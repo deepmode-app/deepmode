@@ -2,7 +2,7 @@
 <html>
   <head>
     <meta charset="UTF-8" />
-    <title>Deepwork AI – Dashboard</title>
+    <title>Deepmode – Dashboard</title>
     <style>
       :root {
         --dw-bg: #050509;
@@ -31,6 +31,14 @@
 
       .header {
         margin-bottom: 18px;
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+      }
+
+      .left-header {
+        display: flex;
+        flex-direction: column;
       }
 
       .badge {
@@ -45,6 +53,26 @@
         margin: 0;
         font-size: 24px;
         letter-spacing: 0.03em;
+      }
+
+      .subhead {
+        font-size: 12px;
+        color: var(--dw-muted);
+        margin-top: 4px;
+      }
+
+      .top-right {
+        font-size: 11px;
+        color: var(--dw-muted);
+      }
+
+      .top-right a {
+        color: var(--dw-accent);
+        text-decoration: none;
+      }
+
+      .top-right a:hover {
+        text-decoration: underline;
       }
 
       .cards-row {
@@ -145,13 +173,48 @@
         color: var(--dw-muted);
         padding: 4px 0 2px;
       }
+
+      .error-banner {
+        margin-bottom: 10px;
+        padding: 6px 10px;
+        border-radius: 8px;
+        font-size: 11px;
+        background: #7f1d1d;
+        color: #fee2e2;
+        display: none;
+      }
+
+      .upgrade-btn {
+        background: #e50914;
+        color: white;
+        padding: 8px 14px;
+        border-radius: 999px;
+        font-size: 12px;
+        text-decoration: none;
+      }
+
+      .upgrade-btn:hover {
+        background: #f3121f;
+      }
+
+      
     </style>
   </head>
   <body>
     <div class="shell">
+      <div id="errorBanner" class="error-banner"></div>
+
       <div class="header">
-        <div class="badge">Deepwork AI</div>
-        <h1>Your Focus Stats</h1>
+        <div class="left-header">
+          <div class="badge">Deepmode</div>
+          <h1>Your focus stats</h1>
+          <div class="subhead" id="userHint">
+            Logged in. Every block here is one you actually sat down and did.
+          </div>
+        </div>
+        <div class="top-right">
+          <a href="/login" id="logoutLink">Log out</a>
+        </div>
       </div>
 
       <div class="cards-row">
@@ -162,30 +225,29 @@
         </div>
 
         <div class="card">
-          <div class="card-title">All Time</div>
-          <div class="card-value" id="allTimeMinutes">0 min</div>
+          <div class="card-title">All time</div>
+          <div class="card-value" id="totalMinutes">0 min</div>
           <div class="card-sub">Minutes across all sessions</div>
         </div>
 
         <div class="card">
           <div class="card-title">
-            Discipline Score
-            <span class="chip" id="disciplineCounts">0 / 0</span>
+            Discipline score
+            <span class="chip" id="sessionCountsChip">0 / 0</span>
           </div>
-          <div class="card-value" id="disciplinePercent">0%</div>
+          <div class="card-value" id="disciplineScore">0%</div>
           <div class="card-sub">Completed sessions / started</div>
         </div>
       </div>
 
       <div class="card sessions-card">
-        <h2>Recent Sessions</h2>
+        <h2>Recent sessions</h2>
         <div id="emptyState" class="empty" style="display:none;">
-          No sessions yet. Start a Deepwork block from the Chrome extension.
+          No sessions yet. Start a Deepmode block from the Chrome extension.
         </div>
         <table id="sessionsTable" style="display:none;">
           <thead>
             <tr>
-              <th>Date</th>
               <th>Task</th>
               <th>Category</th>
               <th>Planned</th>
@@ -199,107 +261,134 @@
     </div>
 
     <script>
-      const API_BASE_URL = window.location.origin;
+      // 1) Check for JWT in browser storage
+      const token = localStorage.getItem("deepmode_token");
+      const errorBanner = document.getElementById("errorBanner");
 
-      async function fetchSummary() {
-        const res = await fetch(`${API_BASE_URL}/sessions/summary`);
-        if (!res.ok) throw new Error("Failed to load summary");
-        return await res.json();
+      // If there's no token, send them to login
+      if (!token) {
+        window.location.href = "/login";
       }
 
-      async function fetchSessions() {
-        const res = await fetch(`${API_BASE_URL}/sessions/`);
-        if (!res.ok) throw new Error("Failed to load sessions");
-        return await res.json();
+      // Simple "logout": clear token and go to login
+      const logoutLink = document.getElementById("logoutLink");
+      logoutLink.addEventListener("click", (e) => {
+        e.preventDefault();
+        localStorage.removeItem("deepmode_token");
+        window.location.href = "/login";
+      });
+
+      function sameDay(d1, d2) {
+        return (
+          d1.getFullYear() === d2.getFullYear() &&
+          d1.getMonth() === d2.getMonth() &&
+          d1.getDate() === d2.getDate()
+        );
       }
 
-      function renderSummary(summary) {
-        const todayEl = document.getElementById("todayMinutes");
-        const allTimeEl = document.getElementById("allTimeMinutes");
-        const disciplinePercentEl = document.getElementById("disciplinePercent");
-        const disciplineCountsEl = document.getElementById("disciplineCounts");
-
-        todayEl.textContent = `${summary.today_minutes} min`;
-        allTimeEl.textContent = `${summary.all_time_minutes} min`;
-
-        const pct =
-          summary.total_sessions === 0
-            ? 0
-            : Math.round(
-                (summary.completed_sessions / summary.total_sessions) * 100
-              );
-
-        disciplinePercentEl.textContent = `${pct}%`;
-        disciplineCountsEl.textContent = `${summary.completed_sessions} / ${summary.total_sessions}`;
-      }
-
-      function renderSessions(sessions) {
-        const tbody = document.getElementById("sessionsBody");
-        const emptyState = document.getElementById("emptyState");
-        const table = document.getElementById("sessionsTable");
-
-        tbody.innerHTML = "";
-
-        if (!sessions.length) {
-          emptyState.style.display = "block";
-          table.style.display = "none";
-          return;
-        }
-
-        emptyState.style.display = "none";
-        table.style.display = "table";
-
-        sessions.forEach((s) => {
-          const row = document.createElement("tr");
-
-          const status =
-            s.end_time === null
-              ? { label: "Active / unfinished", color: "#b91c1c" }
-              : { label: "Completed", color: "#16a34a" };
-
-          const planned = `${s.planned_duration_minutes}m`;
-          const actual =
-            s.actual_duration_minutes === null ? "-" : `${s.actual_duration_minutes}m`;
-
-          row.innerHTML = `
-            <td>${new Date(s.start_time).toLocaleString()}</td>
-            <td>${s.task}</td>
-            <td><span class="pill">${s.category}</span></td>
-            <td class="muted">${planned}</td>
-            <td>${actual}</td>
-            <td>
-              <span style="
-                display:inline-block;
-                padding:2px 8px;
-                border-radius:999px;
-                font-size:11px;
-                background:${status.color}22;
-                color:${status.color};
-              ">
-                ${status.label}
-              </span>
-            </td>
-          `;
-
-          tbody.appendChild(row);
-        });
-      }
-
-      async function loadDashboard() {
+      async function loadSessions() {
         try {
-          const [summary, sessions] = await Promise.all([
-            fetchSummary(),
-            fetchSessions(),
-          ]);
+          // 2) Call /sessions/ with Authorization header
+          const res = await fetch("/sessions/", {
+            headers: {
+              "Accept": "application/json",
+              "Authorization": "Bearer " + token
+            }
+          });
 
-          renderSummary(summary);
-          renderSessions(sessions);
-        } catch (err) {
-          console.error(err);
+          if (res.status === 401) {
+            // Token invalid/expired → force login
+            localStorage.removeItem("deepmode_token");
+            window.location.href = "/login";
+            return;
+          }
+
+          if (!res.ok) {
+            errorBanner.textContent = "Couldn’t load your sessions. Try refreshing.";
+            errorBanner.style.display = "block";
+            return;
+          }
+
+          const data = await res.json();
+
+          const body = document.getElementById("sessionsBody");
+          const emptyState = document.getElementById("emptyState");
+          const table = document.getElementById("sessionsTable");
+
+          body.innerHTML = "";
+
+          if (!Array.isArray(data) || data.length === 0) {
+            emptyState.style.display = "block";
+            table.style.display = "none";
+            document.getElementById("todayMinutes").textContent = "0 min";
+            document.getElementById("totalMinutes").textContent = "0 min";
+            document.getElementById("disciplineScore").textContent = "0%";
+            document.getElementById("sessionCountsChip").textContent = "0 / 0";
+            return;
+          }
+
+          emptyState.style.display = "none";
+          table.style.display = "table";
+
+          let total = 0;
+          let todayTotal = 0;
+          let started = data.length;
+          let completed = 0;
+
+          const today = new Date();
+
+          data.forEach((s) => {
+            const tr = document.createElement("tr");
+            const actual = s.actual_duration_minutes ?? 0;
+            total += actual;
+
+            const start = new Date(s.start_time);
+            if (sameDay(start, today)) {
+              todayTotal += actual;
+            }
+
+            const isCompleted = s.end_time !== null;
+            if (isCompleted) completed += 1;
+
+            const statusPill = isCompleted
+              ? '<span class="pill pill-green">Completed</span>'
+              : '<span class="pill pill-red">Active / unfinished</span>';
+
+            tr.innerHTML = `
+              <td>${s.task}</td>
+              <td><span class="pill">${s.category}</span></td>
+              <td class="muted">${s.planned_duration_minutes}m</td>
+              <td>${actual ? actual + "m" : "-"}</td>
+              <td>${statusPill}</td>
+            `;
+            body.appendChild(tr);
+          });
+
+          document.getElementById("todayMinutes").textContent =
+            todayTotal + " min";
+          document.getElementById("totalMinutes").textContent =
+            total + " min";
+
+          const score = started > 0 ? Math.round((completed / started) * 100) : 0;
+          document.getElementById("disciplineScore").textContent =
+            score + "%";
+          document.getElementById("sessionCountsChip").textContent =
+            completed + " / " + started;
+        } catch (e) {
+          console.error(e);
+          errorBanner.textContent = "Network error while loading your stats.";
+          errorBanner.style.display = "block";
         }
       }
 
-      document.addEventListener("DOMContentLoaded", loadDashboard);
+      loadSessions();
     </script>
   </body>
 </html>
+
+
+<div style="text-align:right; margin-bottom:12px;">
+  <a href="/billing/checkout" class="upgrade-btn">Upgrade to Pro</a>
+</div>
+
+

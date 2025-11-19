@@ -1,0 +1,181 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <meta charset="UTF-8" />
+    <title>Deepwork AI</title>
+    <style>
+      :root {
+        --dw-bg: #050509;
+        --dw-card: #111118;
+        --dw-accent: #e50914;
+        --dw-text: #f5f5f5;
+        --dw-muted: #9ca3af;
+      }
+
+      body {
+        margin: 0;
+        padding: 12px;
+        min-width: 280px;
+        background: radial-gradient(circle at top, #111118 0, #050509 45%, #020205 100%);
+        color: var(--dw-text);
+        font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", system-ui, sans-serif;
+      }
+
+      .card {
+        background: var(--dw-card);
+        border-radius: 14px;
+        padding: 12px 12px 10px;
+        box-shadow: 0 14px 30px rgba(0, 0, 0, 0.7);
+      }
+
+      .badge {
+        font-size: 10px;
+        text-transform: uppercase;
+        letter-spacing: 0.14em;
+        color: var(--dw-muted);
+        margin-bottom: 4px;
+      }
+
+      h3 {
+        margin: 0 0 8px;
+        font-size: 16px;
+        font-weight: 600;
+        letter-spacing: 0.03em;
+      }
+
+      label {
+        display: block;
+        font-size: 11px;
+        margin-top: 6px;
+        margin-bottom: 2px;
+        color: var(--dw-muted);
+      }
+
+      input,
+      select {
+        width: 100%;
+        margin: 0;
+        padding: 6px 7px;
+        border-radius: 7px;
+        border: 1px solid #27272f;
+        background: #050509;
+        color: var(--dw-text);
+        font-size: 12px;
+        box-sizing: border-box;
+      }
+
+      input:disabled,
+      select:disabled {
+        opacity: 0.5;
+      }
+
+      button {
+        width: 100%;
+        padding: 7px 6px;
+        margin-top: 8px;
+        border-radius: 7px;
+        border: none;
+        font-size: 12px;
+        font-weight: 500;
+        cursor: pointer;
+        box-sizing: border-box;
+      }
+
+      #startBtn {
+        background: var(--dw-accent);
+        color: #ffffff;
+      }
+
+      #startBtn:hover:not(:disabled) {
+        background: #f3121f;
+      }
+
+      #startBtn:disabled {
+        background: #4b5563;
+        cursor: default;
+      }
+
+      #endBtn {
+        background: #18181f;
+        color: #f9fafb;
+        border: 1px solid #4b5563;
+      }
+
+      #endBtn:not(:disabled):hover {
+        background: #b91c1c;
+        border-color: #b91c1c;
+      }
+
+      .current-session {
+        margin-top: 8px;
+        font-size: 11px;
+        color: var(--dw-muted);
+        line-height: 1.4;
+      }
+
+      .current-session strong {
+        color: #e5e7eb;
+      }
+
+      .status {
+        margin-top: 6px;
+        font-size: 11px;
+        color: var(--dw-text);
+      }
+
+      .dashboard-link {
+        margin-top: 4px;
+        font-size: 11px;
+        color: var(--dw-accent);
+        text-align: right;
+        cursor: pointer;
+      }
+
+      .dashboard-link:hover {
+        text-decoration: underline;
+      }
+    </style>
+  </head>
+  <body>
+    <div class="card">
+      <div class="badge">Deepwork AI</div>
+      <h3>Focus Block</h3>
+
+      <label>Task</label>
+      <input id="task" type="text" placeholder="What are you working on?" />
+
+      <label>Category</label>
+      <select id="category">
+        <option value="coding">Coding</option>
+        <option value="writing">Writing</option>
+        <option value="study">Study</option>
+        <option value="other">Other</option>
+      </select>
+
+      <label>Duration (minutes)</label>
+      <select id="duration">
+        <option value="25">25</option>
+        <option value="50">50</option>
+        <option value="90" selected>90</option>
+      </select>
+
+      <button id="startBtn">Start Deepwork Session</button>
+      <button id="endBtn" disabled>
+        End Session
+      </button>
+
+      <div id="currentSession" class="current-session" style="display:none;">
+        <strong>Current Deepwork:</strong>
+        <div id="currentTask"></div>
+        <div id="currentCategory"></div>
+      </div>
+
+      <div class="status" id="status"></div>
+      <div id="dashboardLink" class="dashboard-link">
+        View dashboard
+      </div>
+    </div>
+
+    <script src="popup.js"></script>
+  </body>
+</html>

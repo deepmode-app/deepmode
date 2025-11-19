@@ -1,0 +1,142 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <title>Install Deepmode</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <style>
+    :root {
+      --dw-bg: #050509;
+      --dw-card: #111118;
+      --dw-accent: #e50914;
+      --dw-text: #f9fafb;
+      --dw-muted: #9ca3af;
+      --dw-border: #27272f;
+    }
+
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, system-ui, sans-serif;
+      background: radial-gradient(circle at top, #171724 0, #050509 52%, #020205 100%);
+      color: var(--dw-text);
+      min-height: 100vh;
+    }
+
+    .page {
+      max-width: 720px;
+      margin: 0 auto;
+      padding: 32px 16px 40px;
+    }
+
+    a { color: inherit; text-decoration: none; }
+
+    .logo {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      font-size: 13px;
+      letter-spacing: 0.14em;
+      text-transform: uppercase;
+      color: var(--dw-muted);
+      margin-bottom: 28px;
+    }
+
+    .logo-dot {
+      width: 16px;
+      height: 16px;
+      border-radius: 999px;
+      border: 2px solid var(--dw-accent);
+      position: relative;
+    }
+
+    .logo-dot::after {
+      content: "";
+      position: absolute;
+      inset: 3px;
+      border-radius: inherit;
+      background: var(--dw-accent);
+    }
+
+    h1 {
+      font-size: 26px;
+      margin-bottom: 10px;
+    }
+
+    .sub {
+      font-size: 14px;
+      color: var(--dw-muted);
+      margin-bottom: 22px;
+      max-width: 520px;
+    }
+
+    .card {
+      background: var(--dw-card);
+      border-radius: 14px;
+      border: 1px solid var(--dw-border);
+      padding: 18px 18px 16px;
+      font-size: 14px;
+    }
+
+    ol {
+      margin-left: 18px;
+      margin-top: 6px;
+    }
+
+    li {
+      margin-bottom: 8px;
+      line-height: 1.5;
+    }
+
+    .note {
+      margin-top: 14px;
+      font-size: 12px;
+      color: var(--dw-muted);
+    }
+
+    .back-link {
+      display: inline-block;
+      margin-top: 22px;
+      font-size: 13px;
+      color: var(--dw-muted);
+    }
+
+    .back-link span {
+      color: var(--dw-accent);
+    }
+  </style>
+</head>
+<body>
+  <div class="page">
+    <div class="logo">
+      <div class="logo-dot"></div>
+      <span>Deepmode</span>
+    </div>
+
+    <h1>Install the Deepmode Chrome extension</h1>
+    <p class="sub">
+      Deepmode runs through the extension. Once it’s installed, you can start blocks
+      from any tab and see your stats on the dashboard.
+    </p>
+
+    <div class="card">
+      <strong>While we’re in beta, install it in developer mode:</strong>
+      <ol>
+      <li>
+        <a href="/download-extension" download>Download the <strong>Deepmode extension</strong> ZIP</a>.
+      </li>
+      <li>Unzip it – you should now have a folder called <code>deepmode-extension</code> (or similar).</li>
+      <li>In Chrome, go to <code>chrome://extensions</code> and turn on <b>Developer mode</b> in the top-right.</li>
+      <li>Click <b>“Load unpacked”</b> and choose the <b>unzipped Deepmode folder</b> (not the ZIP).</li>
+      </ol>
+
+      <p class="note">
+        When the Chrome Web Store listing is live, this page will link directly to it.
+        For now, this gets you a working local version so you can test Deepmode end to end.
+      </p>
+    </div>
+
+    <a href="/" class="back-link"><span>←</span> Back to homepage</a>
+  </div>
+</body>
+</html>

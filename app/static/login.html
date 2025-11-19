@@ -1,0 +1,207 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <title>Deepmode – Log in</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <style>
+    :root {
+      --dw-bg: #050509;
+      --dw-card: #111118;
+      --dw-accent: #e50914;
+      --dw-text: #f9fafb;
+      --dw-muted: #9ca3af;
+      --dw-border: #27272f;
+    }
+
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, system-ui, sans-serif;
+      background: radial-gradient(circle at top, #171724 0, #050509 52%, #020205 100%);
+      color: var(--dw-text);
+      min-height: 100vh;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      padding: 24px 16px;
+    }
+
+    .card {
+      background: var(--dw-card);
+      border-radius: 14px;
+      border: 1px solid var(--dw-border);
+      padding: 20px 18px 18px;
+      width: 100%;
+      max-width: 360px;
+      box-shadow: 0 22px 50px rgba(0,0,0,0.7);
+    }
+
+    .logo {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      font-size: 12px;
+      letter-spacing: 0.14em;
+      text-transform: uppercase;
+      color: var(--dw-muted);
+      margin-bottom: 14px;
+    }
+
+    .logo-dot {
+      width: 16px;
+      height: 16px;
+      border-radius: 999px;
+      border: 2px solid var(--dw-accent);
+      position: relative;
+    }
+
+    .logo-dot::after {
+      content: "";
+      position: absolute;
+      inset: 3px;
+      border-radius: inherit;
+      background: var(--dw-accent);
+    }
+
+    h1 {
+      font-size: 20px;
+      margin-bottom: 6px;
+    }
+
+    .sub {
+      font-size: 12px;
+      color: var(--dw-muted);
+      margin-bottom: 16px;
+    }
+
+    label {
+      display: block;
+      font-size: 11px;
+      color: var(--dw-muted);
+      margin-bottom: 4px;
+    }
+
+    input {
+      width: 100%;
+      border-radius: 8px;
+      border: 1px solid var(--dw-border);
+      background: #050509;
+      color: var(--dw-text);
+      padding: 7px 8px;
+      font-size: 13px;
+      margin-bottom: 10px;
+    }
+
+    button {
+      width: 100%;
+      border-radius: 999px;
+      border: none;
+      background: var(--dw-accent);
+      color: #fff;
+      padding: 9px 10px;
+      font-size: 13px;
+      font-weight: 500;
+      cursor: pointer;
+      margin-top: 6px;
+    }
+
+    button:hover {
+      background: #f3121f;
+    }
+
+    .error {
+      margin-top: 8px;
+      font-size: 12px;
+      color: #fecaca;
+      min-height: 16px;
+    }
+
+    .footer {
+      margin-top: 12px;
+      font-size: 11px;
+      color: var(--dw-muted);
+      text-align: center;
+    }
+
+    .footer a {
+      color: var(--dw-accent);
+      text-decoration: none;
+    }
+
+    .footer a:hover {
+      text-decoration: underline;
+    }
+  </style>
+</head>
+<body>
+  <div class="card">
+    <div class="logo">
+      <div class="logo-dot"></div>
+      <span>Deepmode</span>
+    </div>
+
+    <h1>Log in</h1>
+    <p class="sub">See your focus stats and continue where you left off.</p>
+
+    <form id="loginForm">
+      <label for="email">Email</label>
+      <input id="email" type="email" autocomplete="email" required />
+
+      <label for="password">Password</label>
+      <input id="password" type="password" autocomplete="current-password" required />
+
+      <button type="submit">Log in</button>
+    </form>
+
+    <div id="errorBox" class="error"></div>
+
+    <div class="footer">
+      No account yet?
+      <a href="/signup">Sign up free</a>
+      &nbsp;·&nbsp;
+      <a href="/">Back to homepage</a>
+    </div>
+  </div>
+
+  <script>
+    const form = document.getElementById("loginForm");
+    const errorBox = document.getElementById("errorBox");
+
+    form.addEventListener("submit", async (e) => {
+      e.preventDefault();
+      errorBox.textContent = "";
+
+      const email = document.getElementById("email").value.trim();
+      const password = document.getElementById("password").value;
+
+      try {
+        const res = await fetch("/auth/login", {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+            "Accept": "application/json",
+          },
+          body: JSON.stringify({ email, password }),
+        });
+
+        if (!res.ok) {
+          const data = await res.json().catch(() => ({}));
+          errorBox.textContent = data.detail || "Login failed. Check your details.";
+          return;
+        }
+
+        const data = await res.json();
+        // CRITICAL: store ONLY the raw token string
+        localStorage.setItem("deepmode_token", data.access_token);
+
+        // Go to dashboard
+        window.location.href = "/dashboard";
+      } catch (err) {
+        console.error(err);
+        errorBox.textContent = "Network error. Try again.";
+      }
+    });
+  </script>
+</body>
+</html>

@@ -1,22 +1,26 @@
 from datetime import datetime, date
-from typing import List
+from typing import List, Optional
 
-from fastapi import APIRouter, HTTPException
+from fastapi import APIRouter, HTTPException, status, Depends
 
 from app.models.schemas import SessionCreate, SessionRead, SessionSummary
+from app.database import get_conn
+from app.routes.auth import get_current_user  # uses the JWT to load user from DB
 
-from app.database import create_session, list_sessions_db, get_session, end_session_db
+router = APIRouter(tags=["sessions"])
 
 
-router = APIRouter()
+# Free tier: per-user limit
+MAX_FREE_SESSIONS_PER_DAY = 3  # tweak later if you want
 
-MAX_FREE_SESSIONS_PER_DAY = 3
 
-# Helper: convert DB row -> SessionRead Pydantic model
 def row_to_session_read(row) -> SessionRead:
+    """
+    Convert a SQLite row into a SessionRead Pydantic model.
+    """
     return SessionRead(
         id=row["id"],
-        user_id=1,  # single user for now
+        user_id=row["user_id"],
         task=row["task"],
         category=row["category"],
         planned_duration_minutes=row["planned_duration_minutes"],
@@ -27,58 +31,174 @@ def row_to_session_read(row) -> SessionRead:
     )
 
 
+def auto_close_expired_sessions_for_user(user_id: int):
+    """
+    Optional safety: close any sessions for this user that have run past their
+    planned duration but don't have an end_time yet.
+    """
+    conn = get_conn()
+    cur = conn.cursor()
+
+    cur.execute(
+        """
+        SELECT *
+        FROM sessions
+        WHERE end_time IS NULL
+          AND user_id = ?
+        """,
+        (user_id,),
+    )
+    rows = cur.fetchall()
+
+    now = datetime.utcnow()
+
+    for r in rows:
+        start = datetime.fromisoformat(r["start_time"])
+        planned = r["planned_duration_minutes"]
+
+        diff_minutes = (now - start).total_seconds() / 60
+        if diff_minutes >= planned:
+            actual_minutes = int(diff_minutes)
+            discipline_score = 1 if actual_minutes >= planned else 0
+
+            cur.execute(
+                """
+                UPDATE sessions
+                SET end_time = ?, actual_duration_minutes = ?, discipline_score = ?
+                WHERE id = ?
+                """,
+                (now.isoformat(), actual_minutes, discipline_score, r["id"]),
+            )
+
+    conn.commit()
+    conn.close()
+
+
 @router.get("/", response_model=List[SessionRead])
-def list_sessions():
+def list_sessions(current_user: dict = Depends(get_current_user)):
     """
-    Return all sessions from the database (currently single-user).
+    Return all sessions for the logged-in user, most recent first.
     """
-    rows = list_sessions_db()
+    user_id = current_user["id"]
+
+    # Auto-close any expired sessions for this user
+    auto_close_expired_sessions_for_user(user_id)
+
+    conn = get_conn()
+    cur = conn.cursor()
+    rows = cur.execute(
+        """
+        SELECT *
+        FROM sessions
+        WHERE user_id = ?
+        ORDER BY start_time DESC
+        """,
+        (user_id,),
+    ).fetchall()
+    conn.close()
+
     return [row_to_session_read(r) for r in rows]
 
 
 @router.post("/", response_model=SessionRead)
-def create_new_session(payload: SessionCreate):
+def create_new_session(
+    payload: SessionCreate,
+    current_user: dict = Depends(get_current_user),
+):
     """
-    Create a new deepwork session and store it in SQLite.
-    Enforce a simple free-tier limit: max N sessions per day.
+    Create a new Deepmode session for the current user.
+    Enforce a per-user free-tier daily limit.
     """
-    # --- FREE TIER DAILY LIMIT CHECK ---
-    rows = list_sessions_db()
-    today_str = date.today().isoformat()
+    user_id = current_user["id"]
+    is_pro = bool(current_user["is_pro"])
 
-    sessions_today = sum(
-        1 for r in rows
-        if r["start_time"] is not None and r["start_time"].startswith(today_str)
-    )
+    conn = get_conn()
+    cur = conn.cursor()
 
-    if sessions_today >= MAX_FREE_SESSIONS_PER_DAY:
-        raise HTTPException(
-            status_code=429,
-            detail="You’ve hit today’s focus limit — pros train daily. Upgrade to access unlimited Deepwork sessions and track your productivity like a professional with AI support."        )
+    # ---- FREE TIER DAILY LIMIT CHECK (per user) ----
+    if not is_pro:
+        today_str = date.today().isoformat()
+        cur.execute(
+            """
+            SELECT COUNT(*) AS cnt
+            FROM sessions
+            WHERE user_id = ?
+              AND date(start_time) = ?
+              AND end_time IS NOT NULL
+            """,
+            (user_id, today_str),
+        )
+        row = cur.fetchone()
+        sessions_today = row["cnt"] if row else 0
 
-    # --- CREATE SESSION ---
+        if sessions_today >= MAX_FREE_SESSIONS_PER_DAY:
+            conn.close()
+            raise HTTPException(
+                status_code=status.HTTP_403_FORBIDDEN,
+                detail=(
+                    "You’ve used today’s free focus blocks. "
+                    "Deepmode Pro unlocks unlimited sessions and richer stats."
+                ),
+            )
+
+    # ---- CREATE SESSION ----
     start_time = datetime.utcnow().isoformat()
 
-    row = create_session(
-        task=payload.task,
-        category=payload.category,
-        planned_duration_minutes=payload.planned_duration_minutes,
-        start_time=start_time,
+    cur.execute(
+        """
+        INSERT INTO sessions (
+            user_id,
+            task,
+            category,
+            planned_duration_minutes,
+            start_time
+        )
+        VALUES (?, ?, ?, ?, ?)
+        """,
+        (
+            user_id,
+            payload.task,
+            payload.category,
+            payload.planned_duration_minutes,
+            start_time,
+        ),
     )
+    session_id = cur.lastrowid
 
-    return row_to_session_read(row)
+    cur.execute("SELECT * FROM sessions WHERE id = ?", (session_id,))
+    new_row = cur.fetchone()
+    conn.commit()
+    conn.close()
 
+    return row_to_session_read(new_row)
 
 
 @router.patch("/{session_id}/end", response_model=SessionRead)
-def end_session(session_id: int):
+def end_session(
+    session_id: int,
+    current_user: dict = Depends(get_current_user),
+):
     """
-    End a session: compute actual duration and discipline_score,
-    then update the row in SQLite.
+    End a session for the current user:
+    - compute actual duration
+    - compute discipline_score
+    - update the row
     """
-    row = get_session(session_id)
+    user_id = current_user["id"]
+
+    conn = get_conn()
+    cur = conn.cursor()
+
+    cur.execute("SELECT * FROM sessions WHERE id = ?", (session_id,))
+    row = cur.fetchone()
     if row is None:
+        conn.close()
         raise HTTPException(status_code=404, detail="Session not found")
+
+    # Ownership check – don’t let one user end another user's session
+    if row["user_id"] != user_id:
+        conn.close()
+        raise HTTPException(status_code=403, detail="Not your session")
 
     now = datetime.utcnow()
     start = datetime.fromisoformat(row["start_time"])
@@ -88,26 +208,74 @@ def end_session(session_id: int):
     planned = row["planned_duration_minutes"]
     discipline_score = 1 if actual_minutes >= planned else 0
 
-    updated_row = end_session_db(
-        session_id=session_id,
-        end_time=now.isoformat(),
-        actual_duration_minutes=actual_minutes,
-        discipline_score=discipline_score,
+    cur.execute(
+        """
+        UPDATE sessions
+        SET end_time = ?, actual_duration_minutes = ?, discipline_score = ?
+        WHERE id = ?
+        """,
+        (
+            now.isoformat(),
+            actual_minutes,
+            discipline_score,
+            session_id,
+        ),
     )
+
+    cur.execute("SELECT * FROM sessions WHERE id = ?", (session_id,))
+    updated_row = cur.fetchone()
+    conn.commit()
+    conn.close()
 
     return row_to_session_read(updated_row)
 
 
-@router.get("/summary", response_model=SessionSummary)
-def get_summary():
+@router.get("/active", response_model=Optional[SessionRead])
+def get_active_session(current_user: dict = Depends(get_current_user)):
     """
-    Return aggregate stats for the current (single) user:
+    Get the latest active (no end_time) session for the current user.
+    """
+    user_id = current_user["id"]
+
+    conn = get_conn()
+    cur = conn.cursor()
+    row = cur.execute(
+        """
+        SELECT *
+        FROM sessions
+        WHERE user_id = ?
+          AND end_time IS NULL
+        ORDER BY start_time DESC
+        LIMIT 1
+        """,
+        (user_id,),
+    ).fetchone()
+    conn.close()
+
+    if row:
+        return row_to_session_read(row)
+    return None
+
+
+@router.get("/summary", response_model=SessionSummary)
+def get_summary(current_user: dict = Depends(get_current_user)):
+    """
+    Aggregate stats for the current user:
     - minutes today
     - minutes all time
     - total sessions
     - completed sessions
     """
-    rows = list_sessions_db()
+    user_id = current_user["id"]
+
+    conn = get_conn()
+    cur = conn.cursor()
+    rows = cur.execute(
+        "SELECT * FROM sessions WHERE user_id = ?",
+        (user_id,),
+    ).fetchall()
+    conn.close()
+
     today_str = date.today().isoformat()
 
     today_minutes = 0
@@ -117,15 +285,10 @@ def get_summary():
 
     for r in rows:
         mins = r["actual_duration_minutes"] or 0
-
-        # Sum all-time minutes
         all_time_minutes += mins
 
-        # Count completed sessions
         if r["end_time"] is not None:
             completed_sessions += 1
-
-            # Check if completed today
             if r["end_time"].startswith(today_str):
                 today_minutes += mins
 

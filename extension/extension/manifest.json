@@ -1,0 +1,26 @@
+{
+  "manifest_version": 3,
+  "name": "Deepwork AI",
+  "version": "2.3.1",
+  "description": "Start Deepwork sessions and stay focused.",
+  "action": {
+    "default_popup": "popup.html",
+    "default_title": "Deepwork AI"
+  },
+  "permissions": ["storage", "notifications", "tabs"],
+  "host_permissions": [
+    "https://www.youtube.com/*",
+    "https://twitter.com/*",
+    "https://x.com/*"
+  ],
+  "content_scripts": [
+    {
+      "matches": [
+        "https://www.youtube.com/*",
+        "https://twitter.com/*",
+        "https://x.com/*"
+      ],
+      "js": ["blocker.js"]
+    }
+  ]
+}
