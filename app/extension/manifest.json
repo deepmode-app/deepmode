@@ -8,7 +8,39 @@
     "default_title": "Deepwork AI"
   },
   "permissions": ["storage", "notifications", "tabs"],
-  "host_permissions": [
+  "host_permissions": [{
+    "manifest_version": 3,
+    "name": "Deepwork AI",
+    "version": "2.3.1",
+    "description": "Start Deepwork sessions and stay focused.",
+    "action": {
+      "default_popup": "popup.html",
+      "default_title": "Deepwork AI"
+    },
+    "permissions": [
+      "storage",
+      "notifications",
+      "tabs",
+      "scripting"               // ✅ NEW
+    ],
+    "host_permissions": [
+      "https://www.youtube.com/*",
+      "https://twitter.com/*",
+      "https://x.com/*",
+      "http://127.0.0.1:8000/*" // ✅ NEW – your FastAPI backend
+    ],
+    "content_scripts": [
+      {
+        "matches": [
+          "https://www.youtube.com/*",
+          "https://twitter.com/*",
+          "https://x.com/*"
+        ],
+        "js": ["blocker.js"]
+      }
+    ]
+  }
+  
     "https://www.youtube.com/*",
     "https://twitter.com/*",
     "https://x.com/*"

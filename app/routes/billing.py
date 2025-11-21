@@ -1,18 +1,25 @@
 # app/routes/billing.py
 
 import os
+
+
+from dotenv import load_dotenv
+load_dotenv()  # safe to call again
+
+
 import stripe
 from fastapi import APIRouter, HTTPException, Request
 from pydantic import BaseModel
 from fastapi.responses import RedirectResponse
 
 
+
+STRIPE_SECRET_KEY = os.getenv("STRIPE_SECRET_KEY") or "sk_test_dummy_for_now"
+STRIPE_PUBLISHABLE_KEY = os.getenv("STRIPE_PUBLISHABLE_KEY") or "pk_test_dummy_for_now"
+
+stripe.api_key = STRIPE_SECRET_KEY
 router = APIRouter()
 
-# 1) Load Stripe secret key from Replit secrets
-STRIPE_SECRET_KEY = os.getenv("STRIPE_SECRET_KEY")
-if not STRIPE_SECRET_KEY:
-    raise RuntimeError("STRIPE_SECRET_KEY not set in environment")
 
 stripe.api_key = STRIPE_SECRET_KEY
 

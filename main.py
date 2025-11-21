@@ -1,5 +1,13 @@
+import os
 from pathlib import Path
 import zipfile
+
+from dotenv import load_dotenv
+import os
+from pathlib import Path
+
+env_path = Path(__file__).resolve().parent / ".env"
+load_dotenv(dotenv_path=env_path)
 
 from fastapi import FastAPI, HTTPException
 from fastapi.middleware.cors import CORSMiddleware
@@ -7,6 +15,7 @@ from fastapi.responses import FileResponse
 
 from app.routes import sessions, billing, auth
 from app.database import init_db
+
 
 # ---------- Init DB + app ----------
 

@@ -1,7 +1,7 @@
 // app/static/login.js
 
 // Same backend base URL you use in popup.js
-const API_BASE_URL = "https://95e81190-332d-4b5b-a875-0a3ed330e756-00-1kk0ba0t7ygdw.janeway.replit.dev";
+const API_BASE_URL = "";
 
 document.addEventListener("DOMContentLoaded", () => {
   const form = document.getElementById("loginForm");
@@ -53,14 +53,18 @@ document.addEventListener("DOMContentLoaded", () => {
         client_secret: "",
       });
 
-      const response = await fetch(`${API_BASE_URL}/auth/login`, {
+      const response = await fetch(`/auth/login`, {
         method: "POST",
         headers: {
-          "Content-Type": "application/x-www-form-urlencoded",
+          "Content-Type": "application/json",
           "Accept": "application/json",
         },
-        body,
+        body: JSON.stringify({
+          email,
+          password,
+        }),
       });
+      
 
       if (!response.ok) {
         // Try to read error from API, fall back to generic
@@ -84,7 +88,7 @@ document.addEventListener("DOMContentLoaded", () => {
       }
 
       // Store token for later use (dashboard / extension can use this later)
-      localStorage.setItem("deepmode_token", token);
+      localStorage.setItem("access_token", token);
 
       // Redirect to dashboard
       window.location.href = "/dashboard";

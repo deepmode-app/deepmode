@@ -163,18 +163,17 @@
       <a href="/">Back to homepage</a>
     </div>
   </div>
-
   <script>
     const form = document.getElementById("loginForm");
     const errorBox = document.getElementById("errorBox");
-
+  
     form.addEventListener("submit", async (e) => {
       e.preventDefault();
       errorBox.textContent = "";
-
+  
       const email = document.getElementById("email").value.trim();
       const password = document.getElementById("password").value;
-
+  
       try {
         const res = await fetch("/auth/login", {
           method: "POST",
@@ -184,17 +183,19 @@
           },
           body: JSON.stringify({ email, password }),
         });
-
+  
         if (!res.ok) {
           const data = await res.json().catch(() => ({}));
-          errorBox.textContent = data.detail || "Login failed. Check your details.";
+          errorBox.textContent =
+            data.detail || "Login failed. Check your details.";
           return;
         }
-
+  
         const data = await res.json();
-        // CRITICAL: store ONLY the raw token string
-        localStorage.setItem("deepmode_token", data.access_token);
-
+  
+        // ✅ Store token under access_token so the whole app uses one key
+        localStorage.setItem("access_token", data.access_token);
+  
         // Go to dashboard
         window.location.href = "/dashboard";
       } catch (err) {
@@ -203,5 +204,6 @@
       }
     });
   </script>
+  
 </body>
 </html>

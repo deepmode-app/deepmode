@@ -47,7 +47,7 @@ def register(payload: RegisterRequest):
     email = payload.email.lower()
 
     # Check if email already exists
-    cur.execute("SELECT id FROM users WHERE email = ?", (email,))
+    cur.execute("SELECT id FROM users WHERE email = %s", (email,))
     if cur.fetchone():
         conn.close()
         raise HTTPException(
@@ -59,16 +59,17 @@ def register(payload: RegisterRequest):
     pw_hash = hash_password(payload.password)
 
     cur.execute(
-        """
-        INSERT INTO users (email, password_hash, is_pro, created_at, updated_at)
-        VALUES (?, ?, 0, ?, ?)
-        """,
-        (email, pw_hash, now, now),
+    """
+    INSERT INTO users (email, password_hash, is_pro)
+    VALUES (%s, %s, %s)
+    """,
+    (email, pw_hash, False),
     )
+
     conn.commit()
     conn.close()
 
-    return {"message": "Account created. Welcome to Deepmode! Take back your focus, one block at a time."}
+    return {"message": "Account created. Welcome to Deepmode! Take back your focus, one deepwork block at a time."}
 
 
 @router.post("/login", response_model=TokenResponse)
@@ -81,7 +82,7 @@ def login(payload: LoginRequest):
     cur = conn.cursor()
 
     email = payload.email.lower()
-    cur.execute("SELECT * FROM users WHERE email = ?", (email,))
+    cur.execute("SELECT * FROM users WHERE email = %s", (email,))
     row = cur.fetchone()
     conn.close()
 
@@ -129,7 +130,7 @@ def get_current_user(
 
     conn = get_conn()
     cur = conn.cursor()
-    cur.execute("SELECT * FROM users WHERE id = ?", (user_id,))
+    cur.execute("SELECT * FROM users WHERE id = %s ", (user_id,))
     row = cur.fetchone()
     conn.close()
 
