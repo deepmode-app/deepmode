@@ -204,6 +204,34 @@
   </style>
 </head>
 <body>
+  <!-- 🔐 Broadcast JWT to extension as soon as dashboard loads -->
+  <script>
+    // Broadcast JWT to the extension AFTER the page + content scripts are loaded
+    window.addEventListener("load", function () {
+      try {
+        const token =
+          localStorage.getItem("access_token") ||
+          localStorage.getItem("deepmode_token");
+  
+        if (token) {
+          console.log("Deepmode dashboard: broadcasting JWT to extension (on load)");
+          window.postMessage(
+            {
+              type: "DEEPMODE_JWT",
+              token,
+            },
+            "*"
+          );
+        } else {
+          console.log("Deepmode dashboard: no JWT in localStorage on load");
+        }
+      } catch (e) {
+        console.warn("Deepmode: unable to read access token from localStorage", e);
+      }
+    });
+  </script>
+  
+
   <div class="shell">
     <div id="errorBanner" class="error-banner"></div>
 
@@ -211,6 +239,10 @@
       <div class="left-header">
         <div class="badge">Deepmode</div>
         <h1>Your focus stats</h1>
+        <div class="subhead" id="nowRunning" style="display:none; color:#22c55e;">
+          🔴 Deepmode block running…
+        </div>
+        
         <div class="subhead" id="userHint">
           Laptop on. Distractions off. Let’s see what you actually did.
         </div>
@@ -266,21 +298,19 @@
 
   <script>
     // 1) Single source of truth for token key
-    const token = localStorage.getItem("access_token");
-    const errorBanner = document.getElementById("errorBanner");
+  const token = localStorage.getItem("access_token");
+  const errorBanner = document.getElementById("errorBanner");
 
-    // If there's no token, bounce to login
-    if (!token) {
-      window.location.href = "/login";
-    }
+    // 🔁 LOGOUT HANDLER – now purely frontend; extension handles cleanup on /login
+  const logoutLink = document.getElementById("logoutLink");
+  logoutLink.addEventListener("click", (e) => {
+    e.preventDefault();
+    console.log("dashboard: LOGOUT CLICKED – going to /login");
+    localStorage.removeItem("access_token");
+    localStorage.removeItem("deepmode_token");
+    window.location.href = "/login";
+  });
 
-    // Logout → clear token + redirect
-    const logoutLink = document.getElementById("logoutLink");
-    logoutLink.addEventListener("click", (e) => {
-      e.preventDefault();
-      localStorage.removeItem("access_token");
-      window.location.href = "/login";
-    });
 
     function sameDay(d1, d2) {
       return (
@@ -300,7 +330,6 @@
         });
 
         if (res.status === 401) {
-          // Token invalid/expired → treat as logged out
           localStorage.removeItem("access_token");
           window.location.href = "/login";
           return;
@@ -364,8 +393,23 @@
             <td>${actual ? actual + "m" : "-"}</td>
             <td>${statusPill}</td>
           `;
+
+          if (!isCompleted) {
+          tr.style.background = "#111827";   // grey background for unfinished sessions
+          }
+
           body.appendChild(tr);
         });
+
+        const nowRunningDiv = document.getElementById("nowRunning");
+        const hasActive = data.some((s) => s.end_time === null);
+
+        if (hasActive) {
+          nowRunningDiv.style.display = "block";
+        } else {
+          nowRunningDiv.style.display = "none";
+        }
+
 
         document.getElementById("todayMinutes").textContent =
           todayTotal + " min";
@@ -385,6 +429,10 @@
     }
 
     loadSessions();
+
+    // 🔁 Poll every 15 seconds to keep stats fresh
+    setInterval(loadSessions, 1000);
+
   </script>
 </body>
 </html>

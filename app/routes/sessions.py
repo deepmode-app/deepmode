@@ -11,7 +11,7 @@ router = APIRouter(tags=["sessions"])
 
 
 # Free tier: per-user limit
-MAX_FREE_SESSIONS_PER_DAY = 3  # tweak later if you want
+MAX_FREE_SESSIONS_PER_DAY = 1000  # tweak later if you want
 
 
 def row_to_session_read(row) -> SessionRead:

@@ -10,6 +10,10 @@
         --dw-accent: #e50914;
         --dw-text: #f5f5f5;
         --dw-muted: #9ca3af;
+        --dw-border: #27272f;
+        --dw-pill-bg: #050509;
+        --dw-pill-active-bg: #e50914;
+        --dw-pill-active-text: #ffffff;
       }
 
       body {
@@ -52,7 +56,8 @@
       }
 
       input,
-      select {
+      select,
+      textarea {
         width: 100%;
         margin: 0;
         padding: 6px 7px;
@@ -62,10 +67,12 @@
         color: var(--dw-text);
         font-size: 12px;
         box-sizing: border-box;
+        resize: vertical;
       }
 
       input:disabled,
-      select:disabled {
+      select:disabled,
+      textarea:disabled {
         opacity: 0.5;
       }
 
@@ -134,12 +141,80 @@
       .dashboard-link:hover {
         text-decoration: underline;
       }
+
+      /* Blocklist section */
+
+      .blocklist-section {
+        margin-top: 10px;
+        padding-top: 8px;
+        border-top: 1px solid var(--dw-border);
+      }
+
+      .blocklist-header {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        margin-bottom: 4px;
+      }
+
+      .blocklist-title {
+        font-size: 11px;
+        text-transform: uppercase;
+        letter-spacing: 0.12em;
+        color: var(--dw-muted);
+      }
+
+      .blocklist-hint {
+        font-size: 10px;
+        color: var(--dw-muted);
+      }
+
+      .pill-row {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 4px;
+        margin-top: 4px;
+      }
+
+      .site-pill {
+        border-radius: 999px;
+        padding: 4px 8px;
+        font-size: 11px;
+        border: 1px solid #27272f;
+        background: var(--dw-pill-bg);
+        color: var(--dw-text);
+        cursor: pointer;
+        display: inline-flex;
+        align-items: center;
+        gap: 4px;
+      }
+
+      .site-pill.active {
+        background: var(--dw-pill-active-bg);
+        border-color: var(--dw-pill-active-bg);
+        color: var(--dw-pill-active-text);
+      }
+
+      .site-pill span.icon {
+        font-size: 11px;
+        opacity: 0.9;
+      }
+
+      .blocklist-subtext {
+        font-size: 10px;
+        color: var(--dw-muted);
+        margin-top: 4px;
+      }
     </style>
   </head>
   <body>
     <div class="card">
       <div class="badge">Deepwork AI</div>
       <h3>Focus Block</h3>
+
+      <!-- auth state line -->
+      <div id="authState"
+           style="font-size: 11px; margin-top: 6px; color: #9ca3af;"></div>
 
       <label>Task</label>
       <input id="task" type="text" placeholder="What are you working on?" />
@@ -160,14 +235,32 @@
       </select>
 
       <button id="startBtn">Start Deepwork Session</button>
-      <button id="endBtn" disabled>
-        End Session
-      </button>
+      <button id="endBtn" disabled>End Session</button>
 
       <div id="currentSession" class="current-session" style="display:none;">
         <strong>Current Deepwork:</strong>
         <div id="currentTask"></div>
         <div id="currentCategory"></div>
+      </div>
+
+      <!-- Blocklist UI -->
+      <div class="blocklist-section">
+        <div class="blocklist-header">
+          <div class="blocklist-title">Block during Deepmode</div>
+          <div class="blocklist-hint">Tap to toggle</div>
+        </div>
+
+        <div id="defaultSitesRow" class="pill-row">
+          <!-- filled by popup.js -->
+        </div>
+
+        <div class="blocklist-subtext">
+          Popular distractions are on by default. Turn YouTube off if you’re studying with videos.
+        </div>
+
+        <label style="margin-top:6px;">More sites to block (one per line)</label>
+        <textarea id="customSites" rows="3"
+          placeholder="example.com&#10;news.site&#10;social.example"></textarea>
       </div>
 
       <div class="status" id="status"></div>

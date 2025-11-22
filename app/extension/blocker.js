@@ -1,4 +1,5 @@
-console.log("Deepwork blocker loaded on this page.");
+// blocker.js – runs in the context of pages that Deepmode decided to block
+console.log("Deepmode blocker loaded on this page.");
 
 function showOverlay() {
   if (document.getElementById("deepwork-overlay")) return;
@@ -40,35 +41,43 @@ function showOverlay() {
   document.body.appendChild(overlay);
 }
 
-
 function removeOverlay() {
   const overlay = document.getElementById("deepwork-overlay");
   if (overlay) overlay.remove();
 }
 
-// Initial check when the content script loads
-chrome.storage.local.get(["deepwork_active_session"], (result) => {
-  const active = result.deepwork_active_session;
+// Initial check when script loads
+chrome.storage.local.get(["deepmode_active_session"], (result) => {
+  const active = result.deepmode_active_session;
   if (active && active.id) {
-    console.log("Deepwork active on load — blocking.");
+    console.log("Deepmode active on load — showing overlay.");
     showOverlay();
   } else {
-    console.log("No active session on load.");
+    console.log("No active session on load (blocker).");
   }
 });
 
-// React to session start/end while this tab is open
+// React to session start/end (storage-based)
 chrome.storage.onChanged.addListener((changes, area) => {
   if (area !== "local") return;
-  if (!changes.deepwork_active_session) return;
+  if (!changes.deepmode_active_session) return;
 
-  const newVal = changes.deepwork_active_session.newValue;
+  const newVal = changes.deepmode_active_session.newValue;
 
   if (newVal && newVal.id) {
-    console.log("Deepwork started — showing overlay.");
+    console.log("Deepmode started — showing overlay.");
     showOverlay();
   } else {
-    console.log("Deepwork ended — removing overlay.");
+    console.log("Deepmode ended — removing overlay.");
+    removeOverlay();
+  }
+});
+
+// NEW: react to explicit unblock messages from background.js
+chrome.runtime.onMessage.addListener((msg) => {
+  if (!msg || !msg.type) return;
+  if (msg.type === "DEEPMODE_UNBLOCK") {
+    console.log("Deepmode blocker: received DEEPMODE_UNBLOCK – removing overlay");
     removeOverlay();
   }
 });
