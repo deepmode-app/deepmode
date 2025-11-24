@@ -204,6 +204,7 @@
         background 0.22s ease,
         box-shadow 0.22s ease,
         transform 0.18s ease;
+      cursor: pointer;
     }
 
     .session-row:hover {
@@ -348,6 +349,191 @@
     .col-task { max-width: 220px; }
     .col-task span { display: inline-block; max-width: 220px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
     .col-when { white-space: nowrap; }
+
+    /* ====== SESSION MODAL ====== */
+
+    .session-modal-backdrop {
+      position: fixed;
+      inset: 0;
+      background: rgba(0, 0, 0, 0.78);
+      display: none;
+      align-items: center;
+      justify-content: center;
+      z-index: 9999;
+      backdrop-filter: blur(6px);
+    }
+
+    .session-modal-backdrop.visible {
+      display: flex;
+    }
+
+    .session-modal-card {
+      background: radial-gradient(circle at top, #171723 0, #050509 55%, #020205 100%);
+      border-radius: 18px;
+      border: 1px solid rgba(148, 163, 184, 0.35);
+      box-shadow:
+        0 24px 60px rgba(0, 0, 0, 0.9),
+        0 0 0 1px rgba(15, 23, 42, 0.9);
+      padding: 16px 18px 14px;
+      width: 460px;
+      max-width: 95vw;
+      color: var(--dw-text);
+      position: relative;
+    }
+
+    .session-modal-header {
+      display: flex;
+      align-items: flex-start;
+      justify-content: space-between;
+      gap: 10px;
+      margin-bottom: 10px;
+    }
+
+    .session-modal-title {
+      font-size: 15px;
+      font-weight: 600;
+    }
+
+    .session-modal-sub {
+      font-size: 11px;
+      color: var(--dw-muted);
+      margin-top: 2px;
+    }
+
+    .session-modal-close {
+      border: none;
+      background: transparent;
+      color: var(--dw-muted);
+      font-size: 16px;
+      cursor: pointer;
+      padding: 2px;
+      line-height: 1;
+    }
+
+    .session-modal-close:hover {
+      color: var(--dw-text);
+    }
+
+    .session-modal-section {
+      border-top: 1px solid rgba(31, 41, 55, 0.9);
+      padding-top: 8px;
+      margin-top: 8px;
+      font-size: 12px;
+    }
+
+    .session-modal-grid {
+      display: grid;
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+      gap: 8px 12px;
+      margin-top: 6px;
+    }
+
+    .session-modal-label {
+      font-size: 10px;
+      text-transform: uppercase;
+      letter-spacing: 0.12em;
+      color: var(--dw-muted);
+      margin-bottom: 3px;
+    }
+
+    .session-modal-value {
+      font-size: 12px;
+    }
+
+    .session-modal-pill-row {
+      display: flex;
+      gap: 6px;
+      align-items: center;
+      flex-wrap: wrap;
+    }
+
+    .session-modal-id {
+      font-size: 10px;
+      color: var(--dw-muted);
+      margin-top: 6px;
+      word-break: break-all;
+    }
+
+    .session-modal-form {
+      display: flex;
+      flex-direction: column;
+      gap: 8px;
+      margin-top: 6px;
+    }
+
+    .session-modal-form-control {
+      display: flex;
+      flex-direction: column;
+      gap: 3px;
+    }
+
+    .session-modal-input,
+    .session-modal-select,
+    .session-modal-textarea {
+      background: #020617;
+      border-radius: 10px;
+      border: 1px solid rgba(55, 65, 81, 0.9);
+      padding: 6px 8px;
+      font-size: 12px;
+      color: var(--dw-text);
+      font-family: inherit;
+      outline: none;
+    }
+
+    .session-modal-input:focus,
+    .session-modal-select:focus,
+    .session-modal-textarea:focus {
+      border-color: var(--dw-accent);
+      box-shadow: 0 0 0 1px rgba(229, 9, 20, 0.7);
+    }
+
+    .session-modal-textarea {
+      min-height: 60px;
+      resize: vertical;
+    }
+
+    .session-modal-actions {
+      display: flex;
+      justify-content: flex-end;
+      gap: 8px;
+      margin-top: 10px;
+    }
+
+    .session-modal-btn-primary {
+      background: var(--dw-accent);
+      border: none;
+      border-radius: 999px;
+      padding: 6px 12px;
+      font-size: 12px;
+      color: #fff;
+      cursor: pointer;
+    }
+
+    .session-modal-btn-primary:hover {
+      background: #f3121f;
+    }
+
+    .session-modal-btn-secondary {
+      background: transparent;
+      border: 1px solid rgba(148, 163, 184, 0.6);
+      border-radius: 999px;
+      padding: 6px 12px;
+      font-size: 12px;
+      color: var(--dw-muted);
+      cursor: pointer;
+    }
+
+    .session-modal-btn-secondary:hover {
+      border-color: rgba(248, 113, 113, 0.9);
+      color: #fecaca;
+    }
+
+    @media (max-width: 480px) {
+      .session-modal-card {
+        padding: 14px 12px 12px;
+        width: 94vw;
+      }
+    }
   </style>
 </head>
 <body>
@@ -439,10 +625,91 @@
     </div>
   </div>
 
+  <!-- Session detail modal -->
+  <div id="sessionModalBackdrop" class="session-modal-backdrop">
+    <div class="session-modal-card">
+      <div class="session-modal-header">
+        <div>
+          <div class="session-modal-title" id="modalTaskTitle">Session</div>
+          <div class="session-modal-sub" id="modalSubtitle">
+            A closer look at this focus block.
+          </div>
+        </div>
+        <button class="session-modal-close" id="modalCloseBtn" aria-label="Close">
+          ×
+        </button>
+      </div>
+
+      <div class="session-modal-section">
+        <div class="session-modal-label">Overview</div>
+        <div class="session-modal-pill-row">
+          <span id="modalProjectPill"></span>
+          <span id="modalCategoryPill"></span>
+          <span id="modalStatusPill"></span>
+        </div>
+        <div class="session-modal-id" id="modalSessionId"></div>
+      </div>
+
+      <div class="session-modal-section">
+        <div class="session-modal-label">Timing</div>
+        <div class="session-modal-grid">
+          <div>
+            <div class="session-modal-label">Planned</div>
+            <div class="session-modal-value" id="modalPlanned"></div>
+          </div>
+          <div>
+            <div class="session-modal-label">Actual</div>
+            <div class="session-modal-value" id="modalActual"></div>
+          </div>
+          <div>
+            <div class="session-modal-label">Started</div>
+            <div class="session-modal-value" id="modalStart"></div>
+          </div>
+          <div>
+            <div class="session-modal-label">Ended</div>
+            <div class="session-modal-value" id="modalEnd"></div>
+          </div>
+        </div>
+      </div>
+
+      <div class="session-modal-section">
+        <div class="session-modal-label">Edit</div>
+        <div class="session-modal-form">
+          <div class="session-modal-form-control">
+            <label for="modalProjectSelect" class="session-modal-label">Project</label>
+            <select id="modalProjectSelect" class="session-modal-select">
+              <!-- options filled by JS -->
+            </select>
+          </div>
+          <div class="session-modal-form-control">
+            <label for="modalNotesInput" class="session-modal-label">Notes</label>
+            <textarea
+              id="modalNotesInput"
+              class="session-modal-textarea"
+              placeholder="How did this block really go? Wins, distractions, thoughts..."
+            ></textarea>
+          </div>
+          <div class="session-modal-actions">
+            <button id="modalDeleteBtn" class="session-modal-btn-secondary">
+              Delete
+            </button>
+            <button id="modalSaveBtn" class="session-modal-btn-primary">
+              Save changes
+            </button>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
   <script>
     const token = localStorage.getItem("access_token");
     const errorBanner = document.getElementById("errorBanner");
     const REFRESH_MS = 5000;
+
+    // in-memory index: id -> session object
+    let sessionsIndex = {};
+    let currentSessionId = null;
 
     const logoutLink = document.getElementById("logoutLink");
     logoutLink.addEventListener("click", (e) => {
@@ -498,7 +765,6 @@
       const d = new Date(isoString);
       if (Number.isNaN(d.getTime())) return "–";
 
-      // Example: Mon, 24 Feb · 14:32
       const day = d.toLocaleDateString(undefined, {
         weekday: "short",
         day: "2-digit",
@@ -551,6 +817,15 @@
       return `<span class="status-pill status-running"><span class="dot"></span>Running</span>`;
     }
 
+    function collectProjectNames() {
+      const names = new Set();
+      Object.values(sessionsIndex).forEach((s) => {
+        const name = (s.project_name || "").trim();
+        if (name) names.add(name);
+      });
+      return Array.from(names).sort();
+    }
+
     async function loadSessions() {
       if (!token) {
         window.location.href = "/login";
@@ -578,6 +853,9 @@
         }
 
         const data = await res.json();
+
+        // reset in-memory index
+        sessionsIndex = {};
 
         const body = document.getElementById("sessionsBody");
         const emptyState = document.getElementById("emptyState");
@@ -642,6 +920,13 @@
             <td>${renderStatusPill(statusKey)}</td>
           `;
 
+          tr.dataset.sessionId = s.id;
+          sessionsIndex[s.id] = s;
+
+          tr.addEventListener("click", () => {
+            openSessionDetail(s.id);
+          });
+
           body.appendChild(tr);
         });
 
@@ -661,6 +946,251 @@
         errorBanner.style.display = "block";
       }
     }
+
+    // ===== MODAL LOGIC =====
+    const modalBackdrop = document.getElementById("sessionModalBackdrop");
+    const modalCloseBtn = document.getElementById("modalCloseBtn");
+    const modalProjectSelect = document.getElementById("modalProjectSelect");
+    const modalNotesInput = document.getElementById("modalNotesInput");
+    const modalSaveBtn = document.getElementById("modalSaveBtn");
+    const modalDeleteBtn = document.getElementById("modalDeleteBtn");
+
+    // Handle "+ Create new project…" selection
+    modalProjectSelect.addEventListener("change", () => {
+      if (modalProjectSelect.value !== "__NEW_PROJECT__") {
+        return;
+      }
+
+      const entered = prompt("New project name:");
+      if (!entered || !entered.trim()) {
+        modalProjectSelect.value = "";
+        return;
+      }
+
+      const clean = entered.trim();
+
+      let exists = false;
+      for (let i = 0; i < modalProjectSelect.options.length; i++) {
+        if (modalProjectSelect.options[i].value === clean) {
+          exists = true;
+          break;
+        }
+      }
+
+      if (!exists) {
+        const opt = document.createElement("option");
+        opt.value = clean;
+        opt.textContent = clean;
+        const lastIndex = modalProjectSelect.options.length - 1;
+        modalProjectSelect.insertBefore(opt, modalProjectSelect.options[lastIndex]);
+      }
+
+      modalProjectSelect.value = clean;
+    });
+
+    function openSessionDetail(sessionId) {
+      const session = sessionsIndex[sessionId];
+      if (!session) {
+        console.warn("No session found for id", sessionId);
+        return;
+      }
+
+      currentSessionId = sessionId;
+
+      const statusKey = deriveStatus(session);
+
+      document.getElementById("modalTaskTitle").textContent =
+        session.task || "Deepmode session";
+      document.getElementById("modalSubtitle").textContent =
+        "How did this block actually go?";
+
+      const projectPillContainer = document.getElementById("modalProjectPill");
+      projectPillContainer.innerHTML = renderProjectBadge(session.project_name);
+
+      const categoryPillContainer = document.getElementById("modalCategoryPill");
+      categoryPillContainer.innerHTML = renderCategoryBadge(session.category);
+
+      const statusPillContainer = document.getElementById("modalStatusPill");
+      statusPillContainer.innerHTML = renderStatusPill(statusKey);
+
+      document.getElementById("modalSessionId").textContent =
+        "Session ID: " + session.id;
+
+      const plannedDisplay = session.planned_duration_minutes
+        ? `${session.planned_duration_minutes} min`
+        : "–";
+
+      const actualDisplay = formatMinutes(session.actual_duration_minutes ?? 0);
+
+      document.getElementById("modalPlanned").textContent = plannedDisplay;
+      document.getElementById("modalActual").textContent = actualDisplay;
+      document.getElementById("modalStart").textContent = formatWhen(session.start_time);
+      document.getElementById("modalEnd").textContent =
+        session.end_time ? formatWhen(session.end_time) : "Still running";
+
+      // Populate project select
+      const projects = collectProjectNames();
+      modalProjectSelect.innerHTML = "";
+
+      const optNone = document.createElement("option");
+      optNone.value = "";
+      optNone.textContent = "(No project)";
+      modalProjectSelect.appendChild(optNone);
+
+      projects.forEach((name) => {
+        const opt = document.createElement("option");
+        opt.value = name;
+        opt.textContent = name;
+        modalProjectSelect.appendChild(opt);
+      });
+
+      const currentProject = (session.project_name || "").trim();
+      if (currentProject && !projects.includes(currentProject)) {
+        const opt = document.createElement("option");
+        opt.value = currentProject;
+        opt.textContent = currentProject;
+        modalProjectSelect.appendChild(opt);
+      }
+
+      const optNew = document.createElement("option");
+      optNew.value = "__NEW_PROJECT__";
+      optNew.textContent = "+ Create new project…";
+      modalProjectSelect.appendChild(optNew);
+
+      modalProjectSelect.value = currentProject || "";
+
+      // Notes
+      modalNotesInput.value = session.notes || "";
+
+      modalBackdrop.classList.add("visible");
+    }
+
+    function closeSessionModal() {
+      modalBackdrop.classList.remove("visible");
+      currentSessionId = null;
+    }
+
+    modalCloseBtn.addEventListener("click", closeSessionModal);
+
+    modalBackdrop.addEventListener("click", (e) => {
+      if (e.target === modalBackdrop) {
+        closeSessionModal();
+      }
+    });
+
+    document.addEventListener("keydown", (e) => {
+      if (e.key === "Escape") {
+        closeSessionModal();
+      }
+    });
+
+    modalSaveBtn.addEventListener("click", async (e) => {
+      e.preventDefault();
+      if (!currentSessionId) return;
+      if (!token) {
+        window.location.href = "/login";
+        return;
+      }
+
+      const project_name = modalProjectSelect.value.trim() || null;
+      const notes = modalNotesInput.value.trim() || null;
+
+      const payload = {
+        project_name,
+        notes,
+      };
+
+      try {
+        modalSaveBtn.disabled = true;
+        modalSaveBtn.textContent = "Saving…";
+
+        const res = await fetch(`/sessions/${currentSessionId}`, {
+          method: "PATCH",
+          headers: {
+            "Content-Type": "application/json",
+            "Accept": "application/json",
+            "Authorization": "Bearer " + token,
+          },
+          body: JSON.stringify(payload),
+        });
+
+        if (res.status === 401) {
+          localStorage.removeItem("access_token");
+          window.location.href = "/login";
+          return;
+        }
+
+        if (!res.ok) {
+          console.error("Failed to update session", await res.text());
+          errorBanner.textContent = "Couldn’t save changes. Try again.";
+          errorBanner.style.display = "block";
+          return;
+        }
+
+        const updated = await res.json();
+        sessionsIndex[currentSessionId] = updated;
+
+        await loadSessions();
+        closeSessionModal();
+      } catch (err) {
+        console.error(err);
+        errorBanner.textContent = "Network error while saving changes.";
+        errorBanner.style.display = "block";
+      } finally {
+        modalSaveBtn.disabled = false;
+        modalSaveBtn.textContent = "Save changes";
+      }
+    });
+
+    modalDeleteBtn.addEventListener("click", async (e) => {
+      e.preventDefault();
+      if (!currentSessionId) return;
+      if (!token) {
+        window.location.href = "/login";
+        return;
+      }
+
+      const confirmed = window.confirm(
+        "Delete this focus block permanently? This cannot be undone."
+      );
+      if (!confirmed) return;
+
+      try {
+        modalDeleteBtn.disabled = true;
+        modalDeleteBtn.textContent = "Deleting…";
+
+        const res = await fetch(`/sessions/${currentSessionId}`, {
+          method: "DELETE",
+          headers: {
+            "Authorization": "Bearer " + token,
+          },
+        });
+
+        if (res.status === 401) {
+          localStorage.removeItem("access_token");
+          window.location.href = "/login";
+          return;
+        }
+
+        if (!res.ok && res.status !== 204) {
+          console.error("Failed to delete session", await res.text());
+          errorBanner.textContent = "Couldn’t delete session. Try again.";
+          errorBanner.style.display = "block";
+          return;
+        }
+
+        delete sessionsIndex[currentSessionId];
+        await loadSessions();
+        closeSessionModal();
+      } catch (err) {
+        console.error(err);
+        errorBanner.textContent = "Network error while deleting session.";
+        errorBanner.style.display = "block";
+      } finally {
+        modalDeleteBtn.disabled = false;
+        modalDeleteBtn.textContent = "Delete";
+      }
+    });
 
     loadSessions();
     setInterval(loadSessions, REFRESH_MS);

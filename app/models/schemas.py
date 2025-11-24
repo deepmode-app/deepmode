@@ -42,8 +42,20 @@ class SessionRead(BaseModel):
     project_name: Optional[str] = None
     notes: Optional[str] = None
 
-class Config:
+    class Config:
         orm_mode = True
+
+
+class SessionUpdate(BaseModel):
+    """
+    Partial update model for sessions.
+    Only fields that are set will be updated.
+    """
+    task: Optional[str] = None
+    category: Optional[str] = None
+    project_name: Optional[str] = None
+    notes: Optional[str] = None
+
 
 class SessionSummary(BaseModel):
     today_minutes: int

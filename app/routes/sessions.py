@@ -1,9 +1,14 @@
-from datetime import datetime, date, timezone
+from datetime import datetime, date, timezone, timedelta
 from typing import List, Optional
 
 from fastapi import APIRouter, HTTPException, status, Depends
 
-from app.models.schemas import SessionCreate, SessionRead, SessionSummary
+from app.models.schemas import (
+    SessionCreate,
+    SessionRead,
+    SessionSummary,
+    SessionUpdate,
+)
 from app.database import get_conn
 from app.routes.auth import get_current_user  # uses the JWT to load user from DB
 
@@ -16,8 +21,6 @@ MAX_FREE_SESSIONS_PER_DAY = 1000  # tweak later if you want
 def row_to_session_read(row) -> SessionRead:
     """
     Convert a DB row into a SessionRead Pydantic model.
-    Note: We don't need to expose 'status' explicitly for now;
-    the dashboard derives it client-side when missing.
     """
     return SessionRead(
         id=row["id"],
@@ -29,12 +32,11 @@ def row_to_session_read(row) -> SessionRead:
         end_time=row["end_time"],
         actual_duration_minutes=row["actual_duration_minutes"],
         discipline_score=row["discipline_score"],
+        status=row.get("status"),
+        duration_seconds=row.get("duration_seconds"),
         project_name=row.get("project_name"),
         notes=row.get("notes"),
     )
-
-
-from datetime import timedelta
 
 
 def auto_close_expired_sessions_for_user(user_id: int) -> None:
@@ -292,20 +294,20 @@ def get_summary(current_user: dict = Depends(get_current_user)):
     completed_sessions = 0
 
     for r in rows:
-        mins = r["actual_duration_minutes"] or 0
-        all_time_minutes += mins
+      mins = r["actual_duration_minutes"] or 0
+      all_time_minutes += mins
 
-        if r["end_time"] is not None:
-            completed_sessions += 1
-            end_date = r["end_time"]
-            if isinstance(end_date, datetime):
-                end_date = end_date.date()
-            elif isinstance(end_date, str):
-                end_date = datetime.fromisoformat(
-                    end_date.replace("Z", "+00:00")
-                ).date()
-            if end_date == today:
-                today_minutes += mins
+      if r["end_time"] is not None:
+          completed_sessions += 1
+          end_date = r["end_time"]
+          if isinstance(end_date, datetime):
+              end_date = end_date.date()
+          elif isinstance(end_date, str):
+              end_date = datetime.fromisoformat(
+                  end_date.replace("Z", "+00:00")
+              ).date()
+          if end_date == today:
+              today_minutes += mins
 
     return SessionSummary(
         today_minutes=today_minutes,
@@ -313,3 +315,99 @@ def get_summary(current_user: dict = Depends(get_current_user)):
         total_sessions=total_sessions,
         completed_sessions=completed_sessions,
     )
+
+
+@router.patch("/{session_id}", response_model=SessionRead)
+def update_session(
+    session_id: int,
+    payload: SessionUpdate,
+    current_user: dict = Depends(get_current_user),
+):
+    """
+    Partial update of a session (task, category, project_name, notes).
+    Only fields provided in the body will be updated.
+    """
+    user_id = current_user["id"]
+
+    conn = get_conn()
+    cur = conn.cursor()
+
+    # Load existing
+    cur.execute("SELECT * FROM sessions WHERE id = %s", (session_id,))
+    row = cur.fetchone()
+    if row is None:
+        conn.close()
+        raise HTTPException(status_code=404, detail="Session not found")
+
+    if row["user_id"] != user_id:
+        conn.close()
+        raise HTTPException(status_code=403, detail="Not your session")
+
+    update_data = payload.dict(exclude_unset=True)
+    if not update_data:
+        conn.close()
+        return row_to_session_read(row)
+
+    set_clauses = []
+    values = []
+
+    mapping = {
+        "task": "task",
+        "category": "category",
+        "project_name": "project_name",
+        "notes": "notes",
+    }
+
+    for field, column in mapping.items():
+        if field in update_data:
+            set_clauses.append(f"{column} = %s")
+            values.append(update_data[field])
+
+    if not set_clauses:
+        conn.close()
+        return row_to_session_read(row)
+
+    values.append(session_id)
+
+    cur.execute(
+        f"UPDATE sessions SET {', '.join(set_clauses)} WHERE id = %s",
+        values,
+    )
+
+    cur.execute("SELECT * FROM sessions WHERE id = %s", (session_id,))
+    updated_row = cur.fetchone()
+
+    conn.commit()
+    conn.close()
+
+    return row_to_session_read(updated_row)
+
+
+@router.delete("/{session_id}", status_code=status.HTTP_204_NO_CONTENT)
+def delete_session(
+    session_id: int,
+    current_user: dict = Depends(get_current_user),
+):
+    """
+    Delete a session owned by the current user.
+    """
+    user_id = current_user["id"]
+
+    conn = get_conn()
+    cur = conn.cursor()
+
+    cur.execute("SELECT * FROM sessions WHERE id = %s", (session_id,))
+    row = cur.fetchone()
+    if row is None:
+        conn.close()
+        raise HTTPException(status_code=404, detail="Session not found")
+
+    if row["user_id"] != user_id:
+        conn.close()
+        raise HTTPException(status_code=403, detail="Not your session")
+
+    cur.execute("DELETE FROM sessions WHERE id = %s", (session_id,))
+    conn.commit()
+    conn.close()
+
+    return
