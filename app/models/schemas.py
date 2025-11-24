@@ -31,12 +31,19 @@ class SessionRead(BaseModel):
     id: int
     user_id: int
     task: str
-    category: str
+    category: Optional[str] = None
     planned_duration_minutes: int
     start_time: datetime
     end_time: Optional[datetime] = None
     actual_duration_minutes: Optional[int] = None
     discipline_score: Optional[float] = None
+    status: Optional[str] = None          # 'running', 'completed', 'partial', 'abandoned', 'auto_closed'
+    duration_seconds: Optional[int] = None
+    project_name: Optional[str] = None
+    notes: Optional[str] = None
+
+class Config:
+        orm_mode = True
 
 class SessionSummary(BaseModel):
     today_minutes: int

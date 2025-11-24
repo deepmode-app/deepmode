@@ -5,7 +5,6 @@ const API_BASE_URL = "http://127.0.0.1:8000";
 
 // Listen for messages from the *page* (dashboard / login etc.)
 window.addEventListener("message", (event) => {
-  // Only accept messages from the same window
   if (event.source !== window) return;
 
   const data = event.data || {};
@@ -15,7 +14,7 @@ window.addEventListener("message", (event) => {
     chrome.storage.local.set(
       { deepmode_access_token: data.token },
       () => {
-        console.log("Deepmode JWT stored in chrome.storage.local");
+        console.log("Deepmode: JWT stored in chrome.storage.local");
       }
     );
     return;
@@ -28,10 +27,25 @@ window.addEventListener("message", (event) => {
     chrome.storage.local.get(
       ["deepmode_access_token", "deepmode_active_session"],
       async (result) => {
-        const token = result.deepmode_access_token;
+        const token  = result.deepmode_access_token;
         const active = result.deepmode_active_session;
 
-        // If there is an active *signed-in* session, try to end it on the server
+        // 🔹 Immediately clear extension-side auth & session
+        chrome.storage.local.remove(
+          ["deepmode_access_token", "deepmode_active_session"],
+          () => {
+            console.log(
+              "Deepmode: cleared deepmode_access_token + deepmode_active_session on logout"
+            );
+            try {
+              chrome.runtime.sendMessage({ type: "DEEPMODE_LOGOUT" });
+            } catch (e) {
+              console.warn("Deepmode: could not notify popup on logout", e);
+            }
+          }
+        );
+
+        // 🔹 Best-effort: tell backend to end the session
         if (token && active && active.id && !active.isGuest) {
           try {
             await fetch(`${API_BASE_URL}/sessions/${active.id}/end`, {
@@ -46,20 +60,12 @@ window.addEventListener("message", (event) => {
             console.warn("Deepmode: failed to end session on logout", err);
           }
         }
-
-        // In all cases, wipe extension-side auth + active session
-        chrome.storage.local.remove(
-          ["deepmode_access_token", "deepmode_active_session"],
-          () => {
-            console.log("Deepmode: cleared token + active session on logout");
-          }
-        );
       }
     );
     return;
   }
 
-  // (Future) Case 3: dashboard updates block prefs
+  // Case 3: dashboard updates block prefs
   if (data.type === "DEEPMODE_UPDATE_BLOCK_PREFS" && data.prefs) {
     chrome.storage.sync.set(
       { deepmode_block_prefs: data.prefs },

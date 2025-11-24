@@ -12,6 +12,18 @@
       --dw-text: #f5f5f5;
       --dw-muted: #9ca3af;
       --dw-border: #27272f;
+
+      --status-completed-bg: #166534;
+      --status-completed-fg: #dcfce7;
+
+      --status-abandoned-bg: #7f1d1d;
+      --status-abandoned-fg: #fee2e2;
+
+      --status-auto-bg: #374151;
+      --status-auto-fg: #e5e7eb;
+
+      --status-running-bg: rgba(59,130,246,0.16);
+      --status-running-fg: #bfdbfe;
     }
 
     * { box-sizing: border-box; }
@@ -67,7 +79,7 @@
       gap: 8px;
       align-items: flex-end;
       font-size: 11px;
-      color: var(--dw-muted); 
+      color: var(--dw-muted);
     }
 
     .top-right a {
@@ -158,28 +170,11 @@
       color: var(--dw-muted);
       font-weight: 500;
       font-size: 11px;
+      white-space: nowrap;
     }
 
     tbody tr:last-child td {
       border-bottom: none;
-    }
-
-    .pill {
-      display: inline-block;
-      padding: 2px 6px;
-      border-radius: 999px;
-      font-size: 10px;
-      background: #1f2933;
-    }
-
-    .pill-green {
-      background: #166534;
-      color: #dcfce7;
-    }
-
-    .pill-red {
-      background: #7f1d1d;
-      color: #fee2e2;
     }
 
     .muted {
@@ -201,18 +196,169 @@
       color: #fee2e2;
       display: none;
     }
+
+    /* ====== SESSION ROW / ACTIVE GLOW ====== */
+
+    .session-row {
+      transition:
+        background 0.22s ease,
+        box-shadow 0.22s ease,
+        transform 0.18s ease;
+    }
+
+    .session-row:hover {
+      background: #181824;
+    }
+
+    .session-row-active {
+      background: rgba(15, 23, 42, 0.9);
+      box-shadow:
+        0 0 0 1px rgba(59,130,246,0.45),
+        0 0 30px rgba(59,130,246,0.35);
+      animation: deepmodeGlow 2.4s ease-in-out infinite;
+    }
+
+    @keyframes deepmodeGlow {
+      0% {
+        box-shadow:
+          0 0 0 1px rgba(59,130,246,0.35),
+          0 0 20px rgba(59,130,246,0.25);
+      }
+      50% {
+        box-shadow:
+          0 0 0 1px rgba(59,130,246,0.65),
+          0 0 32px rgba(59,130,246,0.45);
+      }
+      100% {
+        box-shadow:
+          0 0 0 1px rgba(59,130,246,0.35),
+          0 0 20px rgba(59,130,246,0.25);
+      }
+    }
+
+    /* ====== STATUS PILLS ====== */
+
+    .status-pill {
+      display: inline-flex;
+      align-items: center;
+      gap: 4px;
+      padding: 2px 8px;
+      border-radius: 999px;
+      font-size: 10px;
+      font-weight: 500;
+      border: 1px solid transparent;
+      white-space: nowrap;
+    }
+
+    .status-pill span.dot {
+      width: 6px;
+      height: 6px;
+      border-radius: 999px;
+      background: currentColor;
+    }
+
+    .status-completed {
+      background: var(--status-completed-bg);
+      color: var(--status-completed-fg);
+      border-color: rgba(187,247,208,0.35);
+    }
+
+    .status-abandoned {
+      background: var(--status-abandoned-bg);
+      color: var(--status-abandoned-fg);
+      border-color: rgba(254,202,202,0.35);
+    }
+
+    .status-auto-closed {
+      background: var(--status-auto-bg);
+      color: var(--status-auto-fg);
+      border-color: rgba(156,163,175,0.4);
+    }
+
+    .status-running {
+      background: var(--status-running-bg);
+      color: var(--status-running-fg);
+      border-color: rgba(59,130,246,0.6);
+    }
+
+    @keyframes dotPulse {
+      0% { transform: scale(0.9); opacity: 0.75; }
+      50% { transform: scale(1.25); opacity: 1; }
+      100% { transform: scale(0.9); opacity: 0.75; }
+    }
+
+    .status-running span.dot {
+      animation: dotPulse 1.6s ease-in-out infinite;
+    }
+
+    /* ====== CATEGORY PILLS ====== */
+
+    .category-pill {
+      display: inline-flex;
+      align-items: center;
+      padding: 2px 6px;
+      border-radius: 999px;
+      font-size: 10px;
+      background: #1f2933;
+      color: #e5e7eb;
+    }
+
+    .cat-coding {
+      background: rgba(59,130,246,0.18);
+      color: #bfdbfe;
+    }
+
+    .cat-writing {
+      background: rgba(249,115,22,0.18);
+      color: #fed7aa;
+    }
+
+    .cat-study {
+      background: rgba(147,51,234,0.18);
+      color: #e9d5ff;
+    }
+
+    .cat-other {
+      background: rgba(107,114,128,0.26);
+      color: #e5e7eb;
+    }
+
+    /* ====== PROJECT PILL ====== */
+    .project-pill {
+      display: inline-flex;
+      align-items: center;
+      padding: 2px 7px;
+      border-radius: 999px;
+      font-size: 10px;
+      background: #0f172a;
+      color: #e5e7eb;
+      max-width: 150px;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      white-space: nowrap;
+      border: 1px solid rgba(148,163,184,0.45);
+    }
+
+    .project-pill-empty {
+      font-size: 10px;
+      color: var(--dw-muted);
+    }
+
+    /* small width hints */
+    .col-task { max-width: 220px; }
+    .col-task span { display: inline-block; max-width: 220px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+    .col-when { white-space: nowrap; }
   </style>
 </head>
 <body>
-  <!-- 🔐 Broadcast JWT to extension as soon as dashboard loads -->
+  <!-- Broadcast JWT to extension as soon as dashboard loads -->
   <script>
-    // Broadcast JWT to the extension AFTER the page + content scripts are loaded
     window.addEventListener("load", function () {
       try {
         const token =
           localStorage.getItem("access_token") ||
           localStorage.getItem("deepmode_token");
-  
+
         if (token) {
           console.log("Deepmode dashboard: broadcasting JWT to extension (on load)");
           window.postMessage(
@@ -230,7 +376,6 @@
       }
     });
   </script>
-  
 
   <div class="shell">
     <div id="errorBanner" class="error-banner"></div>
@@ -239,10 +384,6 @@
       <div class="left-header">
         <div class="badge">Deepmode</div>
         <h1>Your focus stats</h1>
-        <div class="subhead" id="nowRunning" style="display:none; color:#22c55e;">
-          🔴 Deepmode block running…
-        </div>
-        
         <div class="subhead" id="userHint">
           Laptop on. Distractions off. Let’s see what you actually did.
         </div>
@@ -285,7 +426,9 @@
         <thead>
           <tr>
             <th>Task</th>
+            <th>Project</th>
             <th>Category</th>
+            <th>When</th>
             <th>Planned</th>
             <th>Actual</th>
             <th>Status</th>
@@ -297,20 +440,22 @@
   </div>
 
   <script>
-    // 1) Single source of truth for token key
-  const token = localStorage.getItem("access_token");
-  const errorBanner = document.getElementById("errorBanner");
+    const token = localStorage.getItem("access_token");
+    const errorBanner = document.getElementById("errorBanner");
+    const REFRESH_MS = 5000;
 
-    // 🔁 LOGOUT HANDLER – now purely frontend; extension handles cleanup on /login
-  const logoutLink = document.getElementById("logoutLink");
-  logoutLink.addEventListener("click", (e) => {
-    e.preventDefault();
-    console.log("dashboard: LOGOUT CLICKED – going to /login");
-    localStorage.removeItem("access_token");
-    localStorage.removeItem("deepmode_token");
-    window.location.href = "/login";
-  });
+    const logoutLink = document.getElementById("logoutLink");
+    logoutLink.addEventListener("click", (e) => {
+      e.preventDefault();
 
+      console.log("dashboard: LOGOUT CLICKED – sending DEEPMODE_LOGOUT");
+      window.postMessage({ type: "DEEPMODE_LOGOUT" }, "*");
+
+      localStorage.removeItem("access_token");
+      localStorage.removeItem("deepmode_token");
+
+      window.location.href = "/login";
+    });
 
     function sameDay(d1, d2) {
       return (
@@ -320,7 +465,98 @@
       );
     }
 
+    function formatMinutes(mins) {
+      if (mins == null) return "–";
+      if (mins <= 0) return "–";
+      if (mins < 1) return "<1m";
+      return `${mins}m`;
+    }
+
+    function normaliseCategory(cat) {
+      if (!cat) return "other";
+      const c = String(cat).toLowerCase().trim();
+      if (["coding", "code", "dev"].includes(c)) return "coding";
+      if (["writing", "write"].includes(c)) return "writing";
+      if (["study", "studying", "learn"].includes(c)) return "study";
+      return "other";
+    }
+
+    function categoryLabel(rawCat) {
+      if (!rawCat) return "Other";
+      const s = String(rawCat).trim();
+      return s.charAt(0).toUpperCase() + s.slice(1).toLowerCase();
+    }
+
+    function renderCategoryBadge(rawCat) {
+      const cat = normaliseCategory(rawCat);
+      const label = categoryLabel(rawCat || cat);
+      return `<span class="category-pill cat-${cat}">${label}</span>`;
+    }
+
+    function formatWhen(isoString) {
+      if (!isoString) return "–";
+      const d = new Date(isoString);
+      if (Number.isNaN(d.getTime())) return "–";
+
+      // Example: Mon, 24 Feb · 14:32
+      const day = d.toLocaleDateString(undefined, {
+        weekday: "short",
+        day: "2-digit",
+        month: "short",
+      });
+      const time = d.toLocaleTimeString(undefined, {
+        hour: "2-digit",
+        minute: "2-digit",
+      });
+      return `${day} · ${time}`;
+    }
+
+    function renderProjectBadge(projectName) {
+      if (!projectName) {
+        return `<span class="project-pill-empty">—</span>`;
+      }
+      const safe = String(projectName).trim();
+      return `<span class="project-pill">${safe}</span>`;
+    }
+
+    function deriveStatus(session) {
+      if (session.status) {
+        return String(session.status).toLowerCase();
+      }
+
+      if (!session.end_time) return "running";
+
+      const actual = session.actual_duration_minutes ?? 0;
+      const planned = session.planned_duration_minutes ?? 0;
+      if (planned && actual >= planned) return "completed";
+
+      return "abandoned";
+    }
+
+    function renderStatusPill(status) {
+      const s = String(status || "").toLowerCase();
+
+      if (s === "completed") {
+        return `<span class="status-pill status-completed"><span class="dot"></span>Completed</span>`;
+      }
+
+      if (s === "abandoned") {
+        return `<span class="status-pill status-abandoned"><span class="dot"></span>Abandoned</span>`;
+      }
+
+      if (s === "auto_closed" || s === "auto-closed") {
+        return `<span class="status-pill status-auto-closed"><span class="dot"></span>Auto-closed</span>`;
+      }
+
+      return `<span class="status-pill status-running"><span class="dot"></span>Running</span>`;
+    }
+
     async function loadSessions() {
+      if (!token) {
+        window.location.href = "/login";
+        return;
+      }
+
       try {
         const res = await fetch("/sessions/", {
           headers: {
@@ -371,6 +607,8 @@
 
         data.forEach((s) => {
           const tr = document.createElement("tr");
+          tr.classList.add("session-row");
+
           const actual = s.actual_duration_minutes ?? 0;
           total += actual;
 
@@ -379,37 +617,33 @@
             todayTotal += actual;
           }
 
-          const isCompleted = s.end_time !== null;
+          const statusKey = deriveStatus(s);
+          const isCompleted = statusKey === "completed";
           if (isCompleted) completed += 1;
 
-          const statusPill = isCompleted
-            ? '<span class="pill pill-green">Completed</span>'
-            : '<span class="pill pill-red">Active / unfinished</span>';
+          if (statusKey === "running") {
+            tr.classList.add("session-row-active");
+          }
+
+          const actualDisplay = formatMinutes(actual);
+          const plannedDisplay = s.planned_duration_minutes
+            ? `${s.planned_duration_minutes}m`
+            : "–";
+
+          const whenDisplay = formatWhen(s.start_time);
 
           tr.innerHTML = `
-            <td>${s.task}</td>
-            <td><span class="pill">${s.category}</span></td>
-            <td class="muted">${s.planned_duration_minutes}m</td>
-            <td>${actual ? actual + "m" : "-"}</td>
-            <td>${statusPill}</td>
+            <td class="col-task"><span>${s.task}</span></td>
+            <td>${renderProjectBadge(s.project_name)}</td>
+            <td>${renderCategoryBadge(s.category)}</td>
+            <td class="muted col-when">${whenDisplay}</td>
+            <td class="muted">${plannedDisplay}</td>
+            <td>${actualDisplay}</td>
+            <td>${renderStatusPill(statusKey)}</td>
           `;
-
-          if (!isCompleted) {
-          tr.style.background = "#111827";   // grey background for unfinished sessions
-          }
 
           body.appendChild(tr);
         });
-
-        const nowRunningDiv = document.getElementById("nowRunning");
-        const hasActive = data.some((s) => s.end_time === null);
-
-        if (hasActive) {
-          nowRunningDiv.style.display = "block";
-        } else {
-          nowRunningDiv.style.display = "none";
-        }
-
 
         document.getElementById("todayMinutes").textContent =
           todayTotal + " min";
@@ -429,10 +663,7 @@
     }
 
     loadSessions();
-
-    // 🔁 Poll every 15 seconds to keep stats fresh
-    setInterval(loadSessions, 1000);
-
+    setInterval(loadSessions, REFRESH_MS);
   </script>
 </body>
 </html>

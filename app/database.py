@@ -53,7 +53,9 @@ def init_db():
             actual_duration_minutes INTEGER,
             discipline_score INTEGER,
             status TEXT DEFAULT 'running',
-            duration_seconds INTEGER
+            duration_seconds INTEGER,
+            project_name VARCHAR(255),
+            notes TEXT
         );
     """)
 
@@ -71,16 +73,22 @@ def init_db():
         """)
 
         cur.execute("""
-            CREATE TABLE IF NOT EXISTS sessions (
-                id INTEGER PRIMARY KEY AUTOINCREMENT,
-                user_id INTEGER NOT NULL,
-                start_time TEXT NOT NULL,
-                end_time TEXT,
-                duration_seconds INTEGER,
-                status TEXT,
-                notes TEXT,
-                created_at TEXT DEFAULT CURRENT_TIMESTAMP
-            );
+        CREATE TABLE IF NOT EXISTS sessions (
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            user_id INTEGER NOT NULL,
+            task TEXT NOT NULL,
+            category TEXT,
+            planned_duration_minutes INTEGER NOT NULL,
+            start_time TEXT NOT NULL,
+            end_time TEXT,
+            actual_duration_minutes INTEGER,
+            discipline_score INTEGER,
+            duration_seconds INTEGER,
+            status TEXT,
+            project_name TEXT,
+            notes TEXT,
+            created_at TEXT DEFAULT CURRENT_TIMESTAMP
+        );
         """)
 
     conn.commit()

@@ -9,14 +9,15 @@ from app.routes.auth import get_current_user  # uses the JWT to load user from D
 
 router = APIRouter(tags=["sessions"])
 
-
 # Free tier: per-user limit
 MAX_FREE_SESSIONS_PER_DAY = 1000  # tweak later if you want
 
 
 def row_to_session_read(row) -> SessionRead:
     """
-    Convert a SQLite row into a SessionRead Pydantic model.
+    Convert a DB row into a SessionRead Pydantic model.
+    Note: We don't need to expose 'status' explicitly for now;
+    the dashboard derives it client-side when missing.
     """
     return SessionRead(
         id=row["id"],
@@ -28,25 +29,23 @@ def row_to_session_read(row) -> SessionRead:
         end_time=row["end_time"],
         actual_duration_minutes=row["actual_duration_minutes"],
         discipline_score=row["discipline_score"],
+        project_name=row.get("project_name"),
+        notes=row.get("notes"),
     )
 
 
-from datetime import datetime, timedelta
+from datetime import timedelta
 
-from app.database import get_conn
 
 def auto_close_expired_sessions_for_user(user_id: int) -> None:
     """
-    Auto-close any 'running' sessions that are clearly stale
-    (e.g. user closed laptop, browser died, etc).
-
-    For now: if a session has been 'running' for more than 6 hours,
+    Auto-close any 'running' sessions that are clearly stale.
+    Currently: if a session has been 'running' for more than 6 hours,
     we mark it as 'auto_closed' and compute duration.
     """
     conn = get_conn()
     cur = conn.cursor()
 
-    # Postgres-friendly query with %s placeholder
     cur.execute(
         """
         UPDATE sessions
@@ -64,7 +63,6 @@ def auto_close_expired_sessions_for_user(user_id: int) -> None:
 
     conn.commit()
     conn.close()
-
 
 
 @router.get("/", response_model=List[SessionRead])
@@ -108,7 +106,6 @@ def create_new_session(
 
     # ---- FREE TIER LIMIT ----
     if not is_pro:
-        
         today_str = date.today().isoformat()
 
         cur.execute(
@@ -116,7 +113,7 @@ def create_new_session(
             SELECT COUNT(*)::INT AS count_today
             FROM sessions
             WHERE user_id = %s
-            AND start_time::date = %s::date
+              AND start_time::date = %s::date
             """,
             (user_id, today_str),
         )
@@ -127,7 +124,7 @@ def create_new_session(
             conn.close()
             raise HTTPException(
                 status_code=403,
-                detail="You’ve used today’s free focus blocks. Deepmode Pro unlocks unlimited sessions."
+                detail="You’ve used today’s free focus blocks. Deepmode Pro unlocks unlimited sessions.",
             )
 
     # ---- CREATE SESSION ----
@@ -136,9 +133,9 @@ def create_new_session(
     cur.execute(
         """
         INSERT INTO sessions (
-            user_id, task, category, planned_duration_minutes, start_time
+            user_id, task, category, planned_duration_minutes, start_time, status
         )
-        VALUES (%s, %s, %s, %s, %s)
+        VALUES (%s, %s, %s, %s, %s, 'running')
         RETURNING id
         """,
         (
@@ -163,7 +160,6 @@ def create_new_session(
     return row_to_session_read(new_row)
 
 
-
 @router.patch("/{session_id}/end", response_model=SessionRead)
 def end_session(
     session_id: int,
@@ -173,7 +169,7 @@ def end_session(
     End a session for the current user:
     - compute actual duration
     - compute discipline_score
-    - update the row
+    - set status = 'completed' or 'abandoned'
     """
     user_id = current_user["id"]
 
@@ -186,33 +182,48 @@ def end_session(
         conn.close()
         raise HTTPException(status_code=404, detail="Session not found")
 
-    # Ownership check – don’t let one user end another user's session
+    # Ownership check
     if row["user_id"] != user_id:
         conn.close()
         raise HTTPException(status_code=403, detail="Not your session")
 
+    # If already has an end_time, just return the row (idempotent)
+    if row["end_time"] is not None:
+        conn.close()
+        return row_to_session_read(row)
+
     now = datetime.now(timezone.utc)
-    # row["start_time"] is already a timezone-aware datetime from PostgreSQL
+
     start = row["start_time"]
-    # Ensure start is timezone-aware (in case it's naive, make it UTC)
     if start.tzinfo is None:
         start = start.replace(tzinfo=timezone.utc)
+
     diff = now - start
     actual_minutes = int(diff.total_seconds() // 60)
-
     planned = row["planned_duration_minutes"]
-    discipline_score = 1 if actual_minutes >= planned else 0
+
+    # NEW: derive status + discipline based on how much of the block was done
+    if planned is not None and actual_minutes >= planned:
+        status_val = "completed"
+        discipline_score = 1
+    else:
+        status_val = "abandoned"
+        discipline_score = 0
 
     cur.execute(
         """
         UPDATE sessions
-        SET end_time = %s, actual_duration_minutes = %s, discipline_score = %s
+        SET end_time = %s,
+            actual_duration_minutes = %s,
+            discipline_score = %s,
+            status = %s
         WHERE id = %s
         """,
         (
-            now,  # Pass datetime object directly - psycopg2 handles TIMESTAMPTZ conversion
+            now,
             actual_minutes,
             discipline_score,
+            status_val,
             session_id,
         ),
     )
@@ -234,7 +245,7 @@ def get_active_session(current_user: dict = Depends(get_current_user)):
 
     conn = get_conn()
     cur = conn.cursor()
-    row = cur.execute(
+    cur.execute(
         """
         SELECT *
         FROM sessions
@@ -260,13 +271,13 @@ def get_summary(current_user: dict = Depends(get_current_user)):
     - minutes today
     - minutes all time
     - total sessions
-    - completed sessions
+    - completed sessions (any with end_time != NULL)
     """
     user_id = current_user["id"]
 
     conn = get_conn()
     cur = conn.cursor()
-    rows = cur.execute(
+    cur.execute(
         "SELECT * FROM sessions WHERE user_id = %s",
         (user_id,),
     )
@@ -286,13 +297,13 @@ def get_summary(current_user: dict = Depends(get_current_user)):
 
         if r["end_time"] is not None:
             completed_sessions += 1
-            # Handle both datetime objects and strings for compatibility
             end_date = r["end_time"]
             if isinstance(end_date, datetime):
                 end_date = end_date.date()
             elif isinstance(end_date, str):
-                # If it's a string, parse it
-                end_date = datetime.fromisoformat(end_date.replace('Z', '+00:00')).date()
+                end_date = datetime.fromisoformat(
+                    end_date.replace("Z", "+00:00")
+                ).date()
             if end_date == today:
                 today_minutes += mins
 

@@ -7,7 +7,7 @@ const DASHBOARD_URL = `${API_BASE_URL}/dashboard`;
 // Storage keys
 const STORAGE_KEYS = {
   ACTIVE_SESSION: "deepmode_active_session",
-  ACCESS_TOKEN: "deepmode_access_token", // extension-side copy of JWT
+  ACCESS_TOKEN: "deepmode_access_token",
 };
 
 // Block preferences (sync)
@@ -39,11 +39,23 @@ document.addEventListener("DOMContentLoaded", () => {
   const customSitesTextarea = document.getElementById("customSites");
 
   let timerInterval = null;
-  let accessToken = null; // will be filled from chrome.storage
+  let accessToken = null;
   let blockPrefs = {
-    defaultSiteFlags: {}, // id -> boolean
-    customSites: []       // array of host strings
+    defaultSiteFlags: {},
+    customSites: [],
   };
+
+  // ---------- Small helpers ----------
+
+  function formatCategoryLabel(cat) {
+    if (!cat) return "";
+    const c = String(cat).toLowerCase().trim();
+    if (c === "coding") return "Coding";
+    if (c === "writing") return "Writing";
+    if (c === "study") return "Study";
+    if (c === "other") return "Other";
+    return cat.charAt(0).toUpperCase() + cat.slice(1);
+  }
 
   // ---------- UI helpers ----------
 
@@ -69,7 +81,8 @@ document.addEventListener("DOMContentLoaded", () => {
 
       currentSessionBox.style.display = "block";
       currentTaskDiv.textContent = `Task: ${active.task}`;
-      currentCategoryDiv.textContent = `Category: ${active.category}`;
+      currentCategoryDiv.textContent =
+        `Category: ${formatCategoryLabel(active.category)}`;
 
       statusDiv.style.color = "#e5e7eb";
       statusDiv.textContent = active.isGuest
@@ -106,7 +119,8 @@ document.addEventListener("DOMContentLoaded", () => {
       );
 
       statusDiv.style.color = "#e5e7eb";
-      statusDiv.textContent = `Deepmode on – ${remainingMin}m ${remainingSec}s left`;
+      statusDiv.textContent =
+        `Deepmode on – ${remainingMin}m ${remainingSec}s left`;
 
       if (remainingMs <= 0) {
         clearInterval(timerInterval);
@@ -125,8 +139,6 @@ document.addEventListener("DOMContentLoaded", () => {
     defaultSitesRow.innerHTML = "";
 
     const flags = blockPrefs.defaultSiteFlags || {};
-
-    // If no flags stored yet, default everything to true
     const noFlags = !flags || Object.keys(flags).length === 0;
 
     DEFAULT_SITES.forEach((site) => {
@@ -182,13 +194,112 @@ document.addEventListener("DOMContentLoaded", () => {
     customSitesTextarea.addEventListener("change", saveCustomSites);
   }
 
+  // ---------- Reconcile local active session with backend ----------
+
+  async function reconcileActiveWithBackend(localActive) {
+    // If no token or guest session → trust local, nothing to check
+    if (!accessToken || !localActive || localActive.isGuest) {
+      if (localActive && localActive.id) {
+        setUIForActiveSession(localActive);
+        startCountdown(
+          localActive.start_time,
+          localActive.planned_duration_minutes,
+          localActive.id,
+          true
+        );
+      } else {
+        setUIForActiveSession(null);
+      }
+      return;
+    }
+
+    // Signed-in + local session → ask backend what it thinks
+    try {
+      const res = await fetch(`${API_BASE_URL}/sessions/active`, {
+        headers: {
+          "Accept": "application/json",
+          "Authorization": "Bearer " + accessToken,
+        },
+      });
+
+      // If token is dead or user not authorised, just drop local session
+      if (res.status === 401) {
+        console.warn("Deepmode popup: 401 on /sessions/active, clearing local session");
+        chrome.storage.local.remove(STORAGE_KEYS.ACTIVE_SESSION, () => {
+          setUIForActiveSession(null);
+        });
+        return;
+      }
+
+      if (!res.ok) {
+        console.warn("Deepmode popup: /sessions/active not OK", res.status);
+        // Fallback: if backend is down, keep using local state
+        setUIForActiveSession(localActive);
+        startCountdown(
+          localActive.start_time,
+          localActive.planned_duration_minutes,
+          localActive.id,
+          false
+        );
+        return;
+      }
+
+      const serverActive = await res.json();
+
+      // If server says "no active session" → our local one is stale → clear it
+      if (!serverActive || !serverActive.id || serverActive.end_time) {
+        console.log("Deepmode popup: server has no active session, clearing local");
+        chrome.storage.local.remove(STORAGE_KEYS.ACTIVE_SESSION, () => {
+          setUIForActiveSession(null);
+        });
+        return;
+      }
+
+      // If IDs differ → local belongs to an older / abandoned session → clear local
+      if (serverActive.id !== localActive.id) {
+        console.log(
+          "Deepmode popup: local session stale (id mismatch), clearing local"
+        );
+        chrome.storage.local.remove(STORAGE_KEYS.ACTIVE_SESSION, () => {
+          setUIForActiveSession(null);
+        });
+        return;
+      }
+
+      // At this point serverActive is THE truth: still running
+      const merged = { ...serverActive, isGuest: false };
+
+      chrome.storage.local.set(
+        { [STORAGE_KEYS.ACTIVE_SESSION]: merged },
+        () => {
+          setUIForActiveSession(merged);
+          startCountdown(
+            merged.start_time,
+            merged.planned_duration_minutes,
+            merged.id,
+            false
+          );
+        }
+      );
+    } catch (err) {
+      console.error("Deepmode popup: error hitting /sessions/active", err);
+      // Network error → fall back to trusting local
+      setUIForActiveSession(localActive);
+      startCountdown(
+        localActive.start_time,
+        localActive.planned_duration_minutes,
+        localActive.id,
+        false
+      );
+    }
+  }
+
   // ---------- AUTO END ----------
 
   async function autoEndSession(sessionId, isGuest) {
     statusDiv.textContent = "Time’s up. Ending your block…";
 
     if (isGuest || !accessToken) {
-      // Guest mode: just clear active session and let the user feel the win
       chrome.storage.local.get([STORAGE_KEYS.ACTIVE_SESSION], (result) => {
         const active = result[STORAGE_KEYS.ACTIVE_SESSION];
         if (!active || active.id !== sessionId) {
@@ -203,13 +314,13 @@ document.addEventListener("DOMContentLoaded", () => {
         chrome.storage.local.remove(STORAGE_KEYS.ACTIVE_SESSION, () => {
           setUIForActiveSession(null);
           statusDiv.style.color = "#22c55e";
-          statusDiv.textContent = `Block finished. You stayed in Deepmode for ~${mins} min.`;
+          statusDiv.textContent =
+            `Block finished. You stayed in Deepmode for ~${mins} min.`;
         });
       });
       return;
     }
 
-    // Signed-in: hit backend
     try {
       const response = await fetch(
         `${API_BASE_URL}/sessions/${sessionId}/end`,
@@ -230,7 +341,8 @@ document.addEventListener("DOMContentLoaded", () => {
       } else {
         const data = await response.json();
         statusDiv.style.color = "#22c55e";
-        statusDiv.textContent = `Session finished. Logged ~${data.actual_duration_minutes} min.`;
+        statusDiv.textContent =
+          `Session finished. Logged ~${data.actual_duration_minutes} min.`;
       }
     } catch (err) {
       console.error(err);
@@ -257,7 +369,6 @@ document.addEventListener("DOMContentLoaded", () => {
       return;
     }
 
-    // Decide mode
     const isGuest = !accessToken;
 
     statusDiv.style.color = "#e5e7eb";
@@ -266,10 +377,9 @@ document.addEventListener("DOMContentLoaded", () => {
       : "Spinning up your Deepmode block…";
 
     if (isGuest) {
-      // ---------- Guest mode: purely local ----------
       const nowIso = new Date().toISOString();
       const guestSession = {
-        id: `guest-${Date.now()}`, // local-only ID
+        id: `guest-${Date.now()}`,
         user_id: null,
         task,
         category,
@@ -297,7 +407,6 @@ document.addEventListener("DOMContentLoaded", () => {
       return;
     }
 
-    // ---------- Signed-in mode: talk to backend ----------
     (async () => {
       try {
         const response = await fetch(`${API_BASE_URL}/sessions/`, {
@@ -331,11 +440,7 @@ document.addEventListener("DOMContentLoaded", () => {
         }
 
         const data = await response.json();
-
-        const active = {
-          ...data,
-          isGuest: false,
-        };
+        const active = { ...data, isGuest: false };
 
         chrome.storage.local.set(
           { [STORAGE_KEYS.ACTIVE_SESSION]: active },
@@ -385,12 +490,12 @@ document.addEventListener("DOMContentLoaded", () => {
         chrome.storage.local.remove(STORAGE_KEYS.ACTIVE_SESSION, () => {
           setUIForActiveSession(null);
           statusDiv.style.color = "#22c55e";
-          statusDiv.textContent = `Session ended. You stayed in Deepmode for ~${mins} min.`;
+          statusDiv.textContent =
+            `Session ended. You stayed in Deepmode for ~${mins} min.`;
         });
         return;
       }
 
-      // Signed-in → call backend
       (async () => {
         try {
           const response = await fetch(
@@ -400,7 +505,7 @@ document.addEventListener("DOMContentLoaded", () => {
               headers: {
                 "Content-Type": "application/json",
                 Authorization: "Bearer " + accessToken,
-              },
+              }
             }
           );
 
@@ -412,7 +517,8 @@ document.addEventListener("DOMContentLoaded", () => {
           } else {
             const data = await response.json();
             statusDiv.style.color = "#22c55e";
-            statusDiv.textContent = `Session ended. Logged ~${data.actual_duration_minutes} min.`;
+            statusDiv.textContent =
+              `Session ended. Logged ~${data.actual_duration_minutes} min.`;
           }
         } catch (err) {
           console.error(err);
@@ -440,27 +546,14 @@ document.addEventListener("DOMContentLoaded", () => {
 
   chrome.storage.local.get(
     [STORAGE_KEYS.ACTIVE_SESSION, STORAGE_KEYS.ACCESS_TOKEN],
-    (result) => {
+    async (result) => {
       accessToken = result[STORAGE_KEYS.ACCESS_TOKEN] || null;
       updateAuthState();
 
       const active = result[STORAGE_KEYS.ACTIVE_SESSION];
-      setUIForActiveSession(active);
 
-      if (
-        active &&
-        active.id &&
-        active.start_time &&
-        active.planned_duration_minutes
-      ) {
-        const isGuest = !!active.isGuest || !accessToken;
-        startCountdown(
-          active.start_time,
-          active.planned_duration_minutes,
-          active.id,
-          isGuest
-        );
-      }
+      // Always reconcile with backend if we are signed in
+      await reconcileActiveWithBackend(active);
     }
   );
 
@@ -478,18 +571,68 @@ document.addEventListener("DOMContentLoaded", () => {
     setupCustomSitesEvents();
   });
 
-  // ---------- React live to logout / token changes ----------
+  // ---------- React immediately to logout (from connect.js) ----------
+
+	chrome.runtime.onMessage.addListener((msg) => {
+	  if (msg && msg.type === "DEEPMODE_LOGOUT") {
+		console.log("Deepmode popup: received DEEPMODE_LOGOUT");
+
+		// 1) Kill timer immediately
+		if (timerInterval) {
+		  clearInterval(timerInterval);
+		  timerInterval = null;
+		}
+
+		// 2) Wipe BOTH token + active session from extension storage
+		chrome.storage.local.remove(
+		  [STORAGE_KEYS.ACTIVE_SESSION, STORAGE_KEYS.ACCESS_TOKEN],
+		  () => {
+			accessToken = null;
+			updateAuthState();
+			setUIForActiveSession(null);
+
+			statusDiv.style.color = "#9ca3af";
+			statusDiv.textContent =
+			  "Logged out — start a new Deepmode block anytime.";
+		  }
+		);
+	  }
+	});
+
+
+
+  // ---------- React to storage changes as backup ----------
 
   chrome.storage.onChanged.addListener((changes, area) => {
     if (area !== "local") return;
 
-    // Token changed → update mode line
     if (changes[STORAGE_KEYS.ACCESS_TOKEN]) {
-      accessToken = changes[STORAGE_KEYS.ACCESS_TOKEN].newValue || null;
+      const newToken = changes[STORAGE_KEYS.ACCESS_TOKEN].newValue || null;
+      accessToken = newToken;
       updateAuthState();
+
+      // If token was removed → force-clear session + timer
+      if (!newToken) {
+        if (timerInterval) clearInterval(timerInterval);
+        chrome.storage.local.remove(STORAGE_KEYS.ACTIVE_SESSION, () => {
+          setUIForActiveSession(null);
+        });
+        return;
+      }
+
+      // If we just got a token and we have a local active session,
+      // double-check with backend now.
+      chrome.storage.local.get(
+        STORAGE_KEYS.ACTIVE_SESSION,
+        async (res) => {
+          const localActive = res[STORAGE_KEYS.ACTIVE_SESSION];
+          if (localActive && localActive.id && !localActive.isGuest) {
+            await reconcileActiveWithBackend(localActive);
+          }
+        }
+      );
     }
 
-    // Active session changed (e.g. cleared on logout) → update UI
     if (changes[STORAGE_KEYS.ACTIVE_SESSION]) {
       const newActive = changes[STORAGE_KEYS.ACTIVE_SESSION].newValue || null;
 
