@@ -14,8 +14,13 @@ from app.routes.auth import get_current_user  # uses the JWT to load user from D
 
 router = APIRouter(tags=["sessions"])
 
-# Free tier: per-user limit
-MAX_FREE_SESSIONS_PER_DAY = 1000  # tweak later if you want
+# ---------- FREE TIER LIMITS ----------
+
+# How many focus blocks a free user can start per day
+MAX_FREE_SESSIONS_PER_DAY = 3
+
+# Which durations (in minutes) are allowed on the free plan
+FREE_ALLOWED_DURATIONS_MINUTES = {5, 25}
 
 
 def row_to_session_read(row) -> SessionRead:
@@ -106,8 +111,9 @@ def create_new_session(
     conn = get_conn()
     cur = conn.cursor()
 
-    # ---- FREE TIER LIMIT ----
+    # ---- FREE TIER LIMITS ----
     if not is_pro:
+      # 1) Daily session cap
         today_str = date.today().isoformat()
 
         cur.execute(
@@ -126,7 +132,16 @@ def create_new_session(
             conn.close()
             raise HTTPException(
                 status_code=403,
-                detail="You’ve used today’s free focus blocks. Deepmode Pro unlocks unlimited sessions.",
+                detail="You’ve hit today’s free Deepmode blocks. Upgrade to Pro for unlimited sessions.",
+            )
+
+        # 2) Duration restriction: free users only get 5m + 25m
+        planned = payload.planned_duration_minutes
+        if planned not in FREE_ALLOWED_DURATIONS_MINUTES:
+            conn.close()
+            raise HTTPException(
+                status_code=403,
+                detail="This duration is reserved for Deepmode Pro. Upgrade to unlock Deep (50m) and Immersive (90m) blocks.",
             )
 
     # ---- CREATE SESSION ----
@@ -204,7 +219,7 @@ def end_session(
     actual_minutes = int(diff.total_seconds() // 60)
     planned = row["planned_duration_minutes"]
 
-    # NEW: derive status + discipline based on how much of the block was done
+    # derive status + discipline based on how much of the block was done
     if planned is not None and actual_minutes >= planned:
         status_val = "completed"
         discipline_score = 1
@@ -294,20 +309,20 @@ def get_summary(current_user: dict = Depends(get_current_user)):
     completed_sessions = 0
 
     for r in rows:
-      mins = r["actual_duration_minutes"] or 0
-      all_time_minutes += mins
+        mins = r["actual_duration_minutes"] or 0
+        all_time_minutes += mins
 
-      if r["end_time"] is not None:
-          completed_sessions += 1
-          end_date = r["end_time"]
-          if isinstance(end_date, datetime):
-              end_date = end_date.date()
-          elif isinstance(end_date, str):
-              end_date = datetime.fromisoformat(
-                  end_date.replace("Z", "+00:00")
-              ).date()
-          if end_date == today:
-              today_minutes += mins
+        if r["end_time"] is not None:
+            completed_sessions += 1
+            end_date = r["end_time"]
+            if isinstance(end_date, datetime):
+                end_date = end_date.date()
+            elif isinstance(end_date, str):
+                end_date = datetime.fromisoformat(
+                    end_date.replace("Z", "+00:00")
+                ).date()
+            if end_date == today:
+                today_minutes += mins
 
     return SessionSummary(
         today_minutes=today_minutes,

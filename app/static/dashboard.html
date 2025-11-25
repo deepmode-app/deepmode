@@ -73,16 +73,15 @@
       color: var(--dw-muted);
     }
 
-
     .live-banner {
       margin: 20px 0 14px;
-      width: 100%;                 /* full width of the shell */
+      width: 100%;
       display: flex;
       align-items: center;
-      justify-content: center;     /* center contents */
+      justify-content: center;
       gap: 10px;
-      padding: 10px 22px;          /* slightly bigger pill */
-      font-size: 14px;             /* more prominent text */
+      padding: 10px 22px;
+      font-size: 14px;
       border-radius: 999px;
       background: radial-gradient(
         circle at top,
@@ -96,7 +95,6 @@
         0 0 0 1px rgba(15, 23, 42, 0.95);
     }
 
-
     .live-dot {
       width: 8px;
       height: 8px;
@@ -104,7 +102,6 @@
       background: #60a5fa;
       animation: dotPulse 1.4s ease-in-out infinite;
     }
-
 
     .top-right {
       display: flex;
@@ -184,7 +181,46 @@
 
     .sessions-card h2 {
       font-size: 15px;
-      margin: 0 0 8px;
+      margin: 0;
+    }
+
+    /* Header row for Recent sessions + filter */
+    .sessions-header-row {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      gap: 12px;
+      margin-bottom: 8px;
+    }
+
+    .session-filters {
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      font-size: 11px;
+      color: var(--dw-muted);
+    }
+
+    .filter-label {
+      font-size: 11px;
+      text-transform: uppercase;
+      letter-spacing: 0.12em;
+    }
+
+    .filter-select {
+      background: #020617;
+      border-radius: 999px;
+      border: 1px solid rgba(55, 65, 81, 0.9);
+      padding: 4px 10px;
+      font-size: 11px;
+      color: var(--dw-text);
+      font-family: inherit;
+      outline: none;
+    }
+
+    .filter-select:focus {
+      border-color: var(--dw-accent);
+      box-shadow: 0 0 0 1px rgba(229, 9, 20, 0.7);
     }
 
     table {
@@ -651,7 +687,6 @@
       <span id="liveSessionText"></span>
     </div>
 
-
     <div class="cards-row">
       <div class="card">
         <div class="card-title">Today</div>
@@ -676,7 +711,16 @@
     </div>
 
     <div class="card sessions-card">
-      <h2>Recent sessions</h2>
+      <div class="sessions-header-row">
+        <h2>Recent sessions</h2>
+        <div class="session-filters">
+          <label for="projectFilter" class="filter-label">Project</label>
+          <select id="projectFilter" class="filter-select">
+            <option value="__ALL__">All projects</option>
+            <option value="__NONE__">(No project)</option>
+          </select>
+        </div>
+      </div>
       <div id="emptyState" class="empty" style="display:none;">
         No sessions yet. Start a Deepmode block from the Chrome extension and earn your stats.
       </div>
@@ -753,14 +797,13 @@
               <!-- options filled by JS -->
             </select>
           </div>
-       <!-- ⬇️ ADD THIS BLOCK ⬇️ -->
-      <div class="session-modal-form-control">
-        <label for="modalCategorySelect" class="session-modal-label">Category</label>
-        <select id="modalCategorySelect" class="session-modal-select">
-          <!-- options filled by JS -->
-        </select>
-      </div>    
-              <div class="session-modal-form-control">
+          <div class="session-modal-form-control">
+            <label for="modalCategorySelect" class="session-modal-label">Category</label>
+            <select id="modalCategorySelect" class="session-modal-select">
+              <!-- options filled by JS -->
+            </select>
+          </div>
+          <div class="session-modal-form-control">
             <label for="modalNotesInput" class="session-modal-label">Notes</label>
             <textarea
               id="modalNotesInput"
@@ -793,6 +836,10 @@
     // live banner timer
     let liveTimerId = null;
 
+    // Project filter state
+    const projectFilter = document.getElementById("projectFilter");
+    let activeProjectFilter = "__ALL__";
+
     const logoutLink = document.getElementById("logoutLink");
     logoutLink.addEventListener("click", (e) => {
       e.preventDefault();
@@ -805,6 +852,13 @@
 
       window.location.href = "/login";
     });
+
+    if (projectFilter) {
+      projectFilter.addEventListener("change", () => {
+        activeProjectFilter = projectFilter.value || "__ALL__";
+        loadSessions();
+      });
+    }
 
     function sameDay(d1, d2) {
       return (
@@ -941,11 +995,9 @@
         const elapsedSec = Math.max(0, Math.floor((now - start) / 1000));
         const planned = session.planned_duration_minutes || 0;
 
-        // Category label
         const catLabel = session.category
           ? `${categoryLabel(session.category)} — `
           : "";
-
 
         let label;
 
@@ -1014,16 +1066,16 @@
 
         const data = await res.json();
 
-        // reset in-memory index
-        sessionsIndex = {};
+        let sessions = Array.isArray(data) ? data : [];
 
         const body = document.getElementById("sessionsBody");
         const emptyState = document.getElementById("emptyState");
         const table = document.getElementById("sessionsTable");
 
         body.innerHTML = "";
+        sessionsIndex = {};
 
-        if (!Array.isArray(data) || data.length === 0) {
+        if (sessions.length === 0) {
           emptyState.style.display = "block";
           table.style.display = "none";
           document.getElementById("todayMinutes").textContent = "0 min";
@@ -1037,18 +1089,59 @@
         emptyState.style.display = "none";
         table.style.display = "table";
 
+        // Populate sessionsIndex with ALL sessions
+        sessions.forEach((s) => {
+          sessionsIndex[s.id] = s;
+        });
+
+        // Build project filter options from sessions
+        if (projectFilter) {
+          const projectNames = new Set();
+          sessions.forEach((s) => {
+            const name = (s.project_name || "").trim();
+            if (name) projectNames.add(name);
+          });
+
+          const previousSelection = activeProjectFilter;
+          projectFilter.innerHTML = "";
+
+          const optAll = document.createElement("option");
+          optAll.value = "__ALL__";
+          optAll.textContent = "All projects";
+          projectFilter.appendChild(optAll);
+
+          const optNone = document.createElement("option");
+          optNone.value = "__NONE__";
+          optNone.textContent = "(No project)";
+          projectFilter.appendChild(optNone);
+
+          Array.from(projectNames).sort().forEach((name) => {
+            const opt = document.createElement("option");
+            opt.value = name;
+            opt.textContent = name;
+            projectFilter.appendChild(opt);
+          });
+
+          const validValues = ["__ALL__", "__NONE__", ...projectNames];
+          if (previousSelection && validValues.includes(previousSelection)) {
+            projectFilter.value = previousSelection;
+            activeProjectFilter = previousSelection;
+          } else {
+            projectFilter.value = "__ALL__";
+            activeProjectFilter = "__ALL__";
+          }
+        }
+
         let total = 0;
         let todayTotal = 0;
-        let started = data.length;
+        let started = sessions.length;
         let completed = 0;
         let runningSession = null;
 
         const today = new Date();
 
-        data.forEach((s) => {
-          const tr = document.createElement("tr");
-          tr.classList.add("session-row");
-
+        // Pass 1: metrics + running session (global, no filter)
+        sessions.forEach((s) => {
           const actual = s.actual_duration_minutes ?? 0;
           total += actual;
 
@@ -1058,16 +1151,36 @@
           }
 
           const statusKey = deriveStatus(s);
-          const isCompleted = statusKey === "completed";
-          if (isCompleted) completed += 1;
+          if (statusKey === "completed") completed += 1;
+          if (statusKey === "running" && !runningSession) {
+            runningSession = s;
+          }
+        });
+
+        // Pass 2: render rows with project filter
+        sessions.forEach((s) => {
+          const projName = (s.project_name || "").trim();
+          const statusKey = deriveStatus(s);
+
+          if (activeProjectFilter === "__NONE__" && projName) {
+            return;
+          }
+          if (
+            activeProjectFilter !== "__ALL__" &&
+            activeProjectFilter !== "__NONE__" &&
+            projName !== activeProjectFilter
+          ) {
+            return;
+          }
+
+          const tr = document.createElement("tr");
+          tr.classList.add("session-row");
 
           if (statusKey === "running") {
             tr.classList.add("session-row-active");
-            if (!runningSession) {
-              runningSession = s;
-            }
           }
 
+          const actual = s.actual_duration_minutes ?? 0;
           const actualDisplay = formatMinutes(actual);
           const plannedDisplay = s.planned_duration_minutes
             ? `${s.planned_duration_minutes}m`
@@ -1086,7 +1199,6 @@
           `;
 
           tr.dataset.sessionId = s.id;
-          sessionsIndex[s.id] = s;
 
           tr.addEventListener("click", () => {
             openSessionDetail(s.id);
@@ -1122,8 +1234,6 @@
     const modalNotesInput = document.getElementById("modalNotesInput");
     const modalSaveBtn = document.getElementById("modalSaveBtn");
     const modalDeleteBtn = document.getElementById("modalDeleteBtn");
-
-
     const modalCategorySelect = document.getElementById("modalCategorySelect");
 
     const CORE_CATEGORIES = [
@@ -1183,7 +1293,6 @@
 
       const clean = entered.trim();
 
-      // Check if it already exists
       let exists = false;
       for (let i = 0; i < modalCategorySelect.options.length; i++) {
         if (modalCategorySelect.options[i].value === clean) {
@@ -1196,21 +1305,18 @@
         const opt = document.createElement("option");
         opt.value = clean;
         opt.textContent = categoryLabel(clean);
-        const lastIndex = modalCategorySelect.options.length - 1; // sentinel is last
+        const lastIndex = modalCategorySelect.options.length - 1;
         modalCategorySelect.insertBefore(opt, modalCategorySelect.options[lastIndex]);
       }
 
       modalCategorySelect.value = clean;
     });
 
-
     function populateCategorySelect(currentRaw) {
-
       if (!modalCategorySelect) return;
 
       modalCategorySelect.innerHTML = "";
 
-      // Core options
       CORE_CATEGORIES.forEach((cat) => {
         const opt = document.createElement("option");
         opt.value = cat.value;
@@ -1220,7 +1326,6 @@
 
       const clean = (currentRaw || "").trim();
 
-      // If existing category is custom, preserve it
       if (
         clean &&
         !CORE_CATEGORIES.some((c) => c.value === clean.toLowerCase())
@@ -1231,22 +1336,17 @@
         modalCategorySelect.appendChild(opt);
       }
 
-      // Custom sentinel
       const optNew = document.createElement("option");
       optNew.value = "__NEW_CATEGORY__";
       optNew.textContent = "+ Custom category…";
       modalCategorySelect.appendChild(optNew);
 
-      // Default selection
       if (clean) {
         modalCategorySelect.value = clean;
       } else {
         modalCategorySelect.value = "other";
       }
     }
-
-
-
 
     function openSessionDetail(sessionId) {
       const session = sessionsIndex[sessionId];
@@ -1276,7 +1376,7 @@
       document.getElementById("modalSessionId").textContent =
         "Session ID: " + session.id;
 
-      populateCategorySelect(session.category);  
+      populateCategorySelect(session.category);
 
       const plannedDisplay = session.planned_duration_minutes
         ? `${session.planned_duration_minutes} min`
@@ -1290,7 +1390,6 @@
       document.getElementById("modalEnd").textContent =
         session.end_time ? formatWhen(session.end_time) : "Still running";
 
-      // Populate project select
       const projects = collectProjectNames();
       modalProjectSelect.innerHTML = "";
 
@@ -1321,7 +1420,6 @@
 
       modalProjectSelect.value = currentProject || "";
 
-      // Notes
       modalNotesInput.value = session.notes || "";
 
       modalBackdrop.classList.add("visible");
