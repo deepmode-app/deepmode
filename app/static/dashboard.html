@@ -73,6 +73,39 @@
       color: var(--dw-muted);
     }
 
+
+    .live-banner {
+      margin: 20px 0 14px;
+      width: 100%;                 /* full width of the shell */
+      display: flex;
+      align-items: center;
+      justify-content: center;     /* center contents */
+      gap: 10px;
+      padding: 10px 22px;          /* slightly bigger pill */
+      font-size: 14px;             /* more prominent text */
+      border-radius: 999px;
+      background: radial-gradient(
+        circle at top,
+        rgba(37, 99, 235, 0.32) 0,
+        rgba(15, 23, 42, 0.98) 55%
+      );
+      color: #dbeafe;
+      border: 1px solid rgba(59, 130, 246, 0.9);
+      box-shadow:
+        0 22px 50px rgba(15, 23, 42, 0.95),
+        0 0 0 1px rgba(15, 23, 42, 0.95);
+    }
+
+
+    .live-dot {
+      width: 8px;
+      height: 8px;
+      border-radius: 999px;
+      background: #60a5fa;
+      animation: dotPulse 1.4s ease-in-out infinite;
+    }
+
+
     .top-right {
       display: flex;
       flex-direction: column;
@@ -304,23 +337,49 @@
       color: #e5e7eb;
     }
 
-    .cat-coding {
-      background: rgba(59,130,246,0.18);
-      color: #bfdbfe;
+    /* Core categories */
+    .cat-design {
+      background: rgba(244,114,182,0.18);
+      color: #fce7f3;
     }
 
-    .cat-writing {
-      background: rgba(249,115,22,0.18);
-      color: #fed7aa;
+    .cat-reading {
+      background: rgba(34,197,235,0.18);
+      color: #bae6fd;
     }
 
-    .cat-study {
-      background: rgba(147,51,234,0.18);
-      color: #e9d5ff;
+    .cat-research {
+      background: rgba(129,140,248,0.18);
+      color: #e0e7ff;
+    }
+
+    .cat-fitness {
+      background: rgba(52,211,153,0.18);
+      color: #bbf7d0;
+    }
+
+    .cat-admin {
+      background: rgba(107,114,128,0.3);
+      color: #e5e7eb;
+    }
+
+    .cat-planning {
+      background: rgba(234,179,8,0.18);
+      color: #fef9c3;
+    }
+
+    .cat-revision {
+      background: rgba(251,191,36,0.18);
+      color: #fef3c7;
+    }
+
+    .cat-freelance {
+      background: rgba(56,189,248,0.18);
+      color: #bae6fd;
     }
 
     .cat-other {
-      background: rgba(107,114,128,0.26);
+      background: rgba(31,41,55,0.7);
       color: #e5e7eb;
     }
 
@@ -347,7 +406,13 @@
 
     /* small width hints */
     .col-task { max-width: 220px; }
-    .col-task span { display: inline-block; max-width: 220px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+    .col-task span {
+      display: inline-block;
+      max-width: 220px;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      white-space: nowrap;
+    }
     .col-when { white-space: nowrap; }
 
     /* ====== SESSION MODAL ====== */
@@ -580,6 +645,13 @@
       </div>
     </div>
 
+    <!-- Centered live session banner -->
+    <div id="liveSessionBanner" class="live-banner">
+      <span class="live-dot"></span>
+      <span id="liveSessionText"></span>
+    </div>
+
+
     <div class="cards-row">
       <div class="card">
         <div class="card-title">Today</div>
@@ -681,7 +753,14 @@
               <!-- options filled by JS -->
             </select>
           </div>
-          <div class="session-modal-form-control">
+       <!-- ⬇️ ADD THIS BLOCK ⬇️ -->
+      <div class="session-modal-form-control">
+        <label for="modalCategorySelect" class="session-modal-label">Category</label>
+        <select id="modalCategorySelect" class="session-modal-select">
+          <!-- options filled by JS -->
+        </select>
+      </div>    
+              <div class="session-modal-form-control">
             <label for="modalNotesInput" class="session-modal-label">Notes</label>
             <textarea
               id="modalNotesInput"
@@ -710,6 +789,9 @@
     // in-memory index: id -> session object
     let sessionsIndex = {};
     let currentSessionId = null;
+
+    // live banner timer
+    let liveTimerId = null;
 
     const logoutLink = document.getElementById("logoutLink");
     logoutLink.addEventListener("click", (e) => {
@@ -742,9 +824,16 @@
     function normaliseCategory(cat) {
       if (!cat) return "other";
       const c = String(cat).toLowerCase().trim();
-      if (["coding", "code", "dev"].includes(c)) return "coding";
-      if (["writing", "write"].includes(c)) return "writing";
-      if (["study", "studying", "learn"].includes(c)) return "study";
+
+      if (["design", "ui", "ux", "creative"].includes(c)) return "design";
+      if (["reading", "read"].includes(c)) return "reading";
+      if (["research", "paper", "thesis"].includes(c)) return "research";
+      if (["fitness", "training", "workout", "gym"].includes(c)) return "fitness";
+      if (["admin", "ops", "operations"].includes(c)) return "admin";
+      if (["planning", "plan", "roadmap", "strategy"].includes(c)) return "planning";
+      if (["revision", "revise", "exam", "exams", "study"].includes(c)) return "revision";
+      if (["freelance", "client", "consulting", "coding", "code", "dev", "programming"].includes(c)) return "freelance";
+
       return "other";
     }
 
@@ -826,6 +915,76 @@
       return Array.from(names).sort();
     }
 
+    function updateLiveBanner(session) {
+      const banner = document.getElementById("liveSessionBanner");
+      const textEl = document.getElementById("liveSessionText");
+      if (!banner || !textEl) return;
+
+      if (!session) {
+        banner.style.display = "none";
+        textEl.textContent = "";
+        if (liveTimerId) {
+          clearInterval(liveTimerId);
+          liveTimerId = null;
+        }
+        return;
+      }
+
+      if (liveTimerId) {
+        clearInterval(liveTimerId);
+        liveTimerId = null;
+      }
+
+      function render() {
+        const start = new Date(session.start_time);
+        const now = new Date();
+        const elapsedSec = Math.max(0, Math.floor((now - start) / 1000));
+        const planned = session.planned_duration_minutes || 0;
+
+        // Category label
+        const catLabel = session.category
+          ? `${categoryLabel(session.category)} — `
+          : "";
+
+
+        let label;
+
+        if (planned > 0) {
+          const totalSec = planned * 60;
+          const remaining = totalSec - elapsedSec;
+
+          if (remaining >= 0) {
+            const rm = Math.floor(remaining / 60);
+            const rs = remaining % 60;
+            const taskTitle = session.task
+              ? session.task.charAt(0).toUpperCase() + session.task.slice(1)
+              : "Deepmode session";
+
+            label = `${catLabel}${taskTitle} • ${rm}m ${String(rs).padStart(2, "0")}s left`;
+          } else {
+            const over = -remaining;
+            const om = Math.floor(over / 60);
+            const os = over % 60;
+            label =
+              `${catLabel}${session.task || "Deepmode session"} · ` +
+              `+${om}m ${String(os).padStart(2, "0")}s overtime`;
+          }
+        } else {
+          const em = Math.floor(elapsedSec / 60);
+          const es = elapsedSec % 60;
+          label =
+            `${catLabel}${session.task || "Deepmode session"} · ` +
+            `${em}m ${String(es).padStart(2, "0")}s in`;
+        }
+
+        textEl.textContent = label;
+      }
+
+      render();
+      banner.style.display = "inline-flex";
+      liveTimerId = setInterval(render, 1000);
+    }
+
     async function loadSessions() {
       if (!token) {
         window.location.href = "/login";
@@ -849,6 +1008,7 @@
         if (!res.ok) {
           errorBanner.textContent = "Couldn’t load your sessions. Try refreshing.";
           errorBanner.style.display = "block";
+          updateLiveBanner(null);
           return;
         }
 
@@ -870,6 +1030,7 @@
           document.getElementById("totalMinutes").textContent = "0 min";
           document.getElementById("disciplineScore").textContent = "0%";
           document.getElementById("sessionCountsChip").textContent = "0 / 0";
+          updateLiveBanner(null);
           return;
         }
 
@@ -880,6 +1041,7 @@
         let todayTotal = 0;
         let started = data.length;
         let completed = 0;
+        let runningSession = null;
 
         const today = new Date();
 
@@ -901,6 +1063,9 @@
 
           if (statusKey === "running") {
             tr.classList.add("session-row-active");
+            if (!runningSession) {
+              runningSession = s;
+            }
           }
 
           const actualDisplay = formatMinutes(actual);
@@ -940,10 +1105,13 @@
           score + "%";
         document.getElementById("sessionCountsChip").textContent =
           completed + " / " + started;
+
+        updateLiveBanner(runningSession);
       } catch (e) {
         console.error(e);
         errorBanner.textContent = "Network error while loading your stats.";
         errorBanner.style.display = "block";
+        updateLiveBanner(null);
       }
     }
 
@@ -954,6 +1122,21 @@
     const modalNotesInput = document.getElementById("modalNotesInput");
     const modalSaveBtn = document.getElementById("modalSaveBtn");
     const modalDeleteBtn = document.getElementById("modalDeleteBtn");
+
+
+    const modalCategorySelect = document.getElementById("modalCategorySelect");
+
+    const CORE_CATEGORIES = [
+      { value: "design",    label: "Design" },
+      { value: "reading",   label: "Reading" },
+      { value: "research",  label: "Research" },
+      { value: "fitness",   label: "Fitness / Training" },
+      { value: "admin",     label: "Admin" },
+      { value: "planning",  label: "Planning" },
+      { value: "revision",  label: "Revision / Study" },
+      { value: "freelance", label: "Freelance / Client" },
+      { value: "other",     label: "Other" },
+    ];
 
     // Handle "+ Create new project…" selection
     modalProjectSelect.addEventListener("change", () => {
@@ -988,6 +1171,83 @@
       modalProjectSelect.value = clean;
     });
 
+    // Handle "+ Custom category…" in the modal
+    modalCategorySelect.addEventListener("change", () => {
+      if (modalCategorySelect.value !== "__NEW_CATEGORY__") return;
+
+      const entered = prompt("New category name:");
+      if (!entered || !entered.trim()) {
+        modalCategorySelect.value = "other";
+        return;
+      }
+
+      const clean = entered.trim();
+
+      // Check if it already exists
+      let exists = false;
+      for (let i = 0; i < modalCategorySelect.options.length; i++) {
+        if (modalCategorySelect.options[i].value === clean) {
+          exists = true;
+          break;
+        }
+      }
+
+      if (!exists) {
+        const opt = document.createElement("option");
+        opt.value = clean;
+        opt.textContent = categoryLabel(clean);
+        const lastIndex = modalCategorySelect.options.length - 1; // sentinel is last
+        modalCategorySelect.insertBefore(opt, modalCategorySelect.options[lastIndex]);
+      }
+
+      modalCategorySelect.value = clean;
+    });
+
+
+    function populateCategorySelect(currentRaw) {
+
+      if (!modalCategorySelect) return;
+
+      modalCategorySelect.innerHTML = "";
+
+      // Core options
+      CORE_CATEGORIES.forEach((cat) => {
+        const opt = document.createElement("option");
+        opt.value = cat.value;
+        opt.textContent = cat.label;
+        modalCategorySelect.appendChild(opt);
+      });
+
+      const clean = (currentRaw || "").trim();
+
+      // If existing category is custom, preserve it
+      if (
+        clean &&
+        !CORE_CATEGORIES.some((c) => c.value === clean.toLowerCase())
+      ) {
+        const opt = document.createElement("option");
+        opt.value = clean;
+        opt.textContent = categoryLabel(clean);
+        modalCategorySelect.appendChild(opt);
+      }
+
+      // Custom sentinel
+      const optNew = document.createElement("option");
+      optNew.value = "__NEW_CATEGORY__";
+      optNew.textContent = "+ Custom category…";
+      modalCategorySelect.appendChild(optNew);
+
+      // Default selection
+      if (clean) {
+        modalCategorySelect.value = clean;
+      } else {
+        modalCategorySelect.value = "other";
+      }
+    }
+
+
+
+
     function openSessionDetail(sessionId) {
       const session = sessionsIndex[sessionId];
       if (!session) {
@@ -1015,6 +1275,8 @@
 
       document.getElementById("modalSessionId").textContent =
         "Session ID: " + session.id;
+
+      populateCategorySelect(session.category);  
 
       const plannedDisplay = session.planned_duration_minutes
         ? `${session.planned_duration_minutes} min`
@@ -1094,10 +1356,12 @@
 
       const project_name = modalProjectSelect.value.trim() || null;
       const notes = modalNotesInput.value.trim() || null;
+      const category = modalCategorySelect.value || null;
 
       const payload = {
         project_name,
         notes,
+        category,
       };
 
       try {
