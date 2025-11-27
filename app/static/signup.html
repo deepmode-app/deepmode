@@ -174,52 +174,48 @@
       const submitBtn = document.getElementById("submitBtn");
       const msgDiv = document.getElementById("message");
       const okDiv = document.getElementById("success");
-
+    
       function showError(text) {
         msgDiv.textContent = text;
         msgDiv.style.display = "block";
         okDiv.style.display = "none";
       }
-
+    
       function showSuccess(text) {
         okDiv.textContent = text;
         okDiv.style.display = "block";
         msgDiv.style.display = "none";
       }
-
+    
       signupForm.addEventListener("submit", async (e) => {
         e.preventDefault();
         msgDiv.style.display = "none";
         okDiv.style.display = "none";
-
+    
         const email = document.getElementById("email").value.trim();
         const password = document.getElementById("password").value;
         const confirm = document.getElementById("confirm").value;
-
+    
         if (!email || !password) {
           showError("Email and password are required.");
           return;
         }
-
+    
         if (password !== confirm) {
           showError("Passwords don’t match.");
           return;
         }
-
+    
         submitBtn.disabled = true;
         submitBtn.textContent = "Creating account...";
-
+    
         try {
-          // 1) Call /auth/register
           const res = await fetch("/auth/register", {
             method: "POST",
             headers: { "Content-Type": "application/json" },
-            body: JSON.stringify({
-              email: email,
-              password: password
-            })
+            body: JSON.stringify({ email, password }),
           });
-
+    
           if (!res.ok) {
             let detail = "Couldn’t create your account. Try again.";
             try {
@@ -231,45 +227,24 @@
             submitBtn.textContent = "Create account";
             return;
           }
-
-          // Optional: show quick success while logging in
-          showSuccess("Account created. Logging you in...");
-
-          // 2) Auto-login: /auth/login
-          const loginRes = await fetch("/auth/login", {
-            method: "POST",
-            headers: { "Content-Type": "application/x-www-form-urlencoded" },
-            body: new URLSearchParams({
-              grant_type: "password",
-              username: email,
-              password: password,
-              scope: ""
-            })
-          });
-
-          if (!loginRes.ok) {
-            showSuccess("Account created. Redirecting to login...");
+    
+          // ✅ NEW: email-verification flow
+          showSuccess(
+             "Account created. Check your inbox for a verification link from hi@deepmode.app. If you don’t see it, check Spam/Junk and mark it as ‘Not junk’."
+          );
+    
+          // Optional: auto-redirect after a few seconds
+          setTimeout(() => {
             window.location.href = "/login";
-            return;
-          }
-
-          const loginData = await loginRes.json();
-          if (loginData.access_token) {
-            // Save JWT for later (dashboard, future extension auth, etc.)
-            localStorage.setItem("deepmode_token", loginData.access_token);
-            window.location.href = "/dashboard";
-          } else {
-            showSuccess("Account created. Redirecting to login...");
-            window.location.href = "/login";
-          }
+          }, 4000);
         } catch (err) {
           console.error(err);
           showError("Network error. Try again in a minute.");
-        } finally {
           submitBtn.disabled = false;
           submitBtn.textContent = "Create account";
         }
       });
     </script>
+    
   </body>
 </html>

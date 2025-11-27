@@ -31,7 +31,7 @@
       background: var(--dw-card);
       border-radius: 14px;
       border: 1px solid var(--dw-border);
-      padding: 20px 18px 18px;
+      padding: 20px 18px 22px;
       width: 100%;
       max-width: 360px;
       box-shadow: 0 22px 50px rgba(0,0,0,0.7);
@@ -45,7 +45,7 @@
       letter-spacing: 0.14em;
       text-transform: uppercase;
       color: var(--dw-muted);
-      margin-bottom: 14px;
+      margin-bottom: 16px;
     }
 
     .logo-dot {
@@ -55,7 +55,6 @@
       border: 2px solid var(--dw-accent);
       position: relative;
     }
-
     .logo-dot::after {
       content: "";
       position: absolute;
@@ -72,7 +71,7 @@
     .sub {
       font-size: 12px;
       color: var(--dw-muted);
-      margin-bottom: 16px;
+      margin-bottom: 18px;
     }
 
     label {
@@ -105,45 +104,75 @@
       cursor: pointer;
       margin-top: 6px;
     }
-
     button:hover {
       background: #f3121f;
     }
 
     .error {
-      margin-top: 8px;
+      margin-top: 10px;
       font-size: 12px;
       color: #fecaca;
       min-height: 16px;
     }
 
     .footer {
-      margin-top: 12px;
+      margin-top: 16px;
       font-size: 11px;
       color: var(--dw-muted);
       text-align: center;
+      line-height: 1.5;
     }
 
     .footer a {
       color: var(--dw-accent);
       text-decoration: none;
     }
+    .footer a:hover { text-decoration: underline; }
 
-    .footer a:hover {
-      text-decoration: underline;
+    /* Forgot password toggle button */
+    .link-button {
+      background: none;
+      border: none;
+      color: var(--dw-accent);
+      font-size: 11px;
+      padding: 0;
+      cursor: pointer;
+      text-decoration: none;
+    }
+    .link-button:hover { text-decoration: underline; }
+
+    .forgot-box {
+      margin-top: 14px;
+      font-size: 11px;
+      color: var(--dw-muted);
+    }
+
+    #forgotPanel {
+      margin-top: 10px;
+      display: none;
+      animation: fadeIn 0.25s ease-out;
+    }
+
+    @keyframes fadeIn {
+      from { opacity: 0; transform: translateY(-4px); }
+      to { opacity: 1; transform: translateY(0); }
     }
   </style>
 </head>
 <body>
   <div class="card">
+
+    <!-- Logo -->
     <div class="logo">
       <div class="logo-dot"></div>
       <span>Deepmode</span>
     </div>
 
+    <!-- Header -->
     <h1>Log in</h1>
     <p class="sub">See your focus stats and continue where you left off.</p>
 
+    <!-- Login form -->
     <form id="loginForm">
       <label for="email">Email</label>
       <input id="email" type="email" autocomplete="email" required />
@@ -156,24 +185,52 @@
 
     <div id="errorBox" class="error"></div>
 
+    <!-- Forgot password -->
+    <div class="forgot-box">
+      <button type="button" class="link-button" id="forgotToggle">
+        Forgot your password?
+      </button>
+
+      <div id="forgotPanel">
+        <label for="forgotEmail" style="margin-bottom:4px;">Enter your account email</label>
+        <input id="forgotEmail" type="email" placeholder="you@example.com" />
+
+        <button type="button" id="forgotSubmit" style="margin-top:8px;">
+          Send reset link
+        </button>
+
+        <div id="forgotMsg" class="error" style="margin-top:8px; min-height:0;"></div>
+      </div>
+    </div>
+
+    <!-- Footer -->
     <div class="footer">
       No account yet?
       <a href="/signup">Sign up free</a>
-      &nbsp;·&nbsp;
+      ·
       <a href="/">Back to homepage</a>
+
+      <br />
+      <span style="font-size:10px; color:#6b7280;">
+        Didn’t get your verification email?<br />
+        Check Spam/Junk for <b>hi@deepmode.app</b> and mark as “Not junk”.
+      </span>
     </div>
+
   </div>
+
   <script>
+    // ---------------- Login ----------------
     const form = document.getElementById("loginForm");
     const errorBox = document.getElementById("errorBox");
-  
+
     form.addEventListener("submit", async (e) => {
       e.preventDefault();
       errorBox.textContent = "";
-  
+
       const email = document.getElementById("email").value.trim();
       const password = document.getElementById("password").value;
-  
+
       try {
         const res = await fetch("/auth/login", {
           method: "POST",
@@ -183,27 +240,66 @@
           },
           body: JSON.stringify({ email, password }),
         });
-  
+
         if (!res.ok) {
           const data = await res.json().catch(() => ({}));
           errorBox.textContent =
             data.detail || "Login failed. Check your details.";
           return;
         }
-  
+
         const data = await res.json();
-  
-        // ✅ Store token under access_token so the whole app uses one key
         localStorage.setItem("access_token", data.access_token);
-  
-        // Go to dashboard
+
         window.location.href = "/dashboard";
       } catch (err) {
         console.error(err);
         errorBox.textContent = "Network error. Try again.";
       }
     });
+
+    // ---------------- Forgot password ----------------
+    const forgotToggle = document.getElementById("forgotToggle");
+    const forgotPanel = document.getElementById("forgotPanel");
+    const forgotSubmit = document.getElementById("forgotSubmit");
+    const forgotEmailInput = document.getElementById("forgotEmail");
+    const forgotMsg = document.getElementById("forgotMsg");
+
+    forgotToggle.addEventListener("click", () => {
+      forgotPanel.style.display = forgotPanel.style.display === "none" ? "block" : "none";
+      forgotMsg.textContent = "";
+    });
+
+    forgotSubmit.addEventListener("click", async () => {
+      const email = forgotEmailInput.value.trim();
+      forgotMsg.textContent = "";
+      forgotMsg.style.color = "#fecaca";
+
+      if (!email) {
+        forgotMsg.textContent = "Please enter your email.";
+        return;
+      }
+
+      try {
+        await fetch("/auth/forgot-password", {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+            "Accept": "application/json",
+          },
+          body: JSON.stringify({ email }),
+        });
+
+        forgotMsg.style.color = "#bbf7d0";
+        forgotMsg.textContent =
+          "If an account exists, we’ve emailed a reset link. Check Inbox + Spam/Junk.";
+      } catch (err) {
+        console.error(err);
+        forgotMsg.style.color = "#fecaca";
+        forgotMsg.textContent = "Network error. Try again.";
+      }
+    });
   </script>
-  
+
 </body>
 </html>
