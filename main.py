@@ -3,19 +3,21 @@ from pathlib import Path
 import zipfile
 
 from dotenv import load_dotenv
-import os
-from pathlib import Path
 
-env_path = Path(__file__).resolve().parent / ".env"
+# ---------- Load .env BEFORE importing app.database ----------
+
+BASE_DIR = Path(__file__).resolve().parent
+env_path = BASE_DIR / ".env"
 load_dotenv(dotenv_path=env_path)
 
 from fastapi import FastAPI, HTTPException
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import FileResponse
+from fastapi.responses import HTMLResponse
 
 from app.routes import sessions, billing, auth
 from app.database import init_db
-
+from app.jobs.email_jobs import router as jobs_router  # /jobs/... endpoints
 
 # ---------- Init DB + app ----------
 
@@ -31,15 +33,17 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
+# ---------- Routers ----------
+
 app.include_router(auth.router)
 app.include_router(sessions.router, prefix="/sessions")
 app.include_router(billing.router, tags=["billing"])
+app.include_router(jobs_router)  # /jobs/daily-streak-digest, /jobs/weekly-summary-digest
 
-# ---------- Paths ----------
 
-BASE_DIR = Path(__file__).resolve().parent
+# ---------- Static paths ----------
+
 STATIC_DIR = BASE_DIR / "app" / "static"
-
 EXTENSION_DIR = STATIC_DIR / "deepmode-extension"
 TEMP_ZIP = STATIC_DIR / "deepmode-extension-download.zip"
 
@@ -70,6 +74,10 @@ def signup_page():
 def install_page():
     return FileResponse(STATIC_DIR / "install.html")
 
+
+@app.get("/pricing", include_in_schema=False)
+def pricing_page():
+    return FileResponse(STATIC_DIR / "pricing.html")
 
 # ---------- Extension ZIP download ----------
 

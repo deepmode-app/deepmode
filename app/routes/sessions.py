@@ -72,6 +72,81 @@ def auto_close_expired_sessions_for_user(user_id: int) -> None:
     conn.close()
 
 
+def update_streak_for_user(user_id: int):
+    """
+    Called whenever a user successfully completes ANY session.
+    Updates: last_active_date, current_streak, longest_streak.
+    """
+    conn = get_conn()
+    cur = conn.cursor()
+
+    # Load streak fields
+    cur.execute(
+        """
+        SELECT last_active_date, current_streak, longest_streak
+        FROM users
+        WHERE id = %s
+        """,
+        (user_id,),
+    )
+    row = cur.fetchone()
+
+    if row is None:
+        conn.close()
+        return
+
+    last_active_date = row["last_active_date"]
+    current = row["current_streak"] or 0
+    longest = row["longest_streak"] or 0
+
+    today = datetime.utcnow().date()
+
+    # FIRST SESSION EVER
+    if last_active_date is None:
+        new_streak = 1
+        longest = max(longest, new_streak)
+
+        cur.execute(
+            """
+            UPDATE users
+            SET last_active_date = %s,
+                current_streak = %s,
+                longest_streak = %s
+            WHERE id = %s
+            """,
+            (today, new_streak, longest, user_id),
+        )
+        conn.commit()
+        conn.close()
+        return
+
+    # SAME DAY — Don't increment streak twice
+    if last_active_date == today:
+        conn.close()
+        return
+
+    # WORKED YESTERDAY → streak continues
+    if last_active_date == (today - timedelta(days=1)):
+        new_streak = current + 1
+        longest = max(longest, new_streak)
+    else:
+        # Streak broken
+        new_streak = 1
+
+    cur.execute(
+        """
+        UPDATE users
+        SET last_active_date = %s,
+            current_streak = %s,
+            longest_streak = %s
+        WHERE id = %s
+        """,
+        (today, new_streak, longest, user_id),
+    )
+    conn.commit()
+    conn.close()
+
+
 @router.get("/", response_model=List[SessionRead])
 def list_sessions(current_user: dict = Depends(get_current_user)):
     """
@@ -113,7 +188,7 @@ def create_new_session(
 
     # ---- FREE TIER LIMITS ----
     if not is_pro:
-      # 1) Daily session cap
+        # 1) Daily session cap
         today_str = date.today().isoformat()
 
         cur.execute(
@@ -187,6 +262,7 @@ def end_session(
     - compute actual duration
     - compute discipline_score
     - set status = 'completed' or 'abandoned'
+    - update streak if there was real work
     """
     user_id = current_user["id"]
 
@@ -245,10 +321,19 @@ def end_session(
         ),
     )
 
+    # Fetch updated row
     cur.execute("SELECT * FROM sessions WHERE id = %s", (session_id,))
     updated_row = cur.fetchone()
+
     conn.commit()
     conn.close()
+
+    # 🔥 Update streak only if some actual work was done
+    if actual_minutes > 0:
+        try:
+            update_streak_for_user(user_id)
+        except Exception as e:
+            print(f"[Deepmode] Error updating streak for user {user_id}: {e}")
 
     return row_to_session_read(updated_row)
 

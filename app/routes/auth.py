@@ -13,16 +13,20 @@ from app.auth_utils import (
     decode_access_token,
 )
 
-from app.email_utils import send_verification_email, send_reset_email, send_email_html
-
-
+from app.email_utils import (
+    send_verification_email,
+    send_reset_email,
+    send_email_html
+)
 
 router = APIRouter(prefix="/auth", tags=["auth"])
 
 security = HTTPBearer()
 
 
-# ---------- Pydantic models ----------
+# ======================================================
+#                   Pydantic Models
+# ======================================================
 
 class RegisterRequest(BaseModel):
     email: EmailStr
@@ -47,33 +51,29 @@ class ResetPasswordRequest(BaseModel):
     token: str
     new_password: str
 
-class ResetPasswordRequest(BaseModel):
-    token: str
-    new_password: str
+class EmailPreferences(BaseModel):
+    daily_email_enabled: bool
+    weekly_email_enabled: bool
 
 
 
-# ---------- Register + verify ----------
+# ======================================================
+#                   Register Route
+# ======================================================
 
 @router.post("/register")
 def register(payload: RegisterRequest):
-    """
-    Create a new user:
-    - store hashed password
-    - create email verification token
-    - send verification email
-    """
     conn = get_conn()
     cur = conn.cursor()
 
     email = payload.email.lower()
 
-    # Check if email already exists
+    # Check existing account
     cur.execute("SELECT id FROM users WHERE email = %s", (email,))
     if cur.fetchone():
         conn.close()
         raise HTTPException(
-            status_code=status.HTTP_400_BAD_REQUEST,
+            status_code=400,
             detail="An account with this email already exists.",
         )
 
@@ -91,42 +91,33 @@ def register(payload: RegisterRequest):
             is_verified,
             verification_token,
             verification_expires_at
-        )
-        VALUES (%s, %s, %s, %s, %s, %s)
+        ) VALUES (%s, %s, %s, %s, %s, %s)
         RETURNING id
         """,
-        (
-            email,
-            pw_hash,
-            False,     # is_pro
-            False,     # is_verified
-            verification_token,
-            verification_expires_at,
-        ),
+        (email, pw_hash, False, False, verification_token, verification_expires_at),
     )
-
-    row = cur.fetchone()
-    user_id = row["id"]
 
     conn.commit()
     conn.close()
 
-    # Fire off verification email
     try:
         send_verification_email(email, verification_token)
     except Exception as e:
         print("Error sending verification email:", e)
 
     return {
-        "message": "Account created. Check your inbox to verify your email before logging in. If you don’t see it, check Spam/Junk and mark it as ‘Not junk’."
+        "message":
+            "Account created. Check your inbox to verify your email before logging in. "
+            "If you don’t see it, check Spam/Junk and mark it as ‘Not junk’."
     }
+
+
+# ======================================================
+#                Email Verification
+# ======================================================
 
 @router.get("/verify")
 def verify_email(token: str):
-    """
-    Verify a user's email using the one-time token.
-    Returns a beautiful HTML success page + sends welcome email.
-    """
     conn = get_conn()
     cur = conn.cursor()
 
@@ -140,66 +131,50 @@ def verify_email(token: str):
     )
     row = cur.fetchone()
 
-    if row is None:
+    if not row:
         conn.close()
-        raise HTTPException(
-            status_code=status.HTTP_400_BAD_REQUEST,
-            detail="Invalid or expired verification link.",
-        )
+        raise HTTPException(status_code=400, detail="Invalid or expired verification link.")
 
     user_id = row["id"]
     email = row["email"]
     expires_at = row["verification_expires_at"]
     already_verified = row["is_verified"]
 
-    # Token expired?
+    # Expired token
     if expires_at is None or expires_at.replace(tzinfo=None) < datetime.utcnow():
         conn.close()
-        raise HTTPException(
-            status_code=status.HTTP_400_BAD_REQUEST,
-            detail="Verification link has expired. Please request a new one.",
-        )
+        raise HTTPException(status_code=400, detail="Verification link has expired.")
 
-    # If already verified → still show success page (don’t punish returning user)
+    # Not yet verified → mark verified
     if not already_verified:
         cur.execute(
             """
             UPDATE users
-            SET is_verified = TRUE,
-                verification_token = NULL,
-                verification_expires_at = NULL
+            SET
+              is_verified = TRUE,
+              verification_token = NULL,
+              verification_expires_at = NULL
             WHERE id = %s
             """,
             (user_id,),
         )
         conn.commit()
 
-        # -----------------------
-        # SEND WELCOME EMAIL
-        # -----------------------
+        # Send Welcome email
         welcome_subject = "You’re in — Welcome to Deepmode"
         welcome_body = f"""
-        <div style="font-family: -apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;
-                    padding: 24px; background: #020617; color: #f9fafb;">
-          <h1 style="margin:0 0 12px; font-size:22px;">Welcome to Deepmode 🎉</h1>
-          <p style="font-size:14px; line-height:1.6;">
-            Your account is confirmed and your focus HQ is officially open.
-          </p>
-          <p style="font-size:14px; line-height:1.6; margin:12px 0;">
-            Install the Chrome extension and start your first block. 
-            Your streak begins today.
-          </p>
-
-          <a href="https://deepmode.app/login"
-             style="display:inline-block; margin-top:14px; padding:10px 18px;
-             background:#e50914; color:#ffffff; text-decoration:none;
-             border-radius:999px; font-size:14px;">
-             Log in to Deepmode
-          </a>
-
-          <p style="font-size:12px; color:#9ca3af; margin-top:18px;">
-            Let’s build your deepwork muscle — one block at a time.
-          </p>
+        <div style="font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;
+                    padding:24px;background:#020617;color:#f9fafb;">
+            <h1 style="margin:0 0 12px;font-size:22px;">Welcome to Deepmode 🎉</h1>
+            <p style="font-size:14px;line-height:1.6;">
+                Your account is confirmed — your focus HQ is officially open.
+            </p>
+            <a href="https://deepmode.app/login"
+                style="display:inline-block;margin-top:14px;padding:10px 18px;
+                background:#e50914;color:#ffffff;text-decoration:none;border-radius:999px;
+                font-size:14px;">
+                Log in to Deepmode
+            </a>
         </div>
         """
 
@@ -210,93 +185,71 @@ def verify_email(token: str):
 
     conn.close()
 
-    # -----------------------
-    # RETURN BEAUTIFUL HTML
-    # -----------------------
-    html_success_page = f"""
+    # Success page
+    html_success = f"""
     <html>
-      <body style="background:#050509; font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif; 
-                   min-height:100vh; padding:32px; display:flex; align-items:center; justify-content:center;">
-        <div style="background:#111118; border-radius:16px; padding:32px; max-width:420px;
-                    border:1px solid #27272f; text-align:center; color:#f5f5f5;">
-          
-          <div style="font-size:11px; text-transform:uppercase; letter-spacing:0.16em; color:#9ca3af; margin-bottom:6px;">
-            <div style='width:16px;height:16px;border-radius:999px;border:2px solid #e50914;margin:0 auto;position:relative;'>
-              <div style='position:absolute;inset:3px;border-radius:999px;background:#e50914;'></div>
-            </div>
-            Deepmode
-          </div>
+      <body style="background:#050509;font-family:-apple-system,sans-serif;
+                   display:flex;align-items:center;justify-content:center;min-height:100vh;padding:32px;">
+        <div style="background:#111118;border-radius:16px;padding:32px;max-width:420px;
+                    border:1px solid #27272f;text-align:center;color:#f5f5f5;">
 
-          <h1 style="font-size:22px; margin:10px 0 6px;">Email verified 🎉</h1>
-          <p style="color:#e5e7eb; font-size:14px; margin-bottom:18px;">
+          <h1 style="font-size:22px;margin-bottom:10px;">Email verified 🎉</h1>
+          <p style="color:#e5e7eb;font-size:14px;margin-bottom:18px;">
             Your account is ready. Sign in and start your first deepwork block.
           </p>
 
           <a href="/login"
-             style="display:inline-block; padding:10px 18px; background:#e50914; color:#ffffff;
-                    border-radius:999px; text-decoration:none; font-size:14px;">
+             style="display:inline-block;padding:10px 18px;background:#e50914;
+                    color:#ffffff;border-radius:999px;text-decoration:none;font-size:14px;">
              Go to Login
           </a>
-
-          <p style="color:#9ca3af; font-size:12px; margin-top:18px;">
-            Time to make your future self proud.
-          </p>
         </div>
       </body>
     </html>
     """
 
-    return HTMLResponse(content=html_success_page, status_code=200)
+    return HTMLResponse(content=html_success, status_code=200)
 
 
-
-# ---------- Login ----------
+# ======================================================
+#                        Login
+# ======================================================
 
 @router.post("/login", response_model=TokenResponse)
 def login(payload: LoginRequest):
-    """
-    Log in with email + password (JSON body).
-    Return a JWT access token.
-    """
     conn = get_conn()
     cur = conn.cursor()
 
     email = payload.email.lower()
     cur.execute("SELECT * FROM users WHERE email = %s", (email,))
     row = cur.fetchone()
+
     conn.close()
 
     if row is None or not verify_password(payload.password, row["password_hash"]):
+        raise HTTPException(status_code=401, detail="Invalid email or password.")
+
+    if not row["is_verified"]:
         raise HTTPException(
-            status_code=status.HTTP_401_UNAUTHORIZED,
-            detail="Invalid email or password.",
+            status_code=403,
+            detail="Please verify your email first. Check your inbox.",
         )
 
-    if not row.get("is_verified", False):
-        raise HTTPException(
-            status_code=status.HTTP_403_FORBIDDEN,
-            detail="Please verify your email first. Check your inbox for a message from hi@deepmode.app.",
-        )
-
-    token = create_access_token(
-        {
-            "sub": row["email"],
-            "user_id": row["id"],
-            "is_pro": bool(row["is_pro"]),
-        }
-    )
+    token = create_access_token({
+        "sub": row["email"],
+        "user_id": row["id"],
+        "is_pro": bool(row["is_pro"]),
+    })
 
     return TokenResponse(access_token=token)
 
 
-# ---------- Forgot / Reset password ----------
+# ======================================================
+#              Forgot Password (Send Reset Email)
+# ======================================================
 
 @router.post("/forgot-password")
 def forgot_password(payload: ForgotPasswordRequest):
-    """
-    Request a password reset link.
-    Always returns 200 with a generic message (no user enumeration).
-    """
     email = payload.email.lower()
 
     conn = get_conn()
@@ -305,7 +258,7 @@ def forgot_password(payload: ForgotPasswordRequest):
     cur.execute("SELECT id FROM users WHERE email = %s", (email,))
     row = cur.fetchone()
 
-    if row is not None:
+    if row:
         user_id = row["id"]
         reset_token = str(uuid.uuid4())
         expires_at = datetime.now(timezone.utc) + timedelta(hours=1)
@@ -313,8 +266,8 @@ def forgot_password(payload: ForgotPasswordRequest):
         cur.execute(
             """
             UPDATE users
-            SET reset_password_token = %s,
-                reset_password_expires_at = %s
+            SET reset_token = %s,
+                reset_token_expires_at = %s
             WHERE id = %s
             """,
             (reset_token, expires_at, user_id),
@@ -328,184 +281,117 @@ def forgot_password(payload: ForgotPasswordRequest):
 
     conn.close()
 
-    # Always the same response
     return {
-        "message": "If an account exists for that email, we’ve sent a reset link. Check your inbox (and Spam/Junk)."
+        "message":
+            "If an account exists for that email, we’ve sent a reset link. "
+            "Check your inbox (and Spam/Junk)."
     }
 
 
+# ======================================================
+#               Reset Password — Form (GET)
+# ======================================================
+
 @router.get("/reset-password", response_class=HTMLResponse)
 def reset_password_form(token: str):
-    """
-    Render a minimal HTML page for setting a new password.
-    Validates that the token exists & is not expired.
-    """
     conn = get_conn()
     cur = conn.cursor()
 
     cur.execute(
         """
-        SELECT id, reset_password_expires_at
+        SELECT id, reset_token_expires_at
         FROM users
-        WHERE reset_password_token = %s
+        WHERE reset_token = %s
         """,
         (token,),
     )
     row = cur.fetchone()
 
-    # Basic invalid / expired handling
-    if row is None:
+    if not row:
         conn.close()
-        html_error = """
-        <html>
-          <body style="background:#050509; font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;
-                       min-height:100vh; display:flex; align-items:center; justify-content:center; padding:24px;">
-            <div style="background:#111118;border-radius:16px;padding:24px 22px;max-width:380px;
-                        border:1px solid #27272f;color:#f5f5f5;text-align:center;">
-              <h1 style="font-size:20px;margin:0 0 8px;">Reset link not valid</h1>
-              <p style="font-size:13px;color:#e5e7eb;margin:0 0 12px;">
-                This password reset link is invalid or has already been used.
-              </p>
-              <p style="font-size:12px;color:#9ca3af;margin:0 0 10px;">
-                Request a new reset link from the “Forgot password” page.
-              </p>
-              <a href="/login"
-                 style="display:inline-block;margin-top:12px;padding:8px 14px;border-radius:999px;
-                        background:#e50914;color:#ffffff;text-decoration:none;font-size:13px;font-weight:500;">
-                Go to login
-              </a>
-            </div>
-          </body>
-        </html>
-        """
-        return HTMLResponse(content=html_error, status_code=400)
+        return HTMLResponse("Invalid reset link", status_code=400)
 
-    expires_at = row["reset_password_expires_at"]
+    expires_at = row["reset_token_expires_at"]
 
     if expires_at is None or expires_at.replace(tzinfo=None) < datetime.utcnow():
         conn.close()
-        html_expired = """
-        <html>
-          <body style="background:#050509; font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;
-                       min-height:100vh; display:flex; align-items:center; justify-content:center; padding:24px;">
-            <div style="background:#111118;border-radius:16px;padding:24px 22px;max-width:380px;
-                        border:1px solid #27272f;color:#f5f5f5;text-align:center;">
-              <h1 style="font-size:20px;margin:0 0 8px;">Reset link expired</h1>
-              <p style="font-size:13px;color:#e5e7eb;margin:0 0 12px;">
-                This password reset link has expired.
-              </p>
-              <p style="font-size:12px;color:#9ca3af;margin:0 0 10px;">
-                Go back to “Forgot password” and request a fresh link.
-              </p>
-              <a href="/login"
-                 style="display:inline-block;margin-top:12px;padding:8px 14px;border-radius:999px;
-                        background:#e50914;color:#ffffff;text-decoration:none;font-size:13px;font-weight:500;">
-                Back to login
-              </a>
-            </div>
-          </body>
-        </html>
-        """
-        return HTMLResponse(content=html_expired, status_code=400)
+        return HTMLResponse("Reset link expired", status_code=400)
 
     conn.close()
 
-    # If we’re here, token is valid → render reset form
+    # Render HTML reset page (kept short for message)
     html_form = f"""
     <html>
-      <body style="background:#050509; font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;
-                   min-height:100vh; display:flex; align-items:center; justify-content:center; padding:24px;">
-        <div style="background:#111118;border-radius:16px;padding:24px 22px;max-width:380px;
-                    border:1px solid #27272f;color:#f5f5f5;">
-          <div style="font-size:11px;text-transform:uppercase;letter-spacing:0.16em;color:#9ca3af;margin-bottom:6px;">
-            Deepmode
-          </div>
-          <h1 style="font-size:20px;margin:0 0 6px;">Set a new password</h1>
-          <p style="font-size:13px;color:#e5e7eb;margin:0 0 14px;">
-            Choose a strong password you won’t reuse on other sites.
+      <body style="background:#050509;font-family:-apple-system,sans-serif;
+                   display:flex;align-items:center;justify-content:center;min-height:100vh;">
+        <form method="POST" onsubmit="submitReset(); return false;"
+              style="background:#111118;padding:24px;border-radius:14px;
+                     color:#fff;max-width:360px;width:100%;">
+
+          <h2>Set a new password</h2>
+          <p style="font-size:12px;color:#9ca3af;margin-bottom:12px;">
+            Choose a strong password you won’t reuse.
           </p>
 
-          <div style="margin-bottom:8px;">
-            <label style="display:block;font-size:11px;color:#9ca3af;margin-bottom:4px;">New password</label>
-            <input id="password" type="password"
-                   style="width:100%;padding:7px 8px;border-radius:8px;border:1px solid #27272f;
-                          background:#050509;color:#f5f5f5;font-size:13px;" />
-          </div>
+          <label>New password</label>
+          <input id="password" type="password" style="width:100%;margin-bottom:10px;" />
 
-          <div style="margin-bottom:10px;">
-            <label style="display:block;font-size:11px;color:#9ca3af;margin-bottom:4px;">Confirm password</label>
-            <input id="confirm" type="password"
-                   style="width:100%;padding:7px 8px;border-radius:8px;border:1px solid #27272f;
-                          background:#050509;color:#f5f5f5;font-size:13px;" />
-          </div>
+          <label>Confirm password</label>
+          <input id="confirm" type="password" style="width:100%;" />
 
-          <button onclick="submitReset()"
-                  style="width:100%;margin-top:6px;padding:8px 10px;border-radius:999px;border:none;
-                         background:#e50914;color:#ffffff;font-size:13px;font-weight:500;cursor:pointer;">
+          <button type="submit"
+                  style="width:100%;margin-top:14px;padding:10px;border:none;background:#e50914;
+                         color:#fff;border-radius:999px;cursor:pointer;">
             Update password
           </button>
 
-          <div id="msg" style="margin-top:10px;font-size:12px;color:#bbf7d0;display:none;"></div>
-          <div id="err" style="margin-top:10px;font-size:12px;color:#fecaca;display:none;"></div>
-
-          <p style="font-size:11px;color:#6b7280;margin-top:12px;text-align:center;">
-            After resetting, you’ll be redirected back to login.
-          </p>
-        </div>
+          <div id="msg" style="margin-top:12px;font-size:12px;color:#bbf7d0;display:none;"></div>
+          <div id="err" style="margin-top:12px;font-size:12px;color:#fecaca;display:none;"></div>
+        </form>
 
         <script>
           async function submitReset() {{
-            const msg = document.getElementById("msg");
-            const err = document.getElementById("err");
-            msg.style.display = "none";
-            err.style.display = "none";
-
             const p = document.getElementById("password").value;
             const c = document.getElementById("confirm").value;
+            const msg = document.getElementById("msg");
+            const err = document.getElementById("err");
+
+            msg.style.display = err.style.display = "none";
 
             if (!p || !c) {{
-              err.textContent = "Please enter and confirm your new password.";
+              err.textContent = "Please fill both fields.";
               err.style.display = "block";
               return;
             }}
+
             if (p !== c) {{
               err.textContent = "Passwords don’t match.";
               err.style.display = "block";
               return;
             }}
+
             if (p.length < 8) {{
-              err.textContent = "Password should be at least 8 characters.";
+              err.textContent = "Password must be at least 8 characters.";
               err.style.display = "block";
               return;
             }}
 
-            try {{
-              const res = await fetch("/auth/reset-password", {{
-                method: "POST",
-                headers: {{ "Content-Type": "application/json" }},
-                body: JSON.stringify({{
-                  token: "{token}",
-                  new_password: p
-                }})
-              }});
+            const res = await fetch("/auth/reset-password", {{
+              method: "POST",
+              headers: {{ "Content-Type": "application/json" }},
+              body: JSON.stringify({{ token: "{token}", new_password: p }})
+            }});
 
-              if (!res.ok) {{
-                const data = await res.json().catch(() => ({{}}));
-                err.textContent = data.detail || "Could not reset password. Try again.";
-                err.style.display = "block";
-                return;
-              }}
-
-              msg.textContent = "Password updated. You can now log in with your new password.";
-              msg.style.display = "block";
-              setTimeout(() => {{
-                window.location.href = "/login";
-              }}, 1800);
-            }} catch (e) {{
-              console.error(e);
-              err.textContent = "Network error. Try again.";
+            if (!res.ok) {{
+              const d = await res.json().catch(() => ({{}}));
+              err.textContent = d.detail || "Could not reset password.";
               err.style.display = "block";
+              return;
             }}
+
+            msg.textContent = "Password updated. Redirecting to login…";
+            msg.style.display = "block";
+            setTimeout(() => window.location.href = "/login", 1500);
           }}
         </script>
       </body>
@@ -515,141 +401,177 @@ def reset_password_form(token: str):
     return HTMLResponse(content=html_form, status_code=200)
 
 
+# ======================================================
+#               Reset Password — Finish (POST)
+# ======================================================
 
 @router.post("/reset-password")
 def reset_password(payload: ResetPasswordRequest):
-    """
-    Consume a valid reset token, set a new password, send confirmation email.
-    """
+    token = payload.token
+    new_pw = payload.new_password
+
+    if len(new_pw) < 8:
+        raise HTTPException(status_code=400, detail="Password must be at least 8 characters.")
+
     conn = get_conn()
     cur = conn.cursor()
 
-    token = payload.token
-    new_password = payload.new_password
-
-    if len(new_password) < 8:
-        conn.close()
-        raise HTTPException(
-            status_code=status.HTTP_400_BAD_REQUEST,
-            detail="Password must be at least 8 characters long.",
-        )
-
     cur.execute(
         """
-        SELECT id, email, reset_password_expires_at
+        SELECT id, email, reset_token_expires_at
         FROM users
-        WHERE reset_password_token = %s
+        WHERE reset_token = %s
         """,
         (token,),
     )
     row = cur.fetchone()
 
-    if row is None:
+    if not row:
         conn.close()
-        raise HTTPException(
-            status_code=status.HTTP_400_BAD_REQUEST,
-            detail="Invalid or expired reset link.",
-        )
+        raise HTTPException(status_code=400, detail="Invalid or expired reset link.")
 
-    expires_at = row["reset_password_expires_at"]
+    expires_at = row["reset_token_expires_at"]
     if expires_at is None or expires_at.replace(tzinfo=None) < datetime.utcnow():
         conn.close()
-        raise HTTPException(
-            status_code=status.HTTP_400_BAD_REQUEST,
-            detail="Reset link has expired. Please request a new one.",
-        )
+        raise HTTPException(status_code=400, detail="Reset link expired.")
 
     user_id = row["id"]
     email = row["email"]
 
-    # Update password + clear reset fields
-    pw_hash = hash_password(new_password)
+    hashed = hash_password(new_pw)
+
     cur.execute(
         """
         UPDATE users
         SET password_hash = %s,
-            reset_password_token = NULL,
-            reset_password_expires_at = NULL
+            reset_token = NULL,
+            reset_token_expires_at = NULL
         WHERE id = %s
         """,
-        (pw_hash, user_id),
+        (hashed, user_id),
     )
+
     conn.commit()
     conn.close()
 
-    # --------- SEND CONFIRMATION EMAIL ----------
+    # Send confirmation email
     subject = "Your Deepmode password was changed"
     body = f"""
-    <div style="font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;
-                padding:24px;background:#020617;color:#f9fafb;">
-      <h1 style="margin:0 0 10px;font-size:20px;">Password updated</h1>
-      <p style="font-size:14px;line-height:1.6;margin:0 0 12px;">
-        This is a quick confirmation that the password for your Deepmode account
-        (<span style="color:#e5e7eb;">{email}</span>) was just changed.
-      </p>
-      <p style="font-size:13px;line-height:1.6;margin:0 0 10px;color:#9ca3af;">
-        If this was you, you’re all set. You can now log in with your new password.
-      </p>
-      <p style="font-size:13px;line-height:1.6;margin:0 0 14px;color:#f97373;">
-        If this wasn’t you, change your password again immediately and secure your email account.
-      </p>
-      <a href="https://deepmode.app/login"
-         style="display:inline-block;padding:8px 14px;border-radius:999px;background:#e50914;
-                color:#ffffff;text-decoration:none;font-size:13px;font-weight:500;">
-        Go to login
-      </a>
+    <div style="font-family:-apple-system,sans-serif;padding:24px;background:#020617;color:#f9fafb;">
+      <h1>Password updated</h1>
+      <p>Your Deepmode password for <b>{email}</b> was changed successfully.</p>
     </div>
     """
 
     try:
         send_email_html(email, subject, body)
     except Exception as e:
-        # Do NOT rollback the password change, just log the email issue
-        print("Error sending password reset confirmation email:", e)
+        print("Error sending reset confirmation:", e)
 
     return {"message": "Password updated successfully."}
 
 
-# ---------- Dependency ----------
+# ======================================================
+#                Current User Dependency
+# ======================================================
 
-def get_current_user(
-    credentials: HTTPAuthorizationCredentials = Depends(security),
-) -> dict:
-    """
-    Extract current user from Bearer token.
-    Used as a dependency in protected routes.
-    """
+def get_current_user(credentials: HTTPAuthorizationCredentials = Depends(security)):
     token = credentials.credentials
     payload = decode_access_token(token)
 
     if payload is None:
-        raise HTTPException(
-            status_code=status.HTTP_401_UNAUTHORIZED,
-            detail="Invalid or expired token.",
-        )
+        raise HTTPException(status_code=401, detail="Invalid or expired token.")
 
     user_id = payload.get("user_id")
-    if user_id is None:
-        raise HTTPException(
-            status_code=status.HTTP_401_UNAUTHORIZED,
-            detail="Invalid token payload.",
-        )
 
     conn = get_conn()
     cur = conn.cursor()
-    cur.execute("SELECT * FROM users WHERE id = %s ", (user_id,))
+    cur.execute("SELECT * FROM users WHERE id = %s", (user_id,))
     row = cur.fetchone()
     conn.close()
 
-    if row is None:
-        raise HTTPException(
-            status_code=status.HTTP_401_UNAUTHORIZED,
-            detail="User no longer exists.",
-        )
+    if not row:
+        raise HTTPException(status_code=401, detail="User no longer exists.")
 
     return {
         "id": row["id"],
         "email": row["email"],
         "is_pro": bool(row["is_pro"]),
-        "is_verified": bool(row.get("is_verified", False)),
+        "is_verified": bool(row["is_verified"]),
     }
+
+
+@router.get("/email-preferences", response_model=EmailPreferences)
+def get_email_preferences(current_user: dict = Depends(get_current_user)):
+    """
+    Return the current user's email notification preferences.
+    """
+    user_id = current_user["id"]
+
+    conn = get_conn()
+    cur = conn.cursor()
+
+    cur.execute(
+        """
+        SELECT daily_email_enabled, weekly_email_enabled
+        FROM users
+        WHERE id = %s
+        """,
+        (user_id,),
+    )
+    row = cur.fetchone()
+    conn.close()
+
+    if row is None:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail="User not found.",
+        )
+
+    return EmailPreferences(
+        daily_email_enabled=bool(row["daily_email_enabled"]),
+        weekly_email_enabled=bool(row["weekly_email_enabled"]),
+    )
+
+@router.get("/me")
+def get_me(current_user: dict = Depends(get_current_user)):
+    """
+    Lightweight endpoint for the frontend to know:
+    - email
+    - is_pro
+    - is_verified
+    """
+    return current_user
+
+
+@router.post("/email-preferences", response_model=EmailPreferences)
+def update_email_preferences(
+    prefs: EmailPreferences,
+    current_user: dict = Depends(get_current_user),
+):
+    """
+    Update daily/weekly email preferences for the current user.
+    """
+    user_id = current_user["id"]
+
+    conn = get_conn()
+    cur = conn.cursor()
+
+    cur.execute(
+        """
+        UPDATE users
+        SET daily_email_enabled = %s,
+            weekly_email_enabled = %s
+        WHERE id = %s
+        """,
+        (
+            prefs.daily_email_enabled,
+            prefs.weekly_email_enabled,
+            user_id,
+        ),
+    )
+    conn.commit()
+
+    conn.close()
+
+    return prefs

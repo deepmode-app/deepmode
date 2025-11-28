@@ -1,0 +1,570 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <title>Deepmode – Pricing</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <style>
+    :root {
+      --dw-bg: #050509;
+      --dw-card: #111118;
+      --dw-accent: #e50914;
+      --dw-text: #f5f5f5;
+      --dw-muted: #9ca3af;
+      --dw-border: #27272f;
+    }
+
+    * { box-sizing: border-box; }
+
+    body {
+      margin: 0;
+      padding: 24px;
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", system-ui, sans-serif;
+      background: radial-gradient(circle at top, #111118 0, #050509 45%, #020205 100%);
+      color: var(--dw-text);
+    }
+
+    .shell {
+      max-width: 960px;
+      margin: 0 auto;
+    }
+
+    .topbar {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 12px;
+      margin-bottom: 20px;
+    }
+
+    .brand {
+      display: flex;
+      flex-direction: column;
+      gap: 2px;
+    }
+
+    .brand-label {
+      font-size: 11px;
+      letter-spacing: 0.16em;
+      text-transform: uppercase;
+      color: var(--dw-muted);
+    }
+
+    .brand-title {
+      font-size: 18px;
+      font-weight: 600;
+    }
+
+    .top-right {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      font-size: 12px;
+      color: var(--dw-muted);
+    }
+
+    .top-right a {
+      color: var(--dw-muted);
+      text-decoration: none;
+    }
+
+    .top-right a:hover {
+      color: var(--dw-text);
+    }
+
+    .upgrade-pill {
+      border-radius: 999px;
+      padding: 6px 12px;
+      font-size: 11px;
+      white-space: nowrap;
+      border: 1px solid var(--dw-accent);
+      color: var(--dw-accent);
+      text-decoration: none;
+      background: transparent;
+      cursor: pointer;
+    }
+
+    .upgrade-pill:hover {
+      background: var(--dw-accent);
+      color: #ffffff;
+    }
+
+    .upgrade-pill.pro-active {
+      border-color: #22c55e;
+      color: #bbf7d0;
+      background: rgba(34, 197, 94, 0.12);
+      cursor: default;
+    }
+
+    .upgrade-pill.pro-active:hover {
+      background: rgba(34, 197, 94, 0.16);
+      color: #bbf7d0;
+    }
+
+    .hero {
+      margin-bottom: 28px;
+    }
+
+    .hero-eyebrow {
+      font-size: 11px;
+      text-transform: uppercase;
+      letter-spacing: 0.16em;
+      color: var(--dw-muted);
+      margin-bottom: 6px;
+    }
+
+    .hero-title {
+      margin: 0 0 10px;
+      font-size: 26px;
+      letter-spacing: 0.03em;
+    }
+
+    .hero-sub {
+      margin: 0;
+      font-size: 13px;
+      color: var(--dw-muted);
+      max-width: 520px;
+      line-height: 1.6;
+    }
+
+    .hero-sub strong {
+      color: #e5e7eb;
+      font-weight: 500;
+    }
+
+    .plans-row {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
+      gap: 18px;
+      margin-bottom: 24px;
+    }
+
+    .plan-card {
+      background: var(--dw-card);
+      border-radius: 16px;
+      padding: 18px 18px 16px;
+      border: 1px solid var(--dw-border);
+      box-shadow: 0 18px 40px rgba(0, 0, 0, 0.75);
+      position: relative;
+      overflow: hidden;
+    }
+
+    .plan-card.pro {
+      border-color: rgba(229, 9, 20, 0.7);
+      box-shadow:
+        0 0 0 1px rgba(229,9,20,0.4),
+        0 24px 60px rgba(0,0,0,0.9);
+    }
+
+    .plan-pill {
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      font-size: 11px;
+      text-transform: uppercase;
+      letter-spacing: 0.16em;
+      color: var(--dw-muted);
+      margin-bottom: 8px;
+    }
+
+    .plan-pill span.dot {
+      width: 8px;
+      height: 8px;
+      border-radius: 999px;
+      background: var(--dw-accent);
+    }
+
+    .plan-name {
+      font-size: 18px;
+      margin: 0 0 4px;
+    }
+
+    .plan-tagline {
+      font-size: 12px;
+      color: var(--dw-muted);
+      margin: 0 0 10px;
+    }
+
+    .price-row {
+      display: flex;
+      align-items: baseline;
+      gap: 6px;
+      margin-bottom: 10px;
+    }
+
+    .price-main {
+      font-size: 22px;
+      font-weight: 600;
+    }
+
+    .price-period {
+      font-size: 12px;
+      color: var(--dw-muted);
+    }
+
+    .plan-list {
+      list-style: none;
+      padding: 0;
+      margin: 8px 0 14px;
+      font-size: 13px;
+      color: #e5e7eb;
+    }
+
+    .plan-list li {
+      margin-bottom: 6px;
+      display: flex;
+      gap: 6px;
+      align-items: flex-start;
+    }
+
+    .plan-list li span.bullet {
+      color: var(--dw-accent);
+      margin-top: 2px;
+    }
+
+    .plan-cta-group {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 8px;
+      margin-top: 4px;
+    }
+
+    .plan-cta {
+      border-radius: 999px;
+      padding: 8px 14px;
+      font-size: 12px;
+      border: none;
+      cursor: pointer;
+      font-weight: 500;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      gap: 6px;
+    }
+
+    .plan-cta.primary {
+      background: var(--dw-accent);
+      color: #ffffff;
+    }
+
+    .plan-cta.primary:hover {
+      background: #f3121f;
+    }
+
+    .plan-cta.outline {
+      background: transparent;
+      color: #e5e7eb;
+      border: 1px solid var(--dw-border);
+    }
+
+    .plan-cta.outline:hover {
+      border-color: rgba(148,163,184,0.8);
+    }
+
+    .plan-footnote {
+      font-size: 11px;
+      color: var(--dw-muted);
+      margin-top: 6px;
+    }
+
+    .notice {
+      font-size: 11px;
+      color: var(--dw-muted);
+      text-align: center;
+      margin-top: 10px;
+    }
+
+    .notice a {
+      color: var(--dw-accent);
+      text-decoration: none;
+    }
+
+    .notice a:hover {
+      text-decoration: underline;
+    }
+
+    .alert {
+      margin-bottom: 14px;
+      padding: 8px 10px;
+      border-radius: 10px;
+      font-size: 12px;
+      display: none;
+    }
+
+    .alert.error {
+      background: #7f1d1d;
+      color: #fee2e2;
+      border: 1px solid rgba(248,113,113,0.7);
+    }
+
+    .alert.info {
+      background: #0f172a;
+      color: #e5e7eb;
+      border: 1px solid #1f2937;
+    }
+
+    @media (max-width: 600px) {
+      body {
+        padding: 16px;
+      }
+      .hero-title {
+        font-size: 22px;
+      }
+    }
+  </style>
+</head>
+<body>
+  <div class="shell">
+    <div class="topbar">
+      <div class="brand">
+        <div class="brand-label" id="planBadge">Deepmode</div>
+        <div class="brand-title">Pricing</div>
+      </div>
+      <div class="top-right">
+        <a href="/dashboard">Back to dashboard</a>
+        <button id="topUpgradeBtn" class="upgrade-pill">Upgrade to Pro</button>
+      </div>
+    </div>
+
+    <div id="pricingAlert" class="alert error"></div>
+
+    <section class="hero">
+      <div class="hero-eyebrow">Choose your lane</div>
+      <h1 class="hero-title">How serious are you about your work?</h1>
+      <p class="hero-sub">
+        Free is for “I’ll try to focus”. Pro is for people treating their time like capital.
+        Same interface, <strong>different level of commitment</strong>.
+      </p>
+    </section>
+
+    <section class="plans-row">
+      <!-- Free plan -->
+      <article class="plan-card">
+        <div class="plan-pill">
+          <span class="dot" style="background:#4b5563;"></span>
+          Free plan
+        </div>
+        <h2 class="plan-name">Deepmode Free</h2>
+        <p class="plan-tagline">
+          Good if you’re testing the habit. Limited if you’re building something that matters.
+        </p>
+
+        <div class="price-row">
+          <div class="price-main">£0</div>
+          <div class="price-period">forever</div>
+        </div>
+
+        <ul class="plan-list">
+          <li><span class="bullet">•</span><span>Up to <strong>3 focus blocks per day</strong>.</span></li>
+          <li><span class="bullet">•</span><span><strong>5 min &amp; 25 min</strong> timers for quick sprints.</span></li>
+          <li><span class="bullet">•</span><span>Project tags, categories and notes to label your work.</span></li>
+          <li><span class="bullet">•</span><span>Dashboard with minutes, streaks and discipline score.</span></li>
+        </ul>
+
+        <div class="plan-cta-group">
+          <button class="plan-cta outline" id="stayOnFreeBtn">
+            Stay on Free for now
+          </button>
+        </div>
+
+        <p class="plan-footnote">
+          Perfect if you’re experimenting. The ceiling will hit you once you start showing up daily.
+        </p>
+      </article>
+
+      <!-- Pro plan -->
+      <article class="plan-card pro">
+        <div class="plan-pill">
+          <span class="dot"></span>
+          Pro
+        </div>
+        <h2 class="plan-name">Deepmode Pro</h2>
+        <p class="plan-tagline">
+          For students, founders and engineers who want their schedule to look like they mean it.
+        </p>
+
+        <div class="price-row">
+          <div class="price-main">£5</div>
+          <div class="price-period">/ month, cancel anytime</div>
+        </div>
+
+        <ul class="plan-list">
+          <li><span class="bullet">•</span><span><strong>Unlimited focus blocks</strong> — no daily caps.</span></li>
+          <li><span class="bullet">•</span><span>Unlock <strong>50 min Deep</strong> and <strong>90 min Immersive</strong> sessions.</span></li>
+          <li><span class="bullet">•</span><span>Use projects, categories and notes to map where your time really goes.</span></li>
+          <li><span class="bullet">•</span><span>Daily and weekly email summaries so your streak is never a guess.</span></li>
+        </ul>
+
+        <div class="plan-cta-group" id="proCtaGroup">
+          <button class="plan-cta primary" data-plan="monthly">
+            Go Pro – Monthly
+          </button>
+          <button class="plan-cta outline" data-plan="yearly">
+            Go Pro – Yearly (save 2 months)
+          </button>
+        </div>
+
+        <p class="plan-footnote" id="proFootnote">
+          Your future self won’t remember how much Pro cost. They’ll remember whether they actually did the work.
+        </p>
+      </article>
+    </section>
+
+    <p class="notice">
+      Already paid and didn’t see Pro activate? Refresh the dashboard or <a href="mailto:hi@deepmode.app">email support</a>.
+    </p>
+  </div>
+
+  <script>
+    const token = localStorage.getItem("access_token");
+    const alertBox = document.getElementById("pricingAlert");
+    const planBadge = document.getElementById("planBadge");
+    const topUpgradeBtn = document.getElementById("topUpgradeBtn");
+    const proCtaGroup = document.getElementById("proCtaGroup");
+    const proFootnote = document.getElementById("proFootnote");
+
+    let currentUser = null;
+
+    function showError(msg) {
+      if (!alertBox) return;
+      alertBox.textContent = msg;
+      alertBox.classList.remove("info");
+      alertBox.classList.add("error");
+      alertBox.style.display = "block";
+    }
+
+    function hideError() {
+      if (!alertBox) return;
+      alertBox.style.display = "none";
+    }
+
+    async function loadUser() {
+      if (!token) {
+        // No token: send to login before they can buy Pro
+        window.location.href = "/login";
+        return;
+      }
+
+      try {
+        const res = await fetch("/auth/me", {
+          headers: {
+            "Accept": "application/json",
+            "Authorization": "Bearer " + token,
+          },
+        });
+
+        if (res.status === 401) {
+          localStorage.removeItem("access_token");
+          localStorage.removeItem("deepmode_token");
+          window.location.href = "/login";
+          return;
+        }
+
+        if (!res.ok) {
+          showError("Couldn’t load your account. Try refreshing.");
+          return;
+        }
+
+        currentUser = await res.json();
+
+        if (currentUser && currentUser.is_pro) {
+          // Already Pro → change visuals
+          planBadge.textContent = "Deepmode Pro";
+
+          if (topUpgradeBtn) {
+            topUpgradeBtn.textContent = "Pro active";
+            topUpgradeBtn.classList.add("pro-active");
+            topUpgradeBtn.addEventListener("click", (e) => e.preventDefault());
+          }
+
+          if (proCtaGroup) {
+            proCtaGroup.innerHTML = `
+              <button class="plan-cta outline" disabled>
+                You’re already on Deepmode Pro
+              </button>
+            `;
+          }
+
+          if (proFootnote) {
+            proFootnote.textContent = "Your account is already in the serious lane. Open the extension and start your next block.";
+          }
+        }
+      } catch (err) {
+        console.error(err);
+        showError("Network error. Check your connection and retry.");
+      }
+    }
+
+    async function startCheckout(plan) {
+      hideError();
+
+      if (!currentUser || !currentUser.email) {
+        showError("We couldn’t read your account email. Log in again and retry.");
+        return;
+      }
+
+      const email = currentUser.email;
+      const buttons = document.querySelectorAll('.plan-cta[data-plan]');
+      buttons.forEach(btn => btn.disabled = true);
+
+      try {
+        const res = await fetch("/billing/create-checkout-session", {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+            "Accept": "application/json",
+          },
+          body: JSON.stringify({
+            email: email,
+            plan: plan,
+          }),
+        });
+
+        if (!res.ok) {
+          const data = await res.json().catch(() => ({}));
+          const detail = data.detail || "Could not start checkout. Try again.";
+          showError(detail);
+          buttons.forEach(btn => btn.disabled = false);
+          return;
+        }
+
+        const data = await res.json();
+        if (data.checkout_url) {
+          window.location.href = data.checkout_url;
+        } else {
+          showError("Stripe didn’t return a checkout URL. Try again.");
+          buttons.forEach(btn => btn.disabled = false);
+        }
+      } catch (err) {
+        console.error(err);
+        showError("Network error starting checkout. Try again.");
+        buttons.forEach(btn => btn.disabled = false);
+      }
+    }
+
+    // Wire buttons
+    document.addEventListener("click", (e) => {
+      const target = e.target;
+
+      if (target.matches('.plan-cta[data-plan]')) {
+        const plan = target.getAttribute("data-plan");
+        e.preventDefault();
+        startCheckout(plan);
+      }
+
+      if (target === document.getElementById("stayOnFreeBtn")) {
+        e.preventDefault();
+        window.location.href = "/dashboard";
+      }
+
+      if (target === topUpgradeBtn && topUpgradeBtn && !topUpgradeBtn.classList.contains("pro-active")) {
+        e.preventDefault();
+        // Default to monthly if they hit the top button
+        startCheckout("monthly");
+      }
+    });
+
+    loadUser();
+  </script>
+</body>
+</html>
