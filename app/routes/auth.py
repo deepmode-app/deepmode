@@ -4,6 +4,7 @@ from fastapi import APIRouter, Depends, HTTPException, status
 from fastapi.security import HTTPBearer, HTTPAuthorizationCredentials
 from pydantic import BaseModel, EmailStr
 import uuid
+import os  # <-- NEW
 
 from app.database import get_conn
 from app.auth_utils import (
@@ -18,6 +19,20 @@ from app.email_utils import (
     send_reset_email,
     send_email_html
 )
+
+# ======================================================
+#                   Config Flags
+# ======================================================
+
+# Controls whether login is blocked until the user verifies their email.
+# Staging: EMAIL_VERIFICATION_REQUIRED=false
+# Prod (later): EMAIL_VERIFICATION_REQUIRED=true
+EMAIL_VERIFICATION_REQUIRED = os.getenv("EMAIL_VERIFICATION_REQUIRED", "true").lower() == "true"
+
+# Base URL for login links in emails (staging vs prod)
+# Staging: https://deepmode.onrender.com
+# Prod:    https://deepmode.app
+FRONTEND_URL = os.getenv("FRONTEND_URL", "https://deepmode.app").rstrip("/")
 
 router = APIRouter(prefix="/auth", tags=["auth"])
 
@@ -51,10 +66,10 @@ class ResetPasswordRequest(BaseModel):
     token: str
     new_password: str
 
+
 class EmailPreferences(BaseModel):
     daily_email_enabled: bool
     weekly_email_enabled: bool
-
 
 
 # ======================================================
@@ -169,7 +184,7 @@ def verify_email(token: str):
             <p style="font-size:14px;line-height:1.6;">
                 Your account is confirmed — your focus HQ is officially open.
             </p>
-            <a href="https://deepmode.app/login"
+            <a href="{FRONTEND_URL}/login"
                 style="display:inline-block;margin-top:14px;padding:10px 18px;
                 background:#e50914;color:#ffffff;text-decoration:none;border-radius:999px;
                 font-size:14px;">
@@ -229,7 +244,8 @@ def login(payload: LoginRequest):
     if row is None or not verify_password(payload.password, row["password_hash"]):
         raise HTTPException(status_code=401, detail="Invalid email or password.")
 
-    if not row["is_verified"]:
+    # Only block unverified users if the environment requires it.
+    if EMAIL_VERIFICATION_REQUIRED and not row["is_verified"]:
         raise HTTPException(
             status_code=403,
             detail="Please verify your email first. Check your inbox.",
@@ -532,6 +548,7 @@ def get_email_preferences(current_user: dict = Depends(get_current_user)):
         daily_email_enabled=bool(row["daily_email_enabled"]),
         weekly_email_enabled=bool(row["weekly_email_enabled"]),
     )
+
 
 @router.get("/me")
 def get_me(current_user: dict = Depends(get_current_user)):
