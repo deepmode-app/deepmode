@@ -1,26 +1,35 @@
 {
   "manifest_version": 3,
-  "name": "Deepwork AI",
+  "name": "Deepmode AI",
   "version": "2.3.1",
   "description": "Start Deepwork sessions and stay focused.",
   "action": {
     "default_popup": "popup.html",
     "default_title": "Deepwork AI"
   },
-  "permissions": ["storage", "notifications", "tabs"],
-  "host_permissions": [
-    "https://www.youtube.com/*",
-    "https://twitter.com/*",
-    "https://x.com/*"
+  "permissions": [
+    "storage",
+    "notifications",
+    "tabs",
+    "scripting",
+	"alarms"
   ],
+  "host_permissions": [
+    "<all_urls>",
+    "http://127.0.0.1:8000/*",
+    "http://localhost:8000/*"
+  ],
+  "background": {
+    "service_worker": "background.js"
+  },
   "content_scripts": [
     {
       "matches": [
-        "https://www.youtube.com/*",
-        "https://twitter.com/*",
-        "https://x.com/*"
+        "http://127.0.0.1:8000/*",
+        "http://localhost:8000/*"
       ],
-      "js": ["blocker.js"]
+      "js": ["connect.js"],
+      "run_at": "document_idle"
     }
   ]
 }

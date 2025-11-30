@@ -2,7 +2,7 @@
 <html>
   <head>
     <meta charset="UTF-8" />
-    <title>Deepwork AI</title>
+    <title>Deepmode AI</title>
     <style>
       :root {
         --dw-bg: #050509;
@@ -10,6 +10,10 @@
         --dw-accent: #e50914;
         --dw-text: #f5f5f5;
         --dw-muted: #9ca3af;
+        --dw-border: #27272f;
+        --dw-pill-bg: #050509;
+        --dw-pill-active-bg: #e50914;
+        --dw-pill-active-text: #ffffff;
       }
 
       body {
@@ -22,6 +26,7 @@
       }
 
       .card {
+        position: relative;
         background: var(--dw-card);
         border-radius: 14px;
         padding: 12px 12px 10px;
@@ -52,7 +57,8 @@
       }
 
       input,
-      select {
+      select,
+      textarea {
         width: 100%;
         margin: 0;
         padding: 6px 7px;
@@ -62,10 +68,12 @@
         color: var(--dw-text);
         font-size: 12px;
         box-sizing: border-box;
+        resize: vertical;
       }
 
       input:disabled,
-      select:disabled {
+      select:disabled,
+      textarea:disabled {
         opacity: 0.5;
       }
 
@@ -134,41 +142,323 @@
       .dashboard-link:hover {
         text-decoration: underline;
       }
+
+      /* Blocklist section (collapsible) */
+
+      details.blocklist-section {
+        margin-top: 8px;
+        padding-top: 6px;
+        border-top: 1px solid var(--dw-border);
+      }
+
+      details.blocklist-section[open] {
+        padding-bottom: 4px;
+      }
+
+      details.blocklist-section summary {
+        list-style: none;
+        cursor: pointer;
+      }
+
+      details.blocklist-section summary::-webkit-details-marker {
+        display: none;
+      }
+
+      .blocklist-header {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+      }
+
+      .blocklist-title {
+        font-size: 11px;
+        text-transform: uppercase;
+        letter-spacing: 0.12em;
+        color: var(--dw-muted);
+      }
+
+      .blocklist-hint {
+        font-size: 10px;
+        color: var(--dw-muted);
+        opacity: 0.9;
+      }
+
+      details.blocklist-section[open] .blocklist-hint::after {
+        content: " (hide)";
+      }
+
+      details.blocklist-section:not([open]) .blocklist-hint::after {
+        content: " (advanced)";
+      }
+
+      .blocklist-inner {
+        margin-top: 6px;
+      }
+
+      .pill-row {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 4px;
+        margin-top: 4px;
+      }
+
+      .site-pill {
+        border-radius: 999px;
+        padding: 4px 8px;
+        font-size: 11px;
+        border: 1px solid #27272f;
+        background: var(--dw-pill-bg);
+        color: var(--dw-text);
+        cursor: pointer;
+        display: inline-flex;
+        align-items: center;
+        gap: 4px;
+      }
+
+      .site-pill.active {
+        background: var(--dw-pill-active-bg);
+        border-color: var(--dw-pill-active-bg);
+        color: var(--dw-pill-active-text);
+      }
+
+      .site-pill span.icon {
+        font-size: 11px;
+        opacity: 0.9;
+      }
+
+      .blocklist-subtext {
+        font-size: 10px;
+        color: var(--dw-muted);
+        margin-top: 4px;
+      }
+
+      /* Priming overlay */
+
+      .priming-overlay {
+        position: absolute;
+        inset: 0;
+        background: radial-gradient(circle at top,
+          rgba(15,15,23,0.98) 0,
+          rgba(5,5,9,0.98) 60%,
+          rgba(0,0,0,0.98) 100%);
+        display: none;
+        align-items: center;
+        justify-content: center;
+        border-radius: 14px;
+        z-index: 10;
+        opacity: 0;
+        transform: scale(1.02);
+      }
+
+      .priming-overlay.visible {
+        display: flex;
+        animation: primingFadeIn 0.45s ease-out forwards;
+      }
+
+      .priming-overlay.fade-out {
+        animation: primingFadeOut 0.35s ease-in forwards;
+      }
+
+      .priming-card {
+        max-width: 260px;
+        text-align: center;
+        padding: 14px 16px 12px;
+      }
+
+      .priming-label {
+        font-size: 10px;
+        text-transform: uppercase;
+        letter-spacing: 0.16em;
+        color: #9ca3af;
+        margin-bottom: 6px;
+      }
+
+      .priming-title {
+        font-size: 16px;
+        font-weight: 600;
+        margin-bottom: 4px;
+        animation: primingBreath 3s ease-in-out infinite;
+      }
+
+      .priming-sub {
+        font-size: 12px;
+        color: #e5e7eb;
+        margin-bottom: 10px;
+      }
+
+      .priming-countdown {
+        font-size: 18px;
+        font-weight: 600;
+        margin-bottom: 4px;
+      }
+
+      .priming-countdown span {
+        font-size: 24px;
+      }
+
+      .priming-hint {
+        font-size: 10px;
+        color: #9ca3af;
+      }
+
+      @keyframes primingFadeIn {
+        0% {
+          opacity: 0;
+          transform: scale(1.03) translateY(4px);
+        }
+        100% {
+          opacity: 1;
+          transform: scale(1) translateY(0);
+        }
+      }
+
+      @keyframes primingFadeOut {
+        0% {
+          opacity: 1;
+          transform: scale(1);
+        }
+        100% {
+          opacity: 0;
+          transform: scale(0.97) translateY(4px);
+        }
+      }
+
+      @keyframes primingBreath {
+        0% {
+          transform: translateY(0);
+        }
+        50% {
+          transform: translateY(-2px);
+        }
+        100% {
+          transform: translateY(0);
+        }
+      }
+
+      /* Upgrade row under plan hint */
+      .upgrade-row {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        margin-top: 4px;
+        gap: 6px;
+      }
+
+      .upgrade-copy {
+        font-size: 9px;
+        color: #6b7280;
+      }
+
+      #upgradeBtn {
+        width: auto;
+        padding: 5px 8px;
+        margin-top: 0;
+        border-radius: 999px;
+        background: #18181f;
+        color: #f9fafb;
+        border: 1px solid #4b5563;
+        font-size: 10px;
+        cursor: pointer;
+        white-space: nowrap;
+      }
+
+      #upgradeBtn:hover {
+        background: #111827;
+        border-color: #9ca3af;
+      }
+
     </style>
   </head>
   <body>
     <div class="card">
-      <div class="badge">Deepwork AI</div>
+      <div class="badge">Deepmode AI</div>
       <h3>Focus Block</h3>
+
+      <!-- auth/plan state -->
+      <div id="authState"
+           style="font-size: 11px; margin-top: 6px; color: #9ca3af;"></div>
+      <div id="planLabel"
+           style="font-size: 11px; margin-top: 2px; color:#e5e7eb;"></div>
+
+      <div class="upgrade-row" id="upgradeRow" style="display:none;">
+        <div class="upgrade-copy" id="upgradeCopy"></div>
+        <button id="upgradeBtn">Upgrade</button>
+      </div>
 
       <label>Task</label>
       <input id="task" type="text" placeholder="What are you working on?" />
 
       <label>Category</label>
       <select id="category">
-        <option value="coding">Coding</option>
-        <option value="writing">Writing</option>
-        <option value="study">Study</option>
+        <option value="design">Design</option>
+        <option value="coding">Software / Coding</option>
+        <option value="reading">Reading</option>
+        <option value="research">Research</option>
+        <option value="fitness">Fitness / Training</option>
+        <option value="admin">Admin</option>
+        <option value="planning">Planning</option>
+        <option value="revision">Revision</option>
+        <option value="freelance">Freelance</option>
         <option value="other">Other</option>
       </select>
 
       <label>Duration (minutes)</label>
       <select id="duration">
-        <option value="25">25</option>
-        <option value="50">50</option>
-        <option value="90" selected>90</option>
+        <option value="1">Micro (1m) – Break Inertia</option>
+        <option value="25" selected>Sprint (25m) – Classic Pomodoro</option>
+        <option value="50">Deep (50m) – Serious Focus</option>
+        <option value="90">Immersive (90m) – Full Flow Reset</option>
       </select>
+      <div id="durationHint"
+           style="font-size:10px;color:#6b7280;margin-top:2px;"></div>
 
       <button id="startBtn">Start Deepwork Session</button>
-      <button id="endBtn" disabled>
-        End Session
-      </button>
+      <button id="endBtn" disabled>End Session</button>
 
       <div id="currentSession" class="current-session" style="display:none;">
         <strong>Current Deepwork:</strong>
         <div id="currentTask"></div>
         <div id="currentCategory"></div>
       </div>
+
+      <!-- Priming overlay -->
+      <div id="primingOverlay" class="priming-overlay">
+        <div class="priming-card">
+          <div class="priming-label">Deepwork AI</div>
+          <div class="priming-title">Breathe in. Breathe out.</div>
+          <div class="priming-sub">
+            Phone away. Distractions off. Let's get some work done!
+          </div>
+          <div class="priming-countdown">
+            Starting in <span id="primingCountdown">5</span>…
+          </div>
+          <div class="priming-hint">
+            If you’re not ready, just close this popup.
+          </div>
+        </div>
+      </div>
+
+      <!-- Collapsible Blocklist UI -->
+      <details class="blocklist-section">
+        <summary class="blocklist-header">
+          <div class="blocklist-title">Blocked sites 👉 </div>
+          <div class="blocklist-hint"> ->Edit</div>
+        </summary>
+
+        <div class="blocklist-inner">
+          <div id="defaultSitesRow" class="pill-row">
+            <!-- filled by popup.js -->
+          </div>
+
+          <div class="blocklist-subtext">
+            Popular distractions are on by default. Toggle sites off only if it's needed for your deepwork session.
+          </div>
+
+          <label style="margin-top:6px;">More sites to block (one per line)</label>
+          <textarea id="customSites" rows="3"
+            placeholder="example.com&#10;news.site&#10;social.example"></textarea>
+        </div>
+      </details>
 
       <div class="status" id="status"></div>
       <div id="dashboardLink" class="dashboard-link">
