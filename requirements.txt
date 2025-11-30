@@ -1,1 +1,8 @@
+fastapi
+uvicorn[standard]
+python-dotenv
+psycopg2-binary
 stripe
+pydantic[email]
+passlib[bcrypt]
+PyJWT
