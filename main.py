@@ -15,7 +15,7 @@ from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import FileResponse
 from fastapi.responses import HTMLResponse
 
-from app.routes import sessions, billing, auth
+from app.routes import sessions, billing, auth , marketing_router
 from app.database import init_db
 from app.jobs.email_jobs import router as jobs_router  # /jobs/... endpoints
 
@@ -39,6 +39,9 @@ app.include_router(auth.router)
 app.include_router(sessions.router, prefix="/sessions")
 app.include_router(billing.router, tags=["billing"])
 app.include_router(jobs_router)  # /jobs/daily-streak-digest, /jobs/weekly-summary-digest
+app.include_router(marketing_router)
+
+
 
 
 # ---------- Static paths ----------
@@ -75,9 +78,7 @@ def install_page():
     return FileResponse(STATIC_DIR / "install.html")
 
 
-@app.get("/pricing", include_in_schema=False)
-def pricing_page():
-    return FileResponse(STATIC_DIR / "pricing.html")
+
 
 # ---------- Extension ZIP download ----------
 

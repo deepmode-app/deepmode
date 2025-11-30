@@ -207,7 +207,13 @@ def create_new_session(
             conn.close()
             raise HTTPException(
                 status_code=403,
-                detail="You’ve hit today’s free Deepmode blocks. Upgrade to Pro for unlimited sessions.",
+                detail={
+                    "code": "FREE_LIMIT_REACHED",
+                    "message": (
+                        "You’ve used all 3 free Deepmode focus blocks for today. "
+                        "Upgrade to Pro for unlimited sessions and longer 50/90 minute blocks."
+                    ),
+                },
             )
 
         # 2) Duration restriction: free users only get 5m + 25m
@@ -216,7 +222,13 @@ def create_new_session(
             conn.close()
             raise HTTPException(
                 status_code=403,
-                detail="This duration is reserved for Deepmode Pro. Upgrade to unlock Deep (50m) and Immersive (90m) blocks.",
+                detail={
+                    "code": "PRO_DURATION_ONLY",
+                    "message": (
+                        "50 and 90 minute focus blocks are part of Deepmode Pro. "
+                        "Upgrade to unlock deeper, distraction-free work."
+                    ),
+                },
             )
 
     # ---- CREATE SESSION ----
@@ -250,6 +262,7 @@ def create_new_session(
     conn.close()
 
     return row_to_session_read(new_row)
+
 
 
 @router.patch("/{session_id}/end", response_model=SessionRead)

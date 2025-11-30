@@ -11,23 +11,26 @@ from fastapi.responses import RedirectResponse
 from pydantic import BaseModel
 
 from app.database import get_conn
-from app.email_utils import send_pro_welcome_email
+from app.email_utils import (
+    send_pro_welcome_email,
+    send_pro_cancellation_email,
+)
 
 # ---------- Stripe keys ----------
 
 STRIPE_SECRET_KEY = os.getenv("STRIPE_SECRET_KEY") or "sk_test_dummy_for_now"
 STRIPE_PUBLISHABLE_KEY = os.getenv("STRIPE_PUBLISHABLE_KEY") or "pk_test_dummy_for_now"
-STRIPE_WEBHOOK_SECRET = os.getenv("STRIPE_WEBHOOK_SECRET", "")  # from Stripe CLI "webhook signing secret"
+STRIPE_WEBHOOK_SECRET = os.getenv("STRIPE_WEBHOOK_SECRET", "")
 
 stripe.api_key = STRIPE_SECRET_KEY
 
 router = APIRouter()
 
-# ---------- Price IDs ----------
-
+# ---------- Price IDs (TEST/SANDBOX) ----------
+# Swap these when you create the real £4.99 / £39.99 prices.
 PRICE_IDS = {
-    "monthly": "price_1STANe22agTN2BGyT4ncyD5B",
-    "yearly": "price_1STANe22agTN2BGy6y3wqXZ8",
+    "monthly": "price_1STANe22agTN2BGyT4ncyD5B",  # test monthly
+    "yearly":  "price_1STANe22agTN2BGy6y3wqXZ8",  # test yearly
 }
 
 
@@ -36,13 +39,233 @@ class CheckoutRequest(BaseModel):
     plan: str    # "monthly" or "yearly"
 
 
+class CustomerPortalRequest(BaseModel):
+    email: str  # email to resolve Stripe customer
+
+
+# ---------- Helpers ----------
+
+def _get_email_from_checkout_session(session_obj) -> str | None:
+    """
+    Try to pull email from a Checkout Session object in a robust way.
+    """
+    return (
+        session_obj.get("customer_details", {}).get("email")
+        or session_obj.get("customer_email")
+    )
+
+
+def _subscription_status_to_pro_flag(status: str) -> bool:
+    """
+    Decide whether a given Stripe subscription status means the user
+    should be treated as Pro.
+    """
+    if not status:
+        return False
+    s = status.lower()
+    # Keep it simple: active or trialing = Pro. Everything else = not Pro.
+    return s in ("active", "trialing")
+
+
+def _find_user_by_email(conn, email: str):
+    cur = conn.cursor()
+    cur.execute(
+        """
+        SELECT
+          id,
+          email,
+          is_pro,
+          stripe_customer_id,
+          stripe_subscription_id,
+          stripe_subscription_status,
+          stripe_price_id
+        FROM users
+        WHERE email = %s
+        """,
+        (email,),
+    )
+    row = cur.fetchone()
+    cur.close()
+    return row
+
+
+def _find_user_by_stripe_ids(conn, customer_id: str | None, subscription_id: str | None):
+    """
+    Primary match by stripe_customer_id, fallback by stripe_subscription_id.
+    """
+    cur = conn.cursor()
+
+    if customer_id and subscription_id:
+        cur.execute(
+            """
+            SELECT
+              id,
+              email,
+              is_pro,
+              stripe_customer_id,
+              stripe_subscription_id,
+              stripe_subscription_status,
+              stripe_price_id
+            FROM users
+            WHERE stripe_customer_id = %s
+               OR stripe_subscription_id = %s
+            LIMIT 1
+            """,
+            (customer_id, subscription_id),
+        )
+    elif customer_id:
+        cur.execute(
+            """
+            SELECT
+              id,
+              email,
+              is_pro,
+              stripe_customer_id,
+              stripe_subscription_id,
+              stripe_subscription_status,
+              stripe_price_id
+            FROM users
+            WHERE stripe_customer_id = %s
+            LIMIT 1
+            """,
+            (customer_id,),
+        )
+    elif subscription_id:
+        cur.execute(
+            """
+            SELECT
+              id,
+              email,
+              is_pro,
+              stripe_customer_id,
+              stripe_subscription_id,
+              stripe_subscription_status,
+              stripe_price_id
+            FROM users
+            WHERE stripe_subscription_id = %s
+            LIMIT 1
+            """,
+            (subscription_id,),
+        )
+    else:
+        cur.close()
+        return None
+
+    row = cur.fetchone()
+    cur.close()
+    return row
+
+
+def _get_email_from_subscription(subscription_obj) -> str | None:
+    """
+    Fallback: given a subscription object, fetch the Customer and pull email.
+    Only used if we can't match by stored Stripe IDs.
+    """
+    try:
+        customer_id = subscription_obj.get("customer")
+        if not customer_id:
+            return None
+        customer = stripe.Customer.retrieve(customer_id)
+        return customer.get("email")
+    except Exception as e:
+        print("[Stripe] Failed to fetch customer email from subscription:", e)
+        return None
+
+
+def _extract_price_id_from_subscription(sub_obj) -> str | None:
+    """
+    Get the price id (e.g. price_123) from a subscription object.
+    """
+    try:
+        items = sub_obj.get("items", {}).get("data", [])
+        if not items:
+            return None
+        price = items[0].get("price")
+        if isinstance(price, dict):
+            return price.get("id")
+        return None
+    except Exception:
+        return None
+
+
+def _update_user_billing(
+    conn,
+    user_row,
+    *,
+    make_pro: bool | None,
+    customer_id: str | None,
+    subscription_id: str | None,
+    subscription_status: str | None,
+    price_id: str | None,
+):
+    """
+    Centralised DB update for user billing fields.
+    Returns (was_pro, is_pro_now).
+    """
+    email = user_row["email"]
+    was_pro = bool(user_row["is_pro"])
+
+    # Decide new Pro flag
+    if make_pro is None:
+        new_pro = was_pro
+    else:
+        new_pro = bool(make_pro)
+
+    set_clauses = []
+    params = []
+
+    # is_pro
+    if new_pro != was_pro:
+        set_clauses.append("is_pro = %s")
+        params.append(new_pro)
+
+    # stripe_customer_id: only set if we got one
+    if customer_id:
+        if not user_row.get("stripe_customer_id"):
+            set_clauses.append("stripe_customer_id = %s")
+            params.append(customer_id)
+
+    # subscription id
+    if subscription_id:
+        if user_row.get("stripe_subscription_id") != subscription_id:
+            set_clauses.append("stripe_subscription_id = %s")
+            params.append(subscription_id)
+
+    # subscription status
+    if subscription_status:
+        if user_row.get("stripe_subscription_status") != subscription_status:
+            set_clauses.append("stripe_subscription_status = %s")
+            params.append(subscription_status)
+
+    # price id
+    if price_id:
+        if user_row.get("stripe_price_id") != price_id:
+            set_clauses.append("stripe_price_id = %s")
+            params.append(price_id)
+
+    if set_clauses:
+        set_sql = ", ".join(set_clauses)
+        params.append(email)
+        cur = conn.cursor()
+        cur.execute(
+            f"UPDATE users SET {set_sql} WHERE email = %s",
+            tuple(params),
+        )
+        conn.commit()
+        cur.close()
+        print(f"[Stripe] Updated billing fields for {email}: {set_sql}")
+    else:
+        print(f"[Stripe] No billing changes needed for {email}")
+
+    return was_pro, new_pro
+
+
 # ---------- Create Checkout Session ----------
 
 @router.post("/billing/create-checkout-session")
 async def create_checkout_session(request: Request, payload: CheckoutRequest):
     """
     Creates a Stripe Checkout Session and returns its URL.
-    Frontend opens that URL in a new tab.
     """
     plan = payload.plan.lower()
     if plan not in PRICE_IDS:
@@ -68,14 +291,6 @@ async def create_checkout_session(request: Request, payload: CheckoutRequest):
         raise HTTPException(status_code=500, detail="Could not create checkout session.")
 
 
-# ---------- Simple redirect for /billing/checkout ----------
-
-@router.get("/billing/checkout")
-def fake_checkout():
-    # Right now just send to pricing/landing; in prod this can be a nice pricing page.
-    return RedirectResponse("/pricing")
-
-
 # ---------- Webhook endpoint ----------
 
 @router.post("/billing/webhook")
@@ -84,11 +299,7 @@ async def stripe_webhook(request: Request):
     Stripe webhook endpoint.
 
     For local dev, use:
-      stripe listen --forward-to localhost:8000/billing/webhook
-
-    Handles:
-    - checkout.session.completed -> marks user.is_pro = TRUE based on email and
-      sends a Pro welcome email on first upgrade.
+      stripe listen --forward-to http://127.0.0.1:8000/billing/webhook
     """
     payload = await request.body()
     sig_header = request.headers.get("stripe-signature")
@@ -104,11 +315,9 @@ async def stripe_webhook(request: Request):
             secret=STRIPE_WEBHOOK_SECRET,
         )
     except ValueError:
-        # Invalid JSON
         print("[Stripe] Invalid payload received on /billing/webhook")
         raise HTTPException(status_code=400, detail="Invalid payload")
     except stripe.error.SignatureVerificationError:
-        # Invalid signature
         print("[Stripe] Invalid signature on /billing/webhook")
         raise HTTPException(status_code=400, detail="Invalid signature")
 
@@ -117,62 +326,239 @@ async def stripe_webhook(request: Request):
 
     print(f"[Stripe] Webhook received: {event_type}")
 
-    # ---- Handle Checkout completion -> upgrade to Pro ----
-    if event_type == "checkout.session.completed":
-        session_obj = data_object
+    conn = get_conn()
 
-        # Stripe sometimes gives email in different places depending on flow
-        email = (
-            session_obj.get("customer_details", {}).get("email")
-            or session_obj.get("customer_email")
-        )
+    try:
+        # ---- 1) Checkout completion -> first upgrade to Pro ----
+        if event_type == "checkout.session.completed":
+            session_obj = data_object
 
-        if not email:
-            print("[Stripe] checkout.session.completed but no email found on session")
-            return {"received": True}
+            email = _get_email_from_checkout_session(session_obj)
+            if not email:
+                print("[Stripe] checkout.session.completed but no email found on session")
+                return {"received": True}
 
-        conn = get_conn()
-        cur = conn.cursor()
+            customer_id = session_obj.get("customer")
+            subscription_id = session_obj.get("subscription")
 
-        # 1) Look up user
-        cur.execute(
-            "SELECT is_pro FROM users WHERE email = %s",
-            (email,),
-        )
-        row = cur.fetchone()
+            # Optionally load subscription to get status + price
+            subscription_status = None
+            price_id = None
+            if subscription_id:
+                try:
+                    sub = stripe.Subscription.retrieve(subscription_id)
+                    subscription_status = sub.get("status")
+                    price_id = _extract_price_id_from_subscription(sub)
+                except Exception as e:
+                    print("[Stripe] Failed to retrieve subscription in checkout.session.completed:", e)
 
-        if not row:
-            print(f"[Stripe] checkout.session.completed for unknown email {email}")
-            cur.close()
-            conn.close()
-            return {"received": True}
+            make_pro = True
 
-        # RealDictCursor -> row["is_pro"]
-        was_pro = bool(row["is_pro"])
+            user_row = _find_user_by_email(conn, email)
+            if not user_row:
+                print(f"[Stripe] checkout.session.completed for unknown email {email}")
+                return {"received": True}
 
-        if not was_pro:
-            # 2) Flip to PRO
-            cur.execute(
-                "UPDATE users SET is_pro = TRUE WHERE email = %s",
-                (email,),
+            was_pro, is_pro_now = _update_user_billing(
+                conn,
+                user_row,
+                make_pro=make_pro,
+                customer_id=customer_id,
+                subscription_id=subscription_id,
+                subscription_status=subscription_status,
+                price_id=price_id,
             )
-            conn.commit()
-            print(f"[Stripe] Marked {email} as PRO")
 
-            # 3) Fire Pro welcome email (non-blocking)
-            try:
-                send_pro_welcome_email(email)
-                print(f"[Stripe] Sent Pro welcome email to {email}")
-            except Exception as e:
-                print(f"[Stripe] Failed to send Pro welcome email to {email}: {e!r}")
+            print(
+                f"[Stripe] checkout.session.completed: {email}, "
+                f"was_pro={was_pro}, is_pro_now={is_pro_now}, "
+                f"customer_id={customer_id}, subscription_id={subscription_id}"
+            )
+
+            if not was_pro and is_pro_now:
+                try:
+                    send_pro_welcome_email(email)
+                    print(f"[Stripe] Sent Pro welcome email to {email}")
+                except Exception as e:
+                    print(f"[Stripe] Failed to send Pro welcome email to {email}: {e!r}")
+
+        # ---- 2) Subscription updated -> keep is_pro in sync ----
+        elif event_type == "customer.subscription.updated":
+            sub = data_object
+            subscription_id = sub.get("id")
+            customer_id = sub.get("customer")
+            status = sub.get("status")
+            price_id = _extract_price_id_from_subscription(sub)
+
+            make_pro = _subscription_status_to_pro_flag(status)
+
+            user_row = _find_user_by_stripe_ids(conn, customer_id, subscription_id)
+
+            if not user_row:
+                email = _get_email_from_subscription(sub)
+                if not email:
+                    print("[Stripe] subscription.updated but no user matched (no email, no stripe IDs)")
+                    return {"received": True}
+                user_row = _find_user_by_email(conn, email)
+                if not user_row:
+                    print(f"[Stripe] subscription.updated but no user found for email {email}")
+                    return {"received": True}
+            else:
+                email = user_row["email"]
+
+            was_pro, is_pro_now = _update_user_billing(
+                conn,
+                user_row,
+                make_pro=make_pro,
+                customer_id=customer_id,
+                subscription_id=subscription_id,
+                subscription_status=status,
+                price_id=price_id,
+            )
+
+            print(
+                f"[Stripe] subscription.updated: {email}, status={status}, "
+                f"was_pro={was_pro}, is_pro_now={is_pro_now}"
+            )
+
+            if not was_pro and is_pro_now:
+                try:
+                    send_pro_welcome_email(email)
+                    print(f"[Stripe] Sent Pro welcome email (via subscription.updated) to {email}")
+                except Exception as e:
+                    print(f"[Stripe] Failed to send Pro welcome email to {email}: {e!r}")
+
+            if was_pro and not is_pro_now:
+                try:
+                    send_pro_cancellation_email(email)
+                    print(f"[Stripe] Sent Pro cancellation email to {email}")
+                except Exception as e:
+                    print(f"[Stripe] Failed to send cancellation email to {email}: {e!r}")
+
+        # ---- 3) Subscription deleted -> definitely not Pro ----
+        elif event_type == "customer.subscription.deleted":
+            sub = data_object
+            subscription_id = sub.get("id")
+            customer_id = sub.get("customer")
+            status = sub.get("status")
+            price_id = _extract_price_id_from_subscription(sub)
+
+            make_pro = False
+
+            user_row = _find_user_by_stripe_ids(conn, customer_id, subscription_id)
+
+            if not user_row:
+                email = _get_email_from_subscription(sub)
+                if not email:
+                    print("[Stripe] subscription.deleted but no user matched")
+                    return {"received": True}
+                user_row = _find_user_by_email(conn, email)
+                if not user_row:
+                    print(f"[Stripe] subscription.deleted but no user found for email {email}")
+                    return {"received": True}
+            else:
+                email = user_row["email"]
+
+            was_pro, is_pro_now = _update_user_billing(
+                conn,
+                user_row,
+                make_pro=make_pro,
+                customer_id=customer_id,
+                subscription_id=subscription_id,
+                subscription_status=status,
+                price_id=price_id,
+            )
+
+            print(
+                f"[Stripe] subscription.deleted: {email}, status={status}, "
+                f"was_pro={was_pro}, is_pro_now={is_pro_now}"
+            )
+
+            if was_pro and not is_pro_now:
+                try:
+                    send_pro_cancellation_email(email)
+                    print(f"[Stripe] Sent Pro cancellation email (deleted) to {email}")
+                except Exception as e:
+                    print(f"[Stripe] Failed to send cancellation email to {email}: {e!r}")
+
         else:
-            print(f"[Stripe] {email} already PRO – skipping upgrade + welcome email")
+            print(f"[Stripe] Ignoring event type: {event_type}")
 
-        cur.close()
+    finally:
         conn.close()
 
-    # TODO later:
-    # - customer.subscription.deleted  -> downgrade is_pro
-    # - customer.subscription.updated (status='canceled') -> downgrade
-
     return {"received": True}
+
+
+# ---------- Customer Portal (email-based, robust) ----------
+
+@router.post("/billing/customer-portal")
+async def create_customer_portal(request: Request, payload: CustomerPortalRequest):
+    """
+    Create a Stripe Customer Portal session for the user identified by email.
+
+    Behaviour:
+    - Look up Stripe Customer by email directly via Stripe API (source of truth).
+    - If found, create a Portal session and return portal_url.
+    - If not found, return 400 with a clear message.
+    - Also upserts stripe_customer_id in DB.
+    """
+    raw_email = (payload.email or "").strip()
+    if not raw_email:
+        raise HTTPException(status_code=400, detail="Email is required for billing portal.")
+
+    base_url = str(request.base_url).rstrip("/")
+
+    try:
+        # 1) Find Stripe customer by email
+        customers = stripe.Customer.list(email=raw_email, limit=1)
+        if not customers.data:
+            raise HTTPException(
+                status_code=400,
+                detail="No billing profile found for this account yet.",
+            )
+
+        customer = customers.data[0]
+        customer_id = customer.id
+
+        # 2) Upsert stripe_customer_id in DB (if user row exists)
+        conn = get_conn()
+        try:
+            cur = conn.cursor()
+            cur.execute(
+                """
+                UPDATE users
+                   SET stripe_customer_id = %s
+                 WHERE email = %s
+                """,
+                (customer_id, raw_email),
+            )
+            conn.commit()
+            cur.close()
+        finally:
+            conn.close()
+
+        # 3) Create Stripe billing portal session
+        portal_session = stripe.billing_portal.Session.create(
+            customer=customer_id,
+            return_url=f"{base_url}/dashboard",
+        )
+
+        return {"portal_url": portal_session.url}
+
+    except HTTPException:
+        raise
+    except Exception as e:
+        print("[Stripe] Error creating customer portal:", repr(e))
+        raise HTTPException(
+            status_code=500,
+            detail="Could not open billing portal. Please try again later.",
+        )
+
+
+# ---------- Simple redirect for /billing/checkout ----------
+
+@router.get("/billing/checkout")
+def fake_checkout():
+    # Right now this just sends to pricing. Later you can make a nice pricing page.
+    return RedirectResponse("/pricing")

@@ -7,7 +7,13 @@ import os
 SMTP_HOST = "smtp.zoho.eu"
 SMTP_PORT = 587  # TLS
 SMTP_USER = "hi@deepmode.app"
-SMTP_PASSWORD = os.getenv("ZOHO_SMTP_PASSWORD", "CHANGE_ME_APP_PASSWORD")
+SMTP_PASSWORD = "UftwHcwBBNZe"
+print(
+    "[Deepmode SMTP] Host:", SMTP_HOST,
+    "| User:", SMTP_USER,
+    "| pw_len:", len(SMTP_PASSWORD or "")
+)
+
 
 BASE_URL = "http://127.0.0.1:8000"  # change to https://deepmode.app in prod
 
@@ -16,6 +22,8 @@ def _send_email_message(msg: EmailMessage) -> None:
     try:
         with smtplib.SMTP(SMTP_HOST, SMTP_PORT) as server:
             server.starttls()
+            print("[Deepmode SMTP] Host:", SMTP_HOST, "User:", SMTP_USER)
+            print("[Deepmode SMTP] Password length:", len(SMTP_PASSWORD))
             server.login(SMTP_USER, SMTP_PASSWORD)
             server.send_message(msg)
         print(f"[Deepmode] Email sent to {msg['To']} with subject: {msg['Subject']}")
@@ -297,4 +305,56 @@ def send_pro_welcome_email(to_email: str) -> None:
     )
 
     # Correct call – matches send_email_html signature
+    send_email_html(to_email, subject, html_body, text_body)
+
+
+
+def send_pro_cancellation_email(to_email: str) -> None:
+    """
+    Supportive downgrade email when a user loses Pro
+    (subscription cancelled / expired / payment failed).
+    No guilt, just honest encouragement.
+    """
+    if not to_email:
+        return
+
+    subject = "Deepmode Pro cancelled — your discipline doesn’t have to be"
+
+    html_body = """
+    <div style="font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',system-ui,sans-serif;
+                background-color:#050509;padding:24px;color:#f5f5f5;">
+      <h1 style="margin:0 0 12px;font-size:22px;">
+        Deepmode Pro is off — your focus work doesn’t have to be.
+      </h1>
+
+      <p style="margin:0 0 12px;font-size:14px;line-height:1.6;">
+        Your Pro subscription has ended. No drama, no hard feelings.
+      </p>
+
+      <p style="margin:0 0 12px;font-size:14px;line-height:1.6;">
+        The blocks you’ve already finished still count. You proved you can sit down,
+        shut the noise off and move real work forward.
+      </p>
+
+      <p style="margin:0 0 12px;font-size:14px;line-height:1.6;">
+        Whether you stay on the free plan or come back to Pro later, the rule is the same:
+        <strong>small, finished focus blocks compound more than “trying to be productive all day”.</strong>
+      </p>
+
+      <p style="margin:0;font-size:14px;line-height:1.6;">
+        Keep going in whatever setup works for you.<br/>
+        <span style="color:#e50914;">— Deepmode</span>
+      </p>
+    </div>
+    """
+
+    text_body = (
+        "Your Deepmode Pro subscription has ended.\n\n"
+        "No guilt — the focus blocks you already finished still count.\n"
+        "Whether you stay on the free plan or come back to Pro later, the rule is the same:\n"
+        "small, finished focus blocks compound faster than endless “productive” scrolling.\n\n"
+        "Keep going in whatever setup works for you.\n"
+        "— Deepmode\n"
+    )
+
     send_email_html(to_email, subject, html_body, text_body)

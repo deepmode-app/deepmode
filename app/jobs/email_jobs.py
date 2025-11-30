@@ -4,7 +4,7 @@ from datetime import date, timedelta
 from fastapi import APIRouter
 
 from app.database import get_conn
-from app.email_utils import send_daily_streak_email, send_weekly_summary_email
+from app.email_utils import send_daily_streak_email, send_weekly_summary_email, send_email_html
 
 
 # This is what main.py imports as jobs_router
