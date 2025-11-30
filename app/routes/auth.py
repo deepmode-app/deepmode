@@ -4,7 +4,7 @@ from fastapi import APIRouter, Depends, HTTPException, status
 from fastapi.security import HTTPBearer, HTTPAuthorizationCredentials
 from pydantic import BaseModel, EmailStr
 import uuid
-import os  # <-- NEW
+import os
 
 from app.database import get_conn
 from app.auth_utils import (
@@ -26,13 +26,18 @@ from app.email_utils import (
 
 # Controls whether login is blocked until the user verifies their email.
 # Staging: EMAIL_VERIFICATION_REQUIRED=false
-# Prod (later): EMAIL_VERIFICATION_REQUIRED=true
+# Prod:    EMAIL_VERIFICATION_REQUIRED=true
 EMAIL_VERIFICATION_REQUIRED = os.getenv("EMAIL_VERIFICATION_REQUIRED", "true").lower() == "true"
 
 # Base URL for login links in emails (staging vs prod)
 # Staging: https://deepmode.onrender.com
 # Prod:    https://deepmode.app
 FRONTEND_URL = os.getenv("FRONTEND_URL", "https://deepmode.app").rstrip("/")
+
+# Controls whether we actually attempt to send emails (SMTP).
+# Staging: EMAIL_SENDING_ENABLED=false
+# Prod:    EMAIL_SENDING_ENABLED=true
+EMAIL_SENDING_ENABLED = os.getenv("EMAIL_SENDING_ENABLED", "true").lower() == "true"
 
 router = APIRouter(prefix="/auth", tags=["auth"])
 
@@ -115,10 +120,12 @@ def register(payload: RegisterRequest):
     conn.commit()
     conn.close()
 
-    try:
-        send_verification_email(email, verification_token)
-    except Exception as e:
-        print("Error sending verification email:", e)
+    # In staging we don't want signup to hang on SMTP.
+    if EMAIL_SENDING_ENABLED:
+        try:
+            send_verification_email(email, verification_token)
+        except Exception as e:
+            print("Error sending verification email:", e)
 
     return {
         "message":
@@ -193,10 +200,11 @@ def verify_email(token: str):
         </div>
         """
 
-        try:
-            send_email_html(email, welcome_subject, welcome_body)
-        except Exception as e:
-            print("Error sending welcome email:", e)
+        if EMAIL_SENDING_ENABLED:
+            try:
+                send_email_html(email, welcome_subject, welcome_body)
+            except Exception as e:
+                print("Error sending welcome email:", e)
 
     conn.close()
 
@@ -244,6 +252,13 @@ def login(payload: LoginRequest):
     if row is None or not verify_password(payload.password, row["password_hash"]):
         raise HTTPException(status_code=401, detail="Invalid email or password.")
 
+    # Debug: log what the server thinks about flags for this login
+    print(
+        "[Deepmode] LOGIN FLAGS:",
+        "EMAIL_VERIFICATION_REQUIRED =", EMAIL_VERIFICATION_REQUIRED,
+        "| is_verified =", row["is_verified"]
+    )
+
     # Only block unverified users if the environment requires it.
     if EMAIL_VERIFICATION_REQUIRED and not row["is_verified"]:
         raise HTTPException(
@@ -290,10 +305,11 @@ def forgot_password(payload: ForgotPasswordRequest):
         )
         conn.commit()
 
-        try:
-            send_reset_email(email, reset_token)
-        except Exception as e:
-            print("Error sending reset email:", e)
+        if EMAIL_SENDING_ENABLED:
+            try:
+                send_reset_email(email, reset_token)
+            except Exception as e:
+                print("Error sending reset email:", e)
 
     conn.close()
 
@@ -479,10 +495,11 @@ def reset_password(payload: ResetPasswordRequest):
     </div>
     """
 
-    try:
-        send_email_html(email, subject, body)
-    except Exception as e:
-        print("Error sending reset confirmation:", e)
+    if EMAIL_SENDING_ENABLED:
+        try:
+            send_email_html(email, subject, body)
+        except Exception as e:
+            print("Error sending reset confirmation:", e)
 
     return {"message": "Password updated successfully."}
 
