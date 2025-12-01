@@ -1,23 +1,24 @@
 {
   "manifest_version": 3,
-  "name": "Deepmode AI",
+  "name": "Deepmode AI - DEV",
   "version": "2.3.1",
   "description": "Start Deepwork sessions and stay focused.",
   "action": {
     "default_popup": "popup.html",
-    "default_title": "Deepwork AI"
+    "default_title": "Deepmode AI - DEV"
   },
   "permissions": [
     "storage",
-    "notifications",
     "tabs",
     "scripting",
-	"alarms"
+    "alarms"
   ],
   "host_permissions": [
     "<all_urls>",
     "http://127.0.0.1:8000/*",
-    "http://localhost:8000/*"
+    "http://localhost:8000/*",
+    "https://deepmode.onrender.com/*",
+	"https://deepmode.app/*"    
   ],
   "background": {
     "service_worker": "background.js"
@@ -26,7 +27,9 @@
     {
       "matches": [
         "http://127.0.0.1:8000/*",
-        "http://localhost:8000/*"
+        "http://localhost:8000/*",
+        "https://deepmode.onrender.com/*",
+		"https://deepmode.app/*"        
       ],
       "js": ["connect.js"],
       "run_at": "document_idle"

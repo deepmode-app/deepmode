@@ -3,6 +3,7 @@ console.log("Deepmode connect script loaded on this page.");
 
 const API_BASE_URL = "https://deepmode.onrender.com";
 
+
 // Listen for messages from the *page* (dashboard / login etc.)
 window.addEventListener("message", (event) => {
   if (event.source !== window) return;

@@ -1,0 +1,32 @@
+{
+    "manifest_version": 3,
+    "name": "Deepmode AI",
+    "version": "2.3.1",
+    "description": "Start Deepwork sessions and stay focused.",
+    "action": {
+      "default_popup": "popup.html",
+      "default_title": "Deepmode AI"
+    },
+    "permissions": [
+      "storage",
+      "tabs",
+      "scripting",
+      "alarms"
+    ],
+    "host_permissions": [
+      "https://deepmode.app/*"
+    ],
+    "background": {
+      "service_worker": "background.js"
+    },
+    "content_scripts": [
+      {
+        "matches": [
+          "https://deepmode.app/*"
+        ],
+        "js": ["connect.js"],
+        "run_at": "document_idle"
+      }
+    ]
+  }
+  
