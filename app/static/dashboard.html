@@ -923,6 +923,8 @@
       padding: 16px 18px 14px;
       width: 460px;
       max-width: 95vw;
+      max-height: 90vh;
+      overflow-y: auto;
       color: var(--dw-text);
       position: relative;
     }
@@ -1379,7 +1381,7 @@
               <span id="userEmailLine" class="user-email-text"></span>
             </button>
             <div class="nav-dropdown">
-              <a href="/account" class="nav-dropdown-item-link">Account settings</a>
+              <button id="accountSettingsBtn" class="nav-dropdown-item">Account settings</button>
               <button id="manageBillingBtn" class="nav-dropdown-item" style="display:none;">
                 Manage billing &amp; subscription
               </button>
@@ -1460,26 +1462,6 @@
         <div class="card-value" id="disciplineScore">0%</div>
         <div class="card-sub">Finished vs started sessions</div>
       </div>
-      </div>
-
-      <!-- Email preferences card -->
-      <div class="card" style="margin-bottom: 18px;">
-      <div class="card-title">Email notifications</div>
-      <div style="font-size:12px;color:var(--dw-muted);margin-bottom:8px;">
-        Choose how often Deepmode nudges you to keep your streak alive.
-      </div>
-
-      <label style="display:flex;align-items:center;gap:8px;font-size:12px;color:#e5e7eb;margin-bottom:6px;">
-        <input id="dailyEmailToggle" type="checkbox" style="width:14px;height:14px;" />
-        <span>Daily streak reminders</span>
-      </label>
-
-      <label style="display:flex;align-items:center;gap:8px;font-size:12px;color:#e5e7eb;margin-bottom:6px;">
-        <input id="weeklyEmailToggle" type="checkbox" style="width:14px;height:14px;" />
-        <span>Weekly focus summary</span>
-      </label>
-
-      <p id="emailPrefsStatus" style="font-size:11px;color:var(--dw-muted);margin-top:6px;min-height:14px;"></p>
       </div>
 
     <div class="card sessions-card">
@@ -1651,6 +1633,57 @@
     </div>
   </div>
 
+  <!-- Account Settings Modal -->
+  <div id="accountSettingsModalBackdrop" class="session-modal-backdrop">
+    <div class="session-modal-card">
+      <div class="session-modal-header">
+        <div>
+          <div class="session-modal-title">Account settings</div>
+          <div class="session-modal-sub">
+            Tune how Deepmode supports your focus.
+          </div>
+        </div>
+        <button class="session-modal-close" id="accountSettingsModalClose" aria-label="Close">
+          ×
+        </button>
+      </div>
+
+      <div class="session-modal-section">
+        <div class="session-modal-label">Notifications</div>
+        
+        <div style="margin-top: 12px;">
+          <label style="display: flex; flex-direction: column; gap: 4px; margin-bottom: 16px; cursor: pointer;">
+            <div style="display: flex; align-items: center; gap: 8px;">
+              <input id="dailyEmailToggle" type="checkbox" style="width: 16px; height: 16px; cursor: pointer;" />
+              <span style="font-size: 13px; font-weight: 500; color: var(--dw-text);">Daily streak reminder</span>
+            </div>
+            <div style="font-size: 11px; color: var(--dw-muted); margin-left: 24px; line-height: 1.4;">
+              A gentle nudge to keep your streak alive.
+            </div>
+          </label>
+
+          <label style="display: flex; flex-direction: column; gap: 4px; margin-bottom: 16px; cursor: pointer;">
+            <div style="display: flex; align-items: center; gap: 8px;">
+              <input id="weeklyEmailToggle" type="checkbox" style="width: 16px; height: 16px; cursor: pointer;" />
+              <span style="font-size: 13px; font-weight: 500; color: var(--dw-text);">Weekly focus report</span>
+            </div>
+            <div style="font-size: 11px; color: var(--dw-muted); margin-left: 24px; line-height: 1.4;">
+              A summary of your wins and where to improve.
+            </div>
+          </label>
+        </div>
+
+        <p id="emailPrefsStatus" style="font-size: 11px; color: var(--dw-muted); margin-top: 8px; min-height: 14px;"></p>
+      </div>
+
+      <div class="session-modal-actions">
+        <button id="accountSettingsCloseBtn" class="session-modal-btn-primary">
+          Close
+        </button>
+      </div>
+    </div>
+  </div>
+
   <script>
     const token = localStorage.getItem("access_token");
     const errorBanner = document.getElementById("errorBanner");
@@ -1674,6 +1707,10 @@
     const dailyEmailToggle = document.getElementById("dailyEmailToggle");
     const weeklyEmailToggle = document.getElementById("weeklyEmailToggle");
     const emailPrefsStatus = document.getElementById("emailPrefsStatus");
+    const accountSettingsBtn = document.getElementById("accountSettingsBtn");
+    const accountSettingsModalBackdrop = document.getElementById("accountSettingsModalBackdrop");
+    const accountSettingsModalClose = document.getElementById("accountSettingsModalClose");
+    const accountSettingsCloseBtn = document.getElementById("accountSettingsCloseBtn");
 
     const params = new URLSearchParams(window.location.search);
     if (params.get("session") === "success") {
@@ -1745,6 +1782,58 @@
       });
     }
 
+    // Account Settings Modal
+    function openAccountSettingsModal() {
+      if (accountSettingsModalBackdrop) {
+        accountSettingsModalBackdrop.classList.add("visible");
+        // Close account dropdown when opening modal
+        if (navAccount) {
+          navAccount.dataset.open = "false";
+          if (accountTrigger) {
+            accountTrigger.setAttribute("aria-expanded", "false");
+          }
+        }
+        // Load preferences when opening modal
+        loadEmailPreferences();
+      }
+    }
+
+    function closeAccountSettingsModal() {
+      if (accountSettingsModalBackdrop) {
+        accountSettingsModalBackdrop.classList.remove("visible");
+      }
+    }
+
+    if (accountSettingsBtn) {
+      accountSettingsBtn.addEventListener("click", (e) => {
+        e.preventDefault();
+        openAccountSettingsModal();
+      });
+    }
+
+    if (accountSettingsModalClose) {
+      accountSettingsModalClose.addEventListener("click", closeAccountSettingsModal);
+    }
+
+    if (accountSettingsCloseBtn) {
+      accountSettingsCloseBtn.addEventListener("click", closeAccountSettingsModal);
+    }
+
+    if (accountSettingsModalBackdrop) {
+      accountSettingsModalBackdrop.addEventListener("click", (e) => {
+        if (e.target === accountSettingsModalBackdrop) {
+          closeAccountSettingsModal();
+        }
+      });
+    }
+
+    // Close modal on Escape key
+    document.addEventListener("keydown", (e) => {
+      if (e.key === "Escape" && accountSettingsModalBackdrop && accountSettingsModalBackdrop.classList.contains("visible")) {
+        closeAccountSettingsModal();
+      }
+    });
+
     async function loadEmailPreferences() {
       if (!dailyEmailToggle || !weeklyEmailToggle || !emailPrefsStatus) return;
 
@@ -1767,20 +1856,37 @@
         });
 
         if (!res.ok) {
-          emailPrefsStatus.textContent = "Couldn’t load email preferences.";
+          emailPrefsStatus.textContent = "Couldn't load email preferences.";
           emailPrefsStatus.style.color = "#fecaca";
+          // Apply defaults if we can't load preferences
+          if (dailyEmailToggle) dailyEmailToggle.checked = false; // Default OFF
+          if (weeklyEmailToggle) weeklyEmailToggle.checked = true; // Default ON
           return;
         }
 
         const data = await res.json();
-        dailyEmailToggle.checked = !!data.daily_email_enabled;
-        weeklyEmailToggle.checked = !!data.weekly_email_enabled;
+        
+        // Apply defaults if preferences are null/undefined (new users)
+        if (dailyEmailToggle) {
+          dailyEmailToggle.checked = data.daily_email_enabled !== undefined 
+            ? !!data.daily_email_enabled 
+            : false; // Default OFF for new users
+        }
+        if (weeklyEmailToggle) {
+          weeklyEmailToggle.checked = data.weekly_email_enabled !== undefined 
+            ? !!data.weekly_email_enabled 
+            : true; // Default ON for new users
+        }
+        
         emailPrefsStatus.textContent = "";
         emailPrefsStatus.style.color = "#9ca3af";
       } catch (err) {
         console.error(err);
         emailPrefsStatus.textContent = "Network error while loading preferences.";
         emailPrefsStatus.style.color = "#fecaca";
+        // Apply defaults on error
+        if (dailyEmailToggle) dailyEmailToggle.checked = false;
+        if (weeklyEmailToggle) weeklyEmailToggle.checked = true;
       }
     }
 
