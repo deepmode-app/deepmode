@@ -320,59 +320,111 @@
     }
 
     /* Last block banner */
-    .last-block-card {
-      margin-bottom: 18px;
-      padding: 14px 16px;
-      border-radius: 12px;
-      background: linear-gradient(135deg, rgba(22, 163, 74, 0.08) 0%, rgba(17, 17, 24, 0.95) 100%);
-      border: 1px solid rgba(34, 197, 94, 0.3);
-      box-shadow: 
-        0 4px 16px rgba(22, 163, 74, 0.15),
-        0 0 0 1px rgba(17, 17, 24, 0.5);
-      font-size: 12px;
-      position: relative;
-      overflow: hidden;
-    }
-
-    .last-block-card::before {
-      content: "";
-      position: absolute;
-      top: 0;
-      left: 0;
-      right: 0;
-      height: 2px;
-      background: linear-gradient(90deg, rgba(34, 197, 94, 0.4), rgba(34, 197, 94, 0.1));
-    }
-
-    .last-block-header {
+    .last-block-banner {
+      border-radius: 14px;
+      padding: 14px 18px;
       display: flex;
       align-items: center;
-      gap: 8px;
-      margin-bottom: 6px;
+      justify-content: space-between;
+      margin-bottom: 20px;
+      border: 1px solid transparent;
+      box-shadow: 0 12px 35px rgba(0, 0, 0, 0.55);
+      backdrop-filter: blur(20px);
+      transition: background 0.2s ease, border-color 0.2s ease, transform 0.15s ease;
+    }
+
+    .last-block-banner:hover {
+      transform: translateY(-1px);
+    }
+
+    .last-block-left {
+      display: flex;
+      align-items: center;
+      gap: 12px;
     }
 
     .last-block-icon {
+      width: 26px;
+      height: 26px;
+      border-radius: 999px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
       font-size: 16px;
-      color: #22c55e;
-      filter: drop-shadow(0 0 4px rgba(34, 197, 94, 0.5));
     }
 
-    .last-block-microcopy {
-      font-size: 12px;
-      font-weight: 500;
-      color: #bbf7d0;
+    .last-block-text {
+      display: flex;
+      flex-direction: column;
+      gap: 2px;
     }
 
-    .last-block-main {
-      font-weight: 500;
-      color: #e5e7eb;
-      margin-bottom: 4px;
+    .last-block-title {
+      font-weight: 600;
+      font-size: 14px;
+    }
+
+    .last-block-subtitle {
       font-size: 13px;
+      color: rgba(255, 255, 255, 0.75);
     }
 
-    .last-block-sub {
-      font-size: 11px;
-      color: #9ca3af;
+    .last-block-meta {
+      font-size: 12px;
+      color: rgba(255, 255, 255, 0.65);
+      text-align: right;
+      white-space: nowrap;
+    }
+
+    /* Status variants */
+    .last-block--completed {
+      background: radial-gradient(circle at top left, rgba(0, 255, 140, 0.12), rgba(6, 45, 22, 0.92));
+      border-color: rgba(0, 255, 140, 0.35);
+    }
+
+    .last-block--completed .last-block-icon {
+      background: rgba(0, 194, 106, 0.2);
+      color: #41f79a;
+    }
+
+    .last-block--completed-early {
+      background: radial-gradient(circle at top left, rgba(255, 210, 0, 0.14), rgba(60, 44, 5, 0.92));
+      border-color: rgba(255, 210, 0, 0.45);
+    }
+
+    .last-block--completed-early .last-block-icon {
+      background: rgba(255, 210, 0, 0.2);
+      color: #ffd666;
+    }
+
+    .last-block--stopped-early {
+      background: radial-gradient(circle at top left, rgba(255, 120, 0, 0.15), rgba(45, 21, 5, 0.96));
+      border-color: rgba(255, 120, 0, 0.55);
+    }
+
+    .last-block--stopped-early .last-block-icon {
+      background: rgba(255, 120, 0, 0.2);
+      color: #ffb88a;
+    }
+
+    .last-block--abandoned {
+      background: radial-gradient(circle at top left, rgba(255, 70, 70, 0.12), rgba(36, 8, 8, 0.95));
+      border-color: rgba(255, 70, 70, 0.5);
+    }
+
+    .last-block--abandoned .last-block-icon {
+      background: rgba(255, 70, 70, 0.2);
+      color: #ff8484;
+    }
+
+    .last-block--empty {
+      background: radial-gradient(circle at top left, rgba(255, 255, 255, 0.03), rgba(26, 26, 34, 0.95));
+      border-color: rgba(255, 255, 255, 0.05);
+    }
+
+    .last-block--empty .last-block-icon {
+      background: #444;
+      color: #ccc;
     }
 
     .upgrade-btn {
@@ -1435,13 +1487,15 @@
       </button>
 
     <!-- Last block banner -->
-    <div id="dm-last-block-banner" class="last-block-card" style="display:none;">
-      <div class="last-block-header">
-        <span class="last-block-icon">✓</span>
-        <span class="last-block-microcopy">Nice work — you finished this block.</span>
+    <div id="dm-last-block-banner" class="last-block-banner last-block--empty" style="display:none;">
+      <div class="last-block-left">
+        <div class="last-block-icon"></div>
+        <div class="last-block-text">
+          <div class="last-block-title">No deep blocks yet.</div>
+          <div class="last-block-subtitle">Start your first focused session to see your progress here.</div>
+        </div>
       </div>
-      <div class="last-block-main"></div>
-      <div class="last-block-sub"></div>
+      <div class="last-block-meta">Deep blocks are saved here right after you finish.</div>
     </div>
 
     <!-- Centered live session banner -->
@@ -2354,43 +2408,85 @@
       const banner = document.getElementById("dm-last-block-banner");
       if (!banner) return;
 
-      if (!Array.isArray(sessions) || sessions.length === 0) {
-        banner.style.display = "none";
-        const mainEl = banner.querySelector(".last-block-main");
-        const subEl = banner.querySelector(".last-block-sub");
-        if (mainEl) mainEl.textContent = "";
-        if (subEl) subEl.textContent = "";
-        return;
-      }
+      const iconEl = banner.querySelector(".last-block-icon");
+      const titleEl = banner.querySelector(".last-block-title");
+      const subtitleEl = banner.querySelector(".last-block-subtitle");
+      const metaEl = banner.querySelector(".last-block-meta");
 
-      const lastCompleted = sessions.find((s) => !!s.end_time);
-      if (!lastCompleted) {
-        banner.style.display = "none";
-        const mainEl = banner.querySelector(".last-block-main");
-        const subEl = banner.querySelector(".last-block-sub");
-        if (mainEl) mainEl.textContent = "";
-        if (subEl) subEl.textContent = "";
-        return;
-      }
+      if (!iconEl || !titleEl || !subtitleEl || !metaEl) return;
 
-      const durationLabel = formatMinutesCompact(
-        lastCompleted.actual_duration_minutes ?? lastCompleted.planned_duration_minutes
-      );
-
-      const labelTask = lastCompleted.task || "Deepmode block";
+      // Find the most recent finished session (by end_time, most recent first)
+      const finishedSessions = sessions && sessions.length > 0
+        ? sessions.filter((s) => !!s.end_time)
+        : [];
       
-      // Use relative time for better UX
-      const relativeTime = formatRelativeTime(lastCompleted.end_time || lastCompleted.start_time);
+      // Sort by end_time descending to get the most recent
+      finishedSessions.sort((a, b) => {
+        const timeA = new Date(a.end_time || 0).getTime();
+        const timeB = new Date(b.end_time || 0).getTime();
+        return timeB - timeA;
+      });
+      
+      const lastSession = finishedSessions.length > 0 ? finishedSessions[0] : null;
 
-      const mainEl = banner.querySelector(".last-block-main");
-      const subEl = banner.querySelector(".last-block-sub");
+      // No sessions or no finished session
+      if (!lastSession) {
+        banner.className = "last-block-banner last-block--empty";
+        iconEl.textContent = "";
+        titleEl.textContent = "No deep blocks yet.";
+        subtitleEl.textContent = "Start your first focused session to see your progress here.";
+        metaEl.textContent = "Deep blocks are saved here right after you finish.";
+        banner.style.display = "block";
+        return;
+      }
 
-      if (mainEl) {
-        mainEl.textContent = `${durationLabel} on "${labelTask}"`;
+      // Get session data
+      const status = lastSession.status || deriveStatus(lastSession);
+      const planned = lastSession.planned_duration_minutes;
+      const actual = lastSession.actual_duration_minutes ?? 0;
+      const taskName = lastSession.task || "Deepmode block";
+      const timeAgoString = formatRelativeTime(lastSession.end_time || lastSession.start_time);
+
+      let iconText = "";
+      let title = "";
+      let subtitle = "";
+      let cssClass = "";
+
+      // Map status to display properties
+      if (status === "completed") {
+        cssClass = "last-block-banner last-block--completed";
+        iconText = "✓";
+        title = "Nice work — you finished this block.";
+        subtitle = `${formatMinutesCompact(actual)} on "${taskName}"`;
+      } else if (status === "completed_early" || status === "completed-early") {
+        cssClass = "last-block-banner last-block--completed-early";
+        iconText = "⚡";
+        title = "Strong move — you wrapped this block early.";
+        subtitle = `${formatMinutesCompact(actual)} done out of ${formatMinutesCompact(planned)} on "${taskName}".`;
+      } else if (status === "stopped_early" || status === "stopped-early") {
+        cssClass = "last-block-banner last-block--stopped-early";
+        iconText = "⏸";
+        title = "You stopped this block early.";
+        subtitle = `${formatMinutesCompact(actual)} out of ${formatMinutesCompact(planned)} on "${taskName}". Next one will feel easier.`;
+      } else if (status === "abandoned") {
+        cssClass = "last-block-banner last-block--abandoned";
+        iconText = "!";
+        title = "Block abandoned — that happens.";
+        subtitle = "No deep work recorded. Start a fresh block when you're ready.";
+      } else {
+        // Fallback for unknown status
+        cssClass = "last-block-banner last-block--empty";
+        iconText = "";
+        title = "Last block";
+        subtitle = `${formatMinutesCompact(actual)} on "${taskName}"`;
       }
-      if (subEl) {
-        subEl.textContent = relativeTime;
-      }
+
+      // Apply styles and content
+      banner.className = cssClass;
+      iconEl.textContent = iconText;
+      titleEl.textContent = title;
+      subtitleEl.textContent = subtitle;
+      metaEl.textContent = timeAgoString || "";
 
       banner.style.display = "block";
     }
