@@ -2169,14 +2169,31 @@
 
     function deriveStatus(session) {
       if (session.status) {
-        return String(session.status).toLowerCase();
+        const status = String(session.status).toLowerCase();
+        // Check if it's a completed session that ended early
+        if (status === "completed") {
+          const actual = session.actual_duration_minutes ?? 0;
+          const planned = session.planned_duration_minutes ?? 0;
+          if (planned && actual >= 5 && actual < planned) {
+            return "completed_early";
+          }
+        }
+        return status;
       }
 
       if (!session.end_time) return "running";
 
       const actual = session.actual_duration_minutes ?? 0;
       const planned = session.planned_duration_minutes ?? 0;
+      
+      // If actual < 5 minutes, it's abandoned
+      if (actual < 5) return "abandoned";
+      
+      // If actual >= planned, it's fully completed
       if (planned && actual >= planned) return "completed";
+      
+      // If actual >= 5 but < planned, it's completed early
+      if (actual >= 5) return "completed_early";
 
       return "abandoned";
     }
@@ -2186,6 +2203,10 @@
 
       if (s === "completed") {
         return `<span class="status-pill status-completed"><span class="dot"></span>Completed</span>`;
+      }
+
+      if (s === "completed_early" || s === "completed-early") {
+        return `<span class="status-pill status-completed"><span class="dot"></span>Completed early</span>`;
       }
 
       if (s === "abandoned") {
@@ -2437,7 +2458,7 @@
           }
 
           const statusKey = deriveStatus(s);
-          if (statusKey === "completed") completed += 1;
+          if (statusKey === "completed" || statusKey === "completed_early") completed += 1;
           if (statusKey === "running" && !runningSession) {
             runningSession = s;
           }

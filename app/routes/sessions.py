@@ -305,16 +305,18 @@ def end_session(
         start = start.replace(tzinfo=timezone.utc)
 
     diff = now - start
-    actual_minutes = int(diff.total_seconds() // 60)
+    actual_minutes = max(1, int(diff.total_seconds() // 60))
     planned = row["planned_duration_minutes"]
 
-    # derive status + discipline based on how much of the block was done
-    if planned is not None and actual_minutes >= planned:
-        status_val = "completed"
-        discipline_score = 1
-    else:
+    # derive status + discipline based on actual work done
+    # If user worked < 5 minutes, mark as abandoned (failure)
+    # If user worked >= 5 minutes, mark as completed (success, even if early)
+    if actual_minutes < 5:
         status_val = "abandoned"
         discipline_score = 0
+    else:
+        status_val = "completed"
+        discipline_score = 1
 
     cur.execute(
         """
