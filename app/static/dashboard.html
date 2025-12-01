@@ -36,6 +36,79 @@
       color: var(--dw-text);
     }
 
+    a {
+      color: inherit;
+      text-decoration: none;
+    }
+
+    /* Top navigation (shared visual language with landing) */
+
+    .nav {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      margin-bottom: 24px;
+    }
+
+    .nav-left {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      font-size: 13px;
+      letter-spacing: 0.14em;
+      text-transform: uppercase;
+      color: var(--dw-muted);
+    }
+
+    .logo-dot {
+      width: 16px;
+      height: 16px;
+      border-radius: 999px;
+      border: 2px solid var(--dw-accent);
+      position: relative;
+    }
+
+    .logo-dot::after {
+      content: "";
+      position: absolute;
+      inset: 3px;
+      border-radius: inherit;
+      background: var(--dw-accent);
+    }
+
+    .nav-links {
+      display: flex;
+      align-items: center;
+      gap: 16px;
+      font-size: 13px;
+      color: var(--dw-muted);
+    }
+
+    .nav-link {
+      cursor: pointer;
+      position: relative;
+    }
+
+    .nav-link::after {
+      content: "";
+      position: absolute;
+      left: 0;
+      bottom: -4px;
+      width: 0;
+      height: 2px;
+      background: var(--dw-accent);
+      transition: width 0.18s ease-out;
+    }
+
+    .nav-link:hover::after {
+      width: 100%;
+    }
+
+    .nav-user-email {
+      font-size: 11px;
+      color: var(--dw-muted);
+    }
+
     #proToast {
       transition: opacity 0.4s ease;
     }
@@ -105,24 +178,6 @@
       border-radius: 999px;
       background: #60a5fa;
       animation: dotPulse 1.4s ease-in-out infinite;
-    }
-
-    .top-right {
-      display: flex;
-      flex-direction: column;
-      gap: 8px;
-      align-items: flex-end;
-      font-size: 11px;
-      color: var(--dw-muted);
-    }
-
-    .top-right a {
-      color: var(--dw-accent);
-      text-decoration: none;
-    }
-
-    .top-right a:hover {
-      text-decoration: underline;
     }
 
     .upgrade-btn {
@@ -665,7 +720,27 @@
   </script>
 
   <div class="shell">
-    <div id="proToast"
+    <!-- Top navigation -->
+    <div class="shell">
+      <header class="nav">
+        <div class="nav-left">
+          <div class="logo-dot"></div>
+          <span>Deepmode</span>
+        </div>
+        <nav class="nav-links">
+          <span id="userEmailLine" class="nav-user-email"></span>
+          <a href="/dashboard" class="nav-link">Dashboard</a>
+          <a href="/billing/checkout" class="upgrade-btn" id="upgradeBtn">Upgrade to Pro</a>
+          <button id="manageBillingBtn" class="upgrade-btn" style="display:none;">
+            Manage billing &amp; subscription
+          </button>
+          <a href="#" id="logoutLink" class="nav-link">Log out</a>
+        </nav>
+      </header>
+    </div>
+
+    <div class="shell">
+      <div id="proToast"
       style="
         display:none;
         background:#111118;
@@ -677,29 +752,19 @@
         font-size:14px;
         box-shadow:0 12px 32px rgba(0,0,0,0.55);
       ">
-    </div>
+      </div>
 
-    <div id="errorBanner" class="error-banner"></div>
+      <div id="errorBanner" class="error-banner"></div>
 
-    <div class="header">
-      <div class="left-header">
-        <div class="badge">Deepmode</div>
-        <h1>Your focus stats</h1>
-        <div class="subhead" id="userHint">
-          Laptop on. Distractions off. Let’s see what you actually did.
+      <div class="header">
+        <div class="left-header">
+          <div class="badge">Deepmode</div>
+          <h1>Your focus stats</h1>
+          <div class="subhead" id="userHint">
+            Laptop on. Distractions off. Let’s see what you actually did.
+          </div>
         </div>
-        <!-- NEW: logged-in email line -->
-        <div class="subhead" id="userEmailLine" style="font-size:11px;"></div>
       </div>
-      <div class="top-right">
-        <a href="/billing/checkout" class="upgrade-btn" id="upgradeBtn">Upgrade to Pro</a>
-        <!-- NEW: manage billing button (hidden by default, shown for Pro users) -->
-        <button id="manageBillingBtn" class="upgrade-btn" style="display:none;">
-          Manage billing &amp; subscription
-        </button>
-        <a href="#" id="logoutLink">Log out</a>
-      </div>
-    </div>
 
     <!-- Last block banner -->
     <div id="dm-last-block-banner"
@@ -722,7 +787,7 @@
       <span id="liveSessionText"></span>
     </div>
 
-    <div class="cards-row">
+      <div class="cards-row">
       <div class="card">
         <div class="card-title">Today</div>
         <div class="card-value" id="todayMinutes">0 min</div>
@@ -743,10 +808,10 @@
         <div class="card-value" id="disciplineScore">0%</div>
         <div class="card-sub">Finished vs started sessions</div>
       </div>
-    </div>
+      </div>
 
-    <!-- Email preferences card -->
-    <div class="card" style="margin-bottom: 18px;">
+      <!-- Email preferences card -->
+      <div class="card" style="margin-bottom: 18px;">
       <div class="card-title">Email notifications</div>
       <div style="font-size:12px;color:var(--dw-muted);margin-bottom:8px;">
         Choose how often Deepmode nudges you to keep your streak alive.
@@ -763,7 +828,7 @@
       </label>
 
       <p id="emailPrefsStatus" style="font-size:11px;color:var(--dw-muted);margin-top:6px;min-height:14px;"></p>
-    </div>
+      </div>
 
     <div class="card sessions-card">
       <div class="sessions-header-row">
