@@ -774,29 +774,38 @@
       gap: 4px;
       padding: 2px 8px;
       border-radius: 999px;
-      font-size: 10px;
+      font-size: 11px;
       font-weight: 500;
       border: 1px solid transparent;
       white-space: nowrap;
     }
 
-    .status-pill span.dot {
-      width: 6px;
-      height: 6px;
-      border-radius: 999px;
-      background: currentColor;
+    .status-icon {
+      font-size: 11px;
+      opacity: 0.9;
+      line-height: 1;
+    }
+
+    .status-label {
+      line-height: 1.2;
     }
 
     .status-completed {
-      background: var(--status-completed-bg);
-      color: var(--status-completed-fg);
-      border-color: rgba(187,247,208,0.35);
+      background: #16a34a;
+      color: #f9fafb;
+      border-color: #16a34a;
+    }
+
+    .status-completed-early {
+      background: #0ea5e9;
+      color: #f9fafb;
+      border-color: #0ea5e9;
     }
 
     .status-abandoned {
-      background: var(--status-abandoned-bg);
-      color: var(--status-abandoned-fg);
-      border-color: rgba(254,202,202,0.35);
+      background: transparent;
+      color: #fca5a5;
+      border-color: #b91c1c;
     }
 
     .status-auto-closed {
@@ -2198,26 +2207,70 @@
       return "abandoned";
     }
 
+    function getStatusMeta(status) {
+      if (!status) {
+        return {
+          label: "",
+          icon: "",
+          cssClass: "",
+        };
+      }
+
+      const s = String(status).toLowerCase();
+      const map = {
+        completed: {
+          label: "Completed",
+          icon: "✔",
+          cssClass: "status-pill status-completed",
+        },
+        completed_early: {
+          label: "Completed Early",
+          icon: "⚡",
+          cssClass: "status-pill status-completed-early",
+        },
+        "completed-early": {
+          label: "Completed Early",
+          icon: "⚡",
+          cssClass: "status-pill status-completed-early",
+        },
+        abandoned: {
+          label: "Stopped Early",
+          icon: "⚠",
+          cssClass: "status-pill status-abandoned",
+        },
+        auto_closed: {
+          label: "Auto-closed",
+          icon: "",
+          cssClass: "status-pill status-auto-closed",
+        },
+        "auto-closed": {
+          label: "Auto-closed",
+          icon: "",
+          cssClass: "status-pill status-auto-closed",
+        },
+        running: {
+          label: "Running",
+          icon: "",
+          cssClass: "status-pill status-running",
+        },
+      };
+
+      return map[s] || {
+        label: status,
+        icon: "",
+        cssClass: "status-pill",
+      };
+    }
+
     function renderStatusPill(status) {
-      const s = String(status || "").toLowerCase();
-
-      if (s === "completed") {
-        return `<span class="status-pill status-completed"><span class="dot"></span>Completed</span>`;
+      const meta = getStatusMeta(status);
+      if (!meta.label) {
+        return "";
       }
 
-      if (s === "completed_early" || s === "completed-early") {
-        return `<span class="status-pill status-completed"><span class="dot"></span>Completed early</span>`;
-      }
-
-      if (s === "abandoned") {
-        return `<span class="status-pill status-abandoned"><span class="dot"></span>Abandoned</span>`;
-      }
-
-      if (s === "auto_closed" || s === "auto-closed") {
-        return `<span class="status-pill status-auto-closed"><span class="dot"></span>Auto-closed</span>`;
-      }
-
-      return `<span class="status-pill status-running"><span class="dot"></span>Running</span>`;
+      return `<span class="${meta.cssClass}">${
+        meta.icon ? `<span class="status-icon">${meta.icon}</span>` : ""
+      }<span class="status-label">${meta.label}</span></span>`;
     }
 
     function collectProjectNames() {
