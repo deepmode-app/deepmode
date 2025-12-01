@@ -828,6 +828,256 @@
         width: 94vw;
       }
     }
+
+    /* Projects modal */
+
+    .manage-projects-btn {
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      padding: 8px 14px;
+      margin-bottom: 18px;
+      background: #111118;
+      border: 1px solid #27272f;
+      border-radius: 999px;
+      color: var(--dw-text);
+      font-size: 12px;
+      font-family: inherit;
+      cursor: pointer;
+      transition: background-color 0.15s ease, border-color 0.15s ease;
+    }
+
+    .manage-projects-btn:hover {
+      background: #18181f;
+      border-color: var(--dw-accent);
+    }
+
+    .manage-projects-icon {
+      font-size: 14px;
+    }
+
+    .projects-modal-backdrop {
+      position: fixed;
+      inset: 0;
+      background: rgba(2, 5, 9, 0.85);
+      backdrop-filter: blur(8px);
+      z-index: 2000;
+      display: none;
+      align-items: center;
+      justify-content: center;
+      padding: 20px;
+      opacity: 0;
+      transition: opacity 0.15s ease;
+    }
+
+    .projects-modal-backdrop.visible {
+      display: flex;
+      opacity: 1;
+    }
+
+    .projects-modal-card {
+      background: var(--dw-card);
+      border-radius: 16px;
+      border: 1px solid var(--dw-border);
+      box-shadow: 0 24px 48px rgba(0, 0, 0, 0.85);
+      max-width: 460px;
+      width: 100%;
+      max-height: 85vh;
+      overflow-y: auto;
+      transform: scale(0.95);
+      transition: transform 0.18s ease;
+    }
+
+    .projects-modal-backdrop.visible .projects-modal-card {
+      transform: scale(1);
+    }
+
+    .projects-modal-header {
+      display: flex;
+      align-items: flex-start;
+      justify-content: space-between;
+      gap: 10px;
+      padding: 18px 20px;
+      border-bottom: 1px solid rgba(31, 41, 55, 0.9);
+    }
+
+    .projects-modal-title {
+      font-size: 16px;
+      font-weight: 600;
+    }
+
+    .projects-modal-subtitle {
+      font-size: 12px;
+      color: var(--dw-muted);
+      margin-top: 4px;
+      line-height: 1.5;
+    }
+
+    .projects-modal-close {
+      border: none;
+      background: transparent;
+      color: var(--dw-muted);
+      font-size: 18px;
+      cursor: pointer;
+      padding: 2px;
+      line-height: 1;
+    }
+
+    .projects-modal-close:hover {
+      color: var(--dw-text);
+    }
+
+    .projects-modal-content {
+      padding: 20px;
+    }
+
+    .projects-list {
+      display: flex;
+      flex-direction: column;
+      gap: 12px;
+    }
+
+    .projects-empty {
+      text-align: center;
+      padding: 32px 20px;
+      color: var(--dw-muted);
+      font-size: 13px;
+    }
+
+    .project-item {
+      background: rgba(17, 17, 24, 0.6);
+      border: 1px solid rgba(39, 39, 47, 0.8);
+      border-radius: 12px;
+      padding: 12px 14px;
+      transition: border-color 0.15s ease, background-color 0.15s ease;
+    }
+
+    .project-item:hover {
+      border-color: var(--dw-border);
+      background: rgba(24, 24, 31, 0.8);
+    }
+
+    .project-item-header {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 12px;
+      margin-bottom: 8px;
+    }
+
+    .project-name {
+      font-size: 14px;
+      font-weight: 500;
+      color: var(--dw-text);
+    }
+
+    .project-session-count {
+      font-size: 11px;
+      color: var(--dw-muted);
+    }
+
+    .project-actions {
+      display: flex;
+      gap: 8px;
+    }
+
+    .project-btn {
+      padding: 6px 12px;
+      border-radius: 999px;
+      font-size: 11px;
+      font-family: inherit;
+      cursor: pointer;
+      border: 1px solid var(--dw-border);
+      background: transparent;
+      color: var(--dw-text);
+      transition: all 0.15s ease;
+    }
+
+    .project-btn-rename {
+      color: var(--dw-text);
+    }
+
+    .project-btn-rename:hover {
+      background: rgba(229, 9, 20, 0.12);
+      border-color: var(--dw-accent);
+      color: var(--dw-accent);
+    }
+
+    .project-btn-clear {
+      color: var(--dw-muted);
+    }
+
+    .project-btn-clear:hover {
+      background: rgba(127, 29, 29, 0.2);
+      border-color: #7f1d1d;
+      color: #fee2e2;
+    }
+
+    .project-rename-form {
+      display: flex;
+      gap: 8px;
+      margin-top: 8px;
+      align-items: center;
+    }
+
+    .project-rename-input {
+      flex: 1;
+      padding: 6px 10px;
+      background: #020617;
+      border: 1px solid var(--dw-border);
+      border-radius: 8px;
+      color: var(--dw-text);
+      font-size: 12px;
+      font-family: inherit;
+      outline: none;
+    }
+
+    .project-rename-input:focus {
+      border-color: var(--dw-accent);
+      box-shadow: 0 0 0 1px rgba(229, 9, 20, 0.3);
+    }
+
+    .project-rename-actions {
+      display: flex;
+      gap: 6px;
+    }
+
+    .project-rename-btn {
+      padding: 6px 10px;
+      border-radius: 8px;
+      font-size: 11px;
+      font-family: inherit;
+      cursor: pointer;
+      border: none;
+      transition: all 0.15s ease;
+    }
+
+    .project-rename-confirm {
+      background: var(--dw-accent);
+      color: #ffffff;
+    }
+
+    .project-rename-confirm:hover {
+      background: #f3121f;
+    }
+
+    .project-rename-cancel {
+      background: transparent;
+      color: var(--dw-muted);
+      border: 1px solid var(--dw-border);
+    }
+
+    .project-rename-cancel:hover {
+      border-color: var(--dw-accent);
+      color: var(--dw-text);
+    }
+
+    .projects-loading {
+      text-align: center;
+      padding: 32px 20px;
+      color: var(--dw-muted);
+      font-size: 13px;
+    }
   </style>
 </head>
 
@@ -910,10 +1160,16 @@
           <div class="badge">Deepmode</div>
           <h1>Your focus stats</h1>
           <div class="subhead" id="userHint">
-            Laptop on. Distractions off. Let’s see what you actually did.
+            Laptop on. Distractions off. Let's see what you actually did.
           </div>
         </div>
       </div>
+
+      <!-- Manage Projects button -->
+      <button id="manageProjectsBtn" class="manage-projects-btn">
+        <span class="manage-projects-icon">📁</span>
+        Manage projects
+      </button>
 
     <!-- Last block banner -->
     <div id="dm-last-block-banner"
@@ -1084,6 +1340,33 @@
             </button>
           </div>
         </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Projects Modal -->
+  <div id="projectsModalBackdrop" class="projects-modal-backdrop">
+    <div class="projects-modal-card">
+      <div class="projects-modal-header">
+        <div>
+          <div class="projects-modal-title">Manage projects</div>
+          <div class="projects-modal-subtitle">
+            Organise your workflows, rename projects, or clear completed ones.
+          </div>
+        </div>
+        <button class="projects-modal-close" id="projectsModalClose">×</button>
+      </div>
+      <div class="projects-modal-content">
+        <div id="projectsLoading" class="projects-loading" style="display:none;">
+          Loading projects...
+        </div>
+        <div id="projectsEmpty" class="projects-empty" style="display:none;">
+          <p>No projects yet.</p>
+          <p style="font-size:11px;margin-top:6px;color:var(--dw-muted);">
+            Projects help you track your long-term focus. Add a project name when creating a session.
+          </p>
+        </div>
+        <div id="projectsList" class="projects-list"></div>
       </div>
     </div>
   </div>
@@ -2163,6 +2446,277 @@
         }
       });
     }
+
+    // ---------- Projects Management ----------
+
+    const manageProjectsBtn = document.getElementById("manageProjectsBtn");
+    const projectsModalBackdrop = document.getElementById("projectsModalBackdrop");
+    const projectsModalClose = document.getElementById("projectsModalClose");
+    const projectsList = document.getElementById("projectsList");
+    const projectsLoading = document.getElementById("projectsLoading");
+    const projectsEmpty = document.getElementById("projectsEmpty");
+
+    function openProjectsModal() {
+      projectsModalBackdrop.classList.add("visible");
+      loadProjects();
+    }
+
+    function closeProjectsModal() {
+      projectsModalBackdrop.classList.remove("visible");
+    }
+
+    async function loadProjects() {
+      if (!token) {
+        window.location.href = "/login";
+        return;
+      }
+
+      projectsLoading.style.display = "block";
+      projectsEmpty.style.display = "none";
+      projectsList.innerHTML = "";
+
+      try {
+        const res = await fetch("/projects/", {
+          headers: {
+            "Accept": "application/json",
+            "Authorization": "Bearer " + token,
+          },
+        });
+
+        if (res.status === 401) {
+          localStorage.removeItem("access_token");
+          window.location.href = "/login";
+          return;
+        }
+
+        if (!res.ok) {
+          console.error("Failed to load projects");
+          projectsLoading.style.display = "none";
+          projectsList.innerHTML = '<div class="projects-empty">Error loading projects. Try again.</div>';
+          return;
+        }
+
+        const projects = await res.json();
+        projectsLoading.style.display = "none";
+
+        if (projects.length === 0) {
+          projectsEmpty.style.display = "block";
+          return;
+        }
+
+        projectsList.innerHTML = "";
+        projects.forEach((proj) => {
+          const item = document.createElement("div");
+          item.className = "project-item";
+          item.dataset.projectName = proj.name;
+
+          item.innerHTML = `
+            <div class="project-item-header">
+              <div>
+                <div class="project-name">${escapeHtml(proj.name)}</div>
+                <div class="project-session-count">${proj.session_count} ${proj.session_count === 1 ? "session" : "sessions"}</div>
+              </div>
+              <div class="project-actions">
+                <button class="project-btn project-btn-rename" data-action="rename" data-project="${escapeHtml(proj.name)}">
+                  Rename
+                </button>
+                <button class="project-btn project-btn-clear" data-action="clear" data-project="${escapeHtml(proj.name)}">
+                  Clear
+                </button>
+              </div>
+            </div>
+            <div class="project-rename-form" style="display:none;">
+              <input type="text" class="project-rename-input" value="${escapeHtml(proj.name)}" />
+              <div class="project-rename-actions">
+                <button class="project-rename-btn project-rename-confirm" data-action="confirm-rename" data-project="${escapeHtml(proj.name)}">
+                  Confirm
+                </button>
+                <button class="project-rename-btn project-rename-cancel" data-action="cancel-rename">
+                  Cancel
+                </button>
+              </div>
+            </div>
+          `;
+
+          projectsList.appendChild(item);
+        });
+
+        // Attach event listeners
+        projectsList.querySelectorAll("[data-action='rename']").forEach((btn) => {
+          btn.addEventListener("click", (e) => {
+            const projectName = btn.dataset.project;
+            const item = btn.closest(".project-item");
+            const renameForm = item.querySelector(".project-rename-form");
+            const input = renameForm.querySelector(".project-rename-input");
+            renameForm.style.display = "flex";
+            input.focus();
+            input.select();
+          });
+        });
+
+        projectsList.querySelectorAll("[data-action='clear']").forEach((btn) => {
+          btn.addEventListener("click", async (e) => {
+            const projectName = btn.dataset.project;
+            if (!confirm(`Clear project label "${projectName}" from all sessions? Sessions will not be deleted, only the project label will be removed.`)) {
+              return;
+            }
+            await clearProject(projectName);
+          });
+        });
+
+        projectsList.querySelectorAll("[data-action='confirm-rename']").forEach((btn) => {
+          btn.addEventListener("click", async (e) => {
+            const projectName = btn.dataset.project;
+            const item = btn.closest(".project-item");
+            const input = item.querySelector(".project-rename-input");
+            const newName = input.value.trim();
+            if (!newName || newName === projectName) {
+              item.querySelector(".project-rename-form").style.display = "none";
+              return;
+            }
+            await renameProject(projectName, newName);
+          });
+        });
+
+        projectsList.querySelectorAll("[data-action='cancel-rename']").forEach((btn) => {
+          btn.addEventListener("click", (e) => {
+            const item = btn.closest(".project-item");
+            item.querySelector(".project-rename-form").style.display = "none";
+          });
+        });
+
+        // Enter key to confirm rename, Escape to cancel
+        projectsList.querySelectorAll(".project-rename-input").forEach((input) => {
+          input.addEventListener("keydown", async (e) => {
+            if (e.key === "Enter") {
+              e.preventDefault();
+              const item = input.closest(".project-item");
+              const projectName = item.dataset.projectName;
+              const newName = input.value.trim();
+              if (!newName || newName === projectName) {
+                item.querySelector(".project-rename-form").style.display = "none";
+                return;
+              }
+              await renameProject(projectName, newName);
+            } else if (e.key === "Escape") {
+              const item = input.closest(".project-item");
+              item.querySelector(".project-rename-form").style.display = "none";
+            }
+          });
+        });
+      } catch (err) {
+        console.error("Error loading projects:", err);
+        projectsLoading.style.display = "none";
+        projectsList.innerHTML = '<div class="projects-empty">Network error. Try again.</div>';
+      }
+    }
+
+    async function renameProject(oldName, newName) {
+      if (!token) {
+        window.location.href = "/login";
+        return;
+      }
+
+      try {
+        const res = await fetch("/projects/rename", {
+          method: "PATCH",
+          headers: {
+            "Content-Type": "application/json",
+            "Accept": "application/json",
+            "Authorization": "Bearer " + token,
+          },
+          body: JSON.stringify({
+            old_name: oldName,
+            new_name: newName,
+          }),
+        });
+
+        if (res.status === 401) {
+          localStorage.removeItem("access_token");
+          window.location.href = "/login";
+          return;
+        }
+
+        if (!res.ok) {
+          const error = await res.json().catch(() => ({ detail: "Failed to rename project" }));
+          alert(error.detail || "Failed to rename project");
+          return;
+        }
+
+        // Reload projects and sessions
+        await loadProjects();
+        await loadSessions();
+      } catch (err) {
+        console.error("Error renaming project:", err);
+        alert("Network error while renaming project.");
+      }
+    }
+
+    async function clearProject(projectName) {
+      if (!token) {
+        window.location.href = "/login";
+        return;
+      }
+
+      try {
+        const encodedName = encodeURIComponent(projectName);
+        const res = await fetch(`/projects/${encodedName}`, {
+          method: "DELETE",
+          headers: {
+            "Authorization": "Bearer " + token,
+          },
+        });
+
+        if (res.status === 401) {
+          localStorage.removeItem("access_token");
+          window.location.href = "/login";
+          return;
+        }
+
+        if (!res.ok) {
+          const error = await res.json().catch(() => ({ detail: "Failed to clear project" }));
+          alert(error.detail || "Failed to clear project");
+          return;
+        }
+
+        // Reload projects and sessions
+        await loadProjects();
+        await loadSessions();
+      } catch (err) {
+        console.error("Error clearing project:", err);
+        alert("Network error while clearing project.");
+      }
+    }
+
+    function escapeHtml(text) {
+      const div = document.createElement("div");
+      div.textContent = text;
+      return div.innerHTML;
+    }
+
+    // Event listeners for projects modal
+    if (manageProjectsBtn) {
+      manageProjectsBtn.addEventListener("click", openProjectsModal);
+    }
+
+    if (projectsModalClose) {
+      projectsModalClose.addEventListener("click", closeProjectsModal);
+    }
+
+    if (projectsModalBackdrop) {
+      projectsModalBackdrop.addEventListener("click", (e) => {
+        if (e.target === projectsModalBackdrop) {
+          closeProjectsModal();
+        }
+      });
+    }
+
+    // ESC key closes modal
+    document.addEventListener("keydown", (e) => {
+      if (e.key === "Escape" && projectsModalBackdrop && projectsModalBackdrop.classList.contains("visible")) {
+        closeProjectsModal();
+      }
+    });
 
     loadUserInfo();
     loadEmailPreferences();
