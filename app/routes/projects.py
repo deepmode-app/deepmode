@@ -134,4 +134,3 @@ def delete_project(
     conn.close()
 
     return {"cleared": cleared_count}
-
