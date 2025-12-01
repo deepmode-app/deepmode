@@ -274,8 +274,8 @@ def end_session(
     End a session for the current user:
     - compute actual duration
     - compute discipline_score
-    - set status = 'completed' or 'abandoned'
-    - update streak if there was real work
+    - set status = 'abandoned', 'completed_early', or 'completed'
+    - update streak if there was real work (>= 5 minutes)
     """
     user_id = current_user["id"]
 
@@ -310,10 +310,14 @@ def end_session(
 
     # derive status + discipline based on actual work done
     # If user worked < 5 minutes, mark as abandoned (failure)
-    # If user worked >= 5 minutes, mark as completed (success, even if early)
+    # If user worked >= 5 minutes but < planned, mark as completed_early (success)
+    # If user worked >= planned (or no planned duration), mark as completed (full success)
     if actual_minutes < 5:
         status_val = "abandoned"
         discipline_score = 0
+    elif planned is not None and actual_minutes < planned:
+        status_val = "completed_early"
+        discipline_score = 1
     else:
         status_val = "completed"
         discipline_score = 1
@@ -343,8 +347,8 @@ def end_session(
     conn.commit()
     conn.close()
 
-    # 🔥 Update streak only if some actual work was done
-    if actual_minutes > 0:
+    # 🔥 Update streak only if actual work was >= 5 minutes (not abandoned)
+    if actual_minutes >= 5:
         try:
             update_streak_for_user(user_id)
         except Exception as e:
