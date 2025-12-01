@@ -321,21 +321,56 @@
 
     /* Last block banner */
     .last-block-card {
-      margin-bottom: 12px;
-      padding: 10px 12px;
-      border-radius: 10px;
-      background: #111118;
-      border: 1px solid #27272f;
+      margin-bottom: 18px;
+      padding: 14px 16px;
+      border-radius: 12px;
+      background: linear-gradient(135deg, rgba(22, 163, 74, 0.08) 0%, rgba(17, 17, 24, 0.95) 100%);
+      border: 1px solid rgba(34, 197, 94, 0.3);
+      box-shadow: 
+        0 4px 16px rgba(22, 163, 74, 0.15),
+        0 0 0 1px rgba(17, 17, 24, 0.5);
       font-size: 12px;
+      position: relative;
+      overflow: hidden;
+    }
+
+    .last-block-card::before {
+      content: "";
+      position: absolute;
+      top: 0;
+      left: 0;
+      right: 0;
+      height: 2px;
+      background: linear-gradient(90deg, rgba(34, 197, 94, 0.4), rgba(34, 197, 94, 0.1));
+    }
+
+    .last-block-header {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      margin-bottom: 6px;
+    }
+
+    .last-block-icon {
+      font-size: 16px;
+      color: #22c55e;
+      filter: drop-shadow(0 0 4px rgba(34, 197, 94, 0.5));
+    }
+
+    .last-block-microcopy {
+      font-size: 12px;
+      font-weight: 500;
+      color: #bbf7d0;
     }
 
     .last-block-main {
       font-weight: 500;
       color: #e5e7eb;
+      margin-bottom: 4px;
+      font-size: 13px;
     }
 
     .last-block-sub {
-      margin-top: 2px;
       font-size: 11px;
       color: #9ca3af;
     }
@@ -1390,6 +1425,10 @@
 
     <!-- Last block banner -->
     <div id="dm-last-block-banner" class="last-block-card" style="display:none;">
+      <div class="last-block-header">
+        <span class="last-block-icon">✓</span>
+        <span class="last-block-microcopy">Nice work — you finished this block.</span>
+      </div>
       <div class="last-block-main"></div>
       <div class="last-block-sub"></div>
     </div>
@@ -1929,6 +1968,46 @@
       return `${day}/${month}/${year} ${timePart}`;
     }
 
+    function formatRelativeTime(dateString) {
+      if (!dateString) return "";
+
+      const d = new Date(dateString);
+      if (isNaN(d.getTime())) return "";
+
+      const now = new Date();
+      const diffMs = now - d;
+      const diffSeconds = Math.floor(diffMs / 1000);
+      const diffMinutes = Math.floor(diffSeconds / 60);
+      const diffHours = Math.floor(diffMinutes / 60);
+      const diffDays = Math.floor(diffHours / 24);
+
+      if (diffSeconds < 60) {
+        return "just now";
+      }
+
+      if (diffMinutes < 60) {
+        return `${diffMinutes} ${diffMinutes === 1 ? "minute" : "minutes"} ago`;
+      }
+
+      if (diffHours < 24) {
+        return `${diffHours} ${diffHours === 1 ? "hour" : "hours"} ago`;
+      }
+
+      if (diffDays === 1) {
+        return "yesterday";
+      }
+
+      if (diffDays < 7) {
+        return `${diffDays} days ago`;
+      }
+
+      // For older dates, show actual date
+      const day = d.getDate().toString().padStart(2, "0");
+      const month = (d.getMonth() + 1).toString().padStart(2, "0");
+      const year = d.getFullYear();
+      return `${day}/${month}/${year}`;
+    }
+
     function normaliseCategory(cat) {
       if (!cat) return "other";
       const c = String(cat).toLowerCase().trim();
@@ -2119,16 +2198,18 @@
       );
 
       const labelTask = lastCompleted.task || "Deepmode block";
-      const when = formatLastBlockDatetime(lastCompleted.end_time || lastCompleted.start_time) || "";
+      
+      // Use relative time for better UX
+      const relativeTime = formatRelativeTime(lastCompleted.end_time || lastCompleted.start_time);
 
       const mainEl = banner.querySelector(".last-block-main");
       const subEl = banner.querySelector(".last-block-sub");
 
       if (mainEl) {
-        mainEl.textContent = `Last block: ${durationLabel} on "${labelTask}"`;
+        mainEl.textContent = `${durationLabel} on "${labelTask}"`;
       }
       if (subEl) {
-        subEl.textContent = when;
+        subEl.textContent = relativeTime;
       }
 
       banner.style.display = "block";
