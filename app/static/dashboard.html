@@ -319,6 +319,27 @@
       animation: dotPulse 1.4s ease-in-out infinite;
     }
 
+    /* Last block banner */
+    .last-block-card {
+      margin-bottom: 12px;
+      padding: 10px 12px;
+      border-radius: 10px;
+      background: #111118;
+      border: 1px solid #27272f;
+      font-size: 12px;
+    }
+
+    .last-block-main {
+      font-weight: 500;
+      color: #e5e7eb;
+    }
+
+    .last-block-sub {
+      margin-top: 2px;
+      font-size: 11px;
+      color: #9ca3af;
+    }
+
     .upgrade-btn {
       background: transparent;
       border-radius: 999px;
@@ -1368,18 +1389,9 @@
       </button>
 
     <!-- Last block banner -->
-    <div id="dm-last-block-banner"
-         style="
-           display:none;
-           margin: 0 0 16px 0;
-           padding: 8px 12px;
-           border-radius: 10px;
-           border: 1px solid rgba(22, 163, 74, 0.6);
-           background: rgba(22, 163, 74, 0.14);
-           color: #bbf7d0;
-           font-size: 12px;
-           font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', system-ui, sans-serif;
-         ">
+    <div id="dm-last-block-banner" class="last-block-card" style="display:none;">
+      <div class="last-block-main"></div>
+      <div class="last-block-sub"></div>
     </div>
 
     <!-- Centered live session banner -->
@@ -1863,6 +1875,60 @@
       return `${mins}m`;
     }
 
+    function formatMinutesCompact(totalMinutes) {
+      if (totalMinutes == null || isNaN(totalMinutes)) return "-";
+
+      const m = Math.max(0, Math.round(totalMinutes));
+      if (m < 60) {
+        return `${m} min`;
+      }
+      const hours = Math.floor(m / 60);
+      const mins = m % 60;
+      if (mins === 0) {
+        return `${hours}h`;
+      }
+      return `${hours}h ${mins}m`;
+    }
+
+    function formatLastBlockDatetime(isoString) {
+      if (!isoString) return "";
+
+      const d = new Date(isoString);
+      if (isNaN(d.getTime())) return "";
+
+      const now = new Date();
+
+      // Compare dates (local) to decide "today", "yesterday", or explicit date
+      const sameDay =
+        d.getFullYear() === now.getFullYear() &&
+        d.getMonth() === now.getMonth() &&
+        d.getDate() === now.getDate();
+
+      const yesterday = new Date(now);
+      yesterday.setDate(now.getDate() - 1);
+      const isYesterday =
+        d.getFullYear() === yesterday.getFullYear() &&
+        d.getMonth() === yesterday.getMonth() &&
+        d.getDate() === yesterday.getDate();
+
+      const hours = d.getHours().toString().padStart(2, "0");
+      const mins = d.getMinutes().toString().padStart(2, "0");
+      const timePart = `${hours}:${mins}`;
+
+      if (sameDay) {
+        return `today at ${timePart}`;
+      }
+
+      if (isYesterday) {
+        return `yesterday at ${timePart}`;
+      }
+
+      const day = d.getDate().toString().padStart(2, "0");
+      const month = (d.getMonth() + 1).toString().padStart(2, "0");
+      const year = d.getFullYear();
+      return `${day}/${month}/${year} ${timePart}`;
+    }
+
     function normaliseCategory(cat) {
       if (!cat) return "other";
       const c = String(cat).toLowerCase().trim();
@@ -2031,46 +2097,39 @@
 
       if (!Array.isArray(sessions) || sessions.length === 0) {
         banner.style.display = "none";
-        banner.textContent = "";
+        const mainEl = banner.querySelector(".last-block-main");
+        const subEl = banner.querySelector(".last-block-sub");
+        if (mainEl) mainEl.textContent = "";
+        if (subEl) subEl.textContent = "";
         return;
       }
 
       const lastCompleted = sessions.find((s) => !!s.end_time);
       if (!lastCompleted) {
         banner.style.display = "none";
-        banner.textContent = "";
+        const mainEl = banner.querySelector(".last-block-main");
+        const subEl = banner.querySelector(".last-block-sub");
+        if (mainEl) mainEl.textContent = "";
+        if (subEl) subEl.textContent = "";
         return;
       }
 
-      const endTime = new Date(lastCompleted.end_time);
-      if (Number.isNaN(endTime.getTime())) {
-        banner.style.display = "none";
-        banner.textContent = "";
-        return;
+      const durationLabel = formatMinutesCompact(
+        lastCompleted.actual_duration_minutes ?? lastCompleted.planned_duration_minutes
+      );
+
+      const labelTask = lastCompleted.task || "Deepmode block";
+      const when = formatLastBlockDatetime(lastCompleted.end_time || lastCompleted.start_time) || "";
+
+      const mainEl = banner.querySelector(".last-block-main");
+      const subEl = banner.querySelector(".last-block-sub");
+
+      if (mainEl) {
+        mainEl.textContent = `Last block: ${durationLabel} on "${labelTask}"`;
       }
-
-      const now = new Date();
-      const diffMs = now - endTime;
-      const diffMinutes = Math.round(diffMs / 60000);
-
-      if (diffMinutes < 0 || diffMinutes > 120) {
-        banner.style.display = "none";
-        banner.textContent = "";
-        return;
+      if (subEl) {
+        subEl.textContent = when;
       }
-
-      const mins =
-        lastCompleted.actual_duration_minutes ??
-        lastCompleted.planned_duration_minutes ??
-        0;
-
-      const task = lastCompleted.task || "your last Deepmode block";
-
-      const timeText =
-        diffMinutes <= 1 ? "just now" : `${diffMinutes} min ago`;
-
-      banner.textContent =
-        `Last block: ${mins} min on “${task}”, finished ${timeText}.`;
 
       banner.style.display = "block";
     }
@@ -2220,9 +2279,9 @@
           }
 
           const actual = s.actual_duration_minutes ?? 0;
-          const actualDisplay = formatMinutes(actual);
+          const actualDisplay = formatMinutesCompact(actual);
           const plannedDisplay = s.planned_duration_minutes
-            ? `${s.planned_duration_minutes}m`
+            ? formatMinutesCompact(s.planned_duration_minutes)
             : "–";
 
           const whenDisplay = formatWhen(s.start_time);
@@ -2465,10 +2524,10 @@
       populateCategorySelect(session.category);
 
       const plannedDisplay = session.planned_duration_minutes
-        ? `${session.planned_duration_minutes} min`
+        ? formatMinutesCompact(session.planned_duration_minutes)
         : "–";
 
-      const actualDisplay = formatMinutes(session.actual_duration_minutes ?? 0);
+      const actualDisplay = formatMinutesCompact(session.actual_duration_minutes ?? 0);
 
       document.getElementById("modalPlanned").textContent = plannedDisplay;
       document.getElementById("modalActual").textContent = actualDisplay;
