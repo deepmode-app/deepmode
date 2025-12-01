@@ -882,7 +882,8 @@
     const manageBillingBtn = document.getElementById("manageBillingBtn");
     const userEmailLine = document.getElementById("userEmailLine");
 
-    const REFRESH_MS = 5000;
+    // Background polling interval for /sessions/ (in ms)
+    const SESSIONS_POLL_INTERVAL_MS = 20000; // 20s
 
     let sessionsIndex = {};
     let currentSessionId = null;
@@ -1500,6 +1501,42 @@
       }
     }
 
+    // ---------- Background polling for /sessions/ ----------
+
+    let sessionsPollHandle = null;
+
+    function pollSessionsOnce() {
+      // Reuse the main loader so manual refresh logic stays unchanged
+      return loadSessions();
+    }
+
+    function startSessionsPolling() {
+      if (sessionsPollHandle !== null) return;
+
+      // Initial immediate load for good UX
+      pollSessionsOnce();
+
+      sessionsPollHandle = setInterval(() => {
+        // Only poll when the tab is visible
+        if (document.visibilityState !== "visible") return;
+        pollSessionsOnce();
+      }, SESSIONS_POLL_INTERVAL_MS);
+    }
+
+    function stopSessionsPolling() {
+      if (sessionsPollHandle !== null) {
+        clearInterval(sessionsPollHandle);
+        sessionsPollHandle = null;
+      }
+    }
+
+    document.addEventListener("visibilitychange", () => {
+      if (document.visibilityState === "visible") {
+        // When the user comes back, make sure stats are fresh
+        pollSessionsOnce();
+      }
+    });
+
     const modalBackdrop = document.getElementById("sessionModalBackdrop");
     const modalCloseBtn = document.getElementById("modalCloseBtn");
     const modalProjectSelect = document.getElementById("modalProjectSelect");
@@ -1874,9 +1911,9 @@
     }
 
     loadUserInfo();
-    loadSessions();
     loadEmailPreferences();
-    setInterval(loadSessions, REFRESH_MS);
+    // Start visibility-aware background polling for sessions
+    startSessionsPolling();
   </script>
 </body>
 </html>
