@@ -405,6 +405,202 @@
       margin-bottom: 8px;
     }
 
+    /* Bulk actions bar */
+    .sessions-bulk-bar {
+      display: none;
+      flex-direction: column;
+      gap: 8px;
+      padding: 8px 12px;
+      background: #111118;
+      border-radius: 8px;
+      border: 1px solid #27272f;
+      margin-bottom: 8px;
+      font-size: 12px;
+    }
+
+    .sessions-bulk-bar.visible {
+      display: flex;
+    }
+
+    .sessions-bulk-bar-top {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      gap: 12px;
+    }
+
+    .sessions-bulk-count {
+      color: var(--dw-text);
+      font-weight: 500;
+    }
+
+    .sessions-bulk-actions {
+      display: flex;
+      gap: 8px;
+      align-items: center;
+    }
+
+    .bulk-delete-btn {
+      background: transparent;
+      border: 1px solid #4b5563;
+      color: #e5e7eb;
+      border-radius: 999px;
+      padding: 4px 10px;
+      font-size: 11px;
+      font-family: inherit;
+      cursor: pointer;
+      transition: all 0.15s ease;
+    }
+
+    .bulk-delete-btn:hover {
+      background: #1f2933;
+      border-color: #9ca3af;
+    }
+
+    .bulk-move-btn {
+      background: #e50914;
+      border: none;
+      border-radius: 999px;
+      padding: 4px 12px;
+      color: #fff;
+      font-size: 11px;
+      font-weight: 500;
+      font-family: inherit;
+      cursor: pointer;
+      transition: background-color 0.15s ease;
+    }
+
+    .bulk-move-btn:hover {
+      background: #f3121f;
+    }
+
+    .sessions-bulk-project-panel {
+      display: none;
+      flex-direction: column;
+      gap: 8px;
+      padding-top: 8px;
+      border-top: 1px solid rgba(39, 39, 47, 0.8);
+    }
+
+    .sessions-bulk-project-panel.visible {
+      display: flex;
+    }
+
+    .sessions-bulk-project-row {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      flex-wrap: wrap;
+    }
+
+    .bulk-project-select {
+      flex: 1;
+      min-width: 160px;
+      background: #020617;
+      border: 1px solid var(--dw-border);
+      border-radius: 8px;
+      padding: 6px 10px;
+      font-size: 11px;
+      color: var(--dw-text);
+      font-family: inherit;
+      outline: none;
+    }
+
+    .bulk-project-select:focus {
+      border-color: var(--dw-accent);
+      box-shadow: 0 0 0 1px rgba(229, 9, 20, 0.3);
+    }
+
+    .bulk-project-separator {
+      color: var(--dw-muted);
+      font-size: 11px;
+      padding: 0 4px;
+    }
+
+    .bulk-project-new-input {
+      flex: 1;
+      min-width: 140px;
+      background: #020617;
+      border: 1px solid var(--dw-border);
+      border-radius: 8px;
+      padding: 6px 10px;
+      font-size: 11px;
+      color: var(--dw-text);
+      font-family: inherit;
+      outline: none;
+    }
+
+    .bulk-project-new-input:focus {
+      border-color: var(--dw-accent);
+      box-shadow: 0 0 0 1px rgba(229, 9, 20, 0.3);
+    }
+
+    .bulk-project-apply-btn {
+      background: var(--dw-accent);
+      border: none;
+      border-radius: 8px;
+      padding: 6px 12px;
+      color: #fff;
+      font-size: 11px;
+      font-weight: 500;
+      font-family: inherit;
+      cursor: pointer;
+      transition: background-color 0.15s ease;
+    }
+
+    .bulk-project-apply-btn:hover {
+      background: #f3121f;
+    }
+
+    .bulk-project-cancel-btn {
+      background: transparent;
+      border: none;
+      color: var(--dw-muted);
+      font-size: 11px;
+      font-family: inherit;
+      cursor: pointer;
+      text-decoration: underline;
+      padding: 4px;
+    }
+
+    .bulk-project-cancel-btn:hover {
+      color: var(--dw-text);
+    }
+
+    .bulk-project-error {
+      color: #fecaca;
+      font-size: 11px;
+      display: none;
+    }
+
+    .bulk-project-hint {
+      font-size: 10px;
+      color: var(--dw-muted);
+      margin-top: 2px;
+    }
+
+    /* Session table checkboxes */
+    .session-select {
+      width: 16px;
+      height: 16px;
+      cursor: pointer;
+      accent-color: var(--dw-accent);
+    }
+
+    .session-select:hover {
+      filter: brightness(1.2);
+    }
+
+    th.session-select-header {
+      width: 32px;
+      text-align: center;
+    }
+
+    td.session-select-cell {
+      text-align: center;
+      padding: 6px 4px;
+    }
+
     .session-filters {
       display: flex;
       align-items: center;
@@ -1246,12 +1442,45 @@
           </select>
         </div>
       </div>
+      
+      <!-- Bulk actions bar -->
+      <div id="sessionsBulkBar" class="sessions-bulk-bar">
+        <div class="sessions-bulk-bar-top">
+          <div>
+            <span id="sessionsBulkCount" class="sessions-bulk-count">0 selected</span>
+            <div class="bulk-project-hint">Batch cleanups make your focus history easier to read.</div>
+          </div>
+          <div class="sessions-bulk-actions">
+            <button id="bulkDeleteBtn" class="bulk-delete-btn">Delete</button>
+            <button id="bulkMoveBtn" class="bulk-move-btn">Move to project…</button>
+          </div>
+        </div>
+        
+        <!-- Project selection panel -->
+        <div id="bulkProjectPanel" class="sessions-bulk-project-panel">
+          <div class="sessions-bulk-project-row">
+            <select id="bulkProjectSelect" class="bulk-project-select">
+              <option value="none">Select existing project…</option>
+            </select>
+            <span class="bulk-project-separator">or</span>
+            <input type="text" id="bulkProjectNewName" class="bulk-project-new-input" placeholder="Type new project name…" />
+            <button id="bulkProjectApplyBtn" class="bulk-project-apply-btn">Apply</button>
+            <button id="bulkProjectCancelBtn" class="bulk-project-cancel-btn">Cancel</button>
+          </div>
+          <div id="bulkProjectError" class="bulk-project-error"></div>
+          <div class="bulk-project-hint">New name = new project. Your sessions carry the label.</div>
+        </div>
+      </div>
+      
       <div id="emptyState" class="empty" style="display:none;">
         No sessions yet. Start a Deepmode block from the Chrome extension and earn your stats.
       </div>
       <table id="sessionsTable" style="display:none;">
         <thead>
           <tr>
+            <th class="session-select-header">
+              <input type="checkbox" id="sessionsSelectAll" />
+            </th>
             <th>Task</th>
             <th>Project</th>
             <th>Category</th>
@@ -1999,6 +2228,9 @@
           const whenDisplay = formatWhen(s.start_time);
 
           tr.innerHTML = `
+            <td class="session-select-cell">
+              <input type="checkbox" class="session-select" data-session-id="${s.id}" />
+            </td>
             <td class="col-task"><span>${s.task}</span></td>
             <td>${renderProjectBadge(s.project_name)}</td>
             <td>${renderCategoryBadge(s.category)}</td>
@@ -2010,7 +2242,17 @@
 
           tr.dataset.sessionId = s.id;
 
-          tr.addEventListener("click", () => {
+          // Prevent checkbox click from opening session detail
+          const checkbox = tr.querySelector(".session-select");
+          checkbox.addEventListener("click", (e) => {
+            e.stopPropagation();
+          });
+
+          checkbox.addEventListener("change", updateSessionsBulkBar);
+
+          tr.addEventListener("click", (e) => {
+            // Don't open detail if clicking on checkbox
+            if (e.target.type === "checkbox") return;
             openSessionDetail(s.id);
           });
 
@@ -2497,6 +2739,10 @@
         }
 
         const projects = await res.json();
+        
+        // Update cache for bulk actions
+        window.deepmodeProjectsCache = projects;
+        
         projectsLoading.style.display = "none";
 
         if (projects.length === 0) {
@@ -2717,6 +2963,280 @@
         closeProjectsModal();
       }
     });
+
+    // ---------- Bulk Sessions Management ----------
+
+    // Cache for projects list
+    window.deepmodeProjectsCache = [];
+
+    function getSelectedSessionIds() {
+      const checkboxes = document.querySelectorAll(".session-select:checked");
+      return Array.from(checkboxes).map((cb) => parseInt(cb.dataset.sessionId, 10));
+    }
+
+    function updateSessionsBulkBar() {
+      const ids = getSelectedSessionIds();
+      const bulkBar = document.getElementById("sessionsBulkBar");
+      const countEl = document.getElementById("sessionsBulkCount");
+      const selectAll = document.getElementById("sessionsSelectAll");
+
+      if (!bulkBar || !countEl) return;
+
+      if (ids.length > 0) {
+        bulkBar.classList.add("visible");
+        countEl.textContent = `${ids.length} selected`;
+      } else {
+        bulkBar.classList.remove("visible");
+        hideBulkProjectPanel();
+      }
+
+      if (selectAll) {
+        const allCheckboxes = document.querySelectorAll(".session-select");
+        const allCount = allCheckboxes.length;
+        selectAll.checked = ids.length > 0 && ids.length === allCount;
+        selectAll.indeterminate = ids.length > 0 && ids.length < allCount;
+      }
+    }
+
+    function showBulkProjectPanel() {
+      const panel = document.getElementById("bulkProjectPanel");
+      if (!panel) return;
+
+      panel.classList.add("visible");
+
+      // Populate dropdown from cache or fetch
+      const selectEl = document.getElementById("bulkProjectSelect");
+      if (selectEl) {
+        selectEl.innerHTML = '<option value="none">Select existing project…</option>';
+        if (window.deepmodeProjectsCache && window.deepmodeProjectsCache.length > 0) {
+          window.deepmodeProjectsCache.forEach((proj) => {
+            const opt = document.createElement("option");
+            opt.value = proj.name;
+            opt.textContent = proj.name;
+            selectEl.appendChild(opt);
+          });
+        } else {
+          // Fetch projects if cache is empty
+          loadProjectsForBulk();
+        }
+      }
+
+      // Focus on new name input
+      const newNameEl = document.getElementById("bulkProjectNewName");
+      if (newNameEl) {
+        newNameEl.value = "";
+        newNameEl.focus();
+      }
+    }
+
+    function hideBulkProjectPanel() {
+      const panel = document.getElementById("bulkProjectPanel");
+      if (panel) {
+        panel.classList.remove("visible");
+      }
+
+      const errorEl = document.getElementById("bulkProjectError");
+      if (errorEl) {
+        errorEl.style.display = "none";
+        errorEl.textContent = "";
+      }
+
+      const newNameEl = document.getElementById("bulkProjectNewName");
+      if (newNameEl) {
+        newNameEl.value = "";
+      }
+
+      const selectEl = document.getElementById("bulkProjectSelect");
+      if (selectEl) {
+        selectEl.value = "none";
+      }
+    }
+
+    async function loadProjectsForBulk() {
+      if (!token) return;
+
+      try {
+        const res = await fetch("/projects/", {
+          headers: {
+            Accept: "application/json",
+            Authorization: "Bearer " + token,
+          },
+        });
+
+        if (res.ok) {
+          const projects = await res.json();
+          window.deepmodeProjectsCache = projects;
+
+          const selectEl = document.getElementById("bulkProjectSelect");
+          if (selectEl) {
+            selectEl.innerHTML = '<option value="none">Select existing project…</option>';
+            projects.forEach((proj) => {
+              const opt = document.createElement("option");
+              opt.value = proj.name;
+              opt.textContent = proj.name;
+              selectEl.appendChild(opt);
+            });
+          }
+        }
+      } catch (err) {
+        console.error("Error loading projects for bulk:", err);
+      }
+    }
+
+    async function bulkDeleteSessions() {
+      const ids = getSelectedSessionIds();
+      if (!ids.length) return;
+
+      if (
+        !confirm(
+          `Delete ${ids.length} session(s)? This cannot be undone.`
+        )
+      ) {
+        return;
+      }
+
+      if (!token) {
+        window.location.href = "/login";
+        return;
+      }
+
+      try {
+        await Promise.all(
+          ids.map((id) =>
+            fetch(`/sessions/${id}`, {
+              method: "DELETE",
+              headers: {
+                Authorization: "Bearer " + token,
+              },
+            })
+          )
+        );
+      } catch (err) {
+        console.error("Bulk delete failed", err);
+        alert("Some sessions could not be deleted. Please try again.");
+        return;
+      } finally {
+        // Reload sessions + reset selection
+        await loadSessions();
+        const bulkBar = document.getElementById("sessionsBulkBar");
+        if (bulkBar) bulkBar.classList.remove("visible");
+        const selectAll = document.getElementById("sessionsSelectAll");
+        if (selectAll) {
+          selectAll.checked = false;
+          selectAll.indeterminate = false;
+        }
+      }
+    }
+
+    async function bulkMoveSessionsToProject(projectName) {
+      const ids = getSelectedSessionIds();
+      if (!ids.length) return;
+
+      if (!token) {
+        window.location.href = "/login";
+        return;
+      }
+
+      try {
+        const results = await Promise.all(
+          ids.map((id) =>
+            fetch(`/sessions/${id}`, {
+              method: "PATCH",
+              headers: {
+                "Content-Type": "application/json",
+                Authorization: "Bearer " + token,
+              },
+              body: JSON.stringify({ project_name: projectName || null }),
+            })
+          )
+        );
+
+        // Check for errors
+        const errors = results.filter((r) => !r.ok);
+        if (errors.length > 0) {
+          console.error("Some sessions could not be updated");
+          alert("Some sessions could not be moved. Please try again.");
+          return;
+        }
+      } catch (err) {
+        console.error("Bulk project move failed", err);
+        alert("Network error while moving sessions.");
+        return;
+      } finally {
+        await loadSessions();
+        const bulkBar = document.getElementById("sessionsBulkBar");
+        if (bulkBar) bulkBar.classList.remove("visible");
+        const selectAll = document.getElementById("sessionsSelectAll");
+        if (selectAll) {
+          selectAll.checked = false;
+          selectAll.indeterminate = false;
+        }
+        hideBulkProjectPanel();
+      }
+    }
+
+    // Wire up bulk actions
+    const bulkDeleteBtn = document.getElementById("bulkDeleteBtn");
+    if (bulkDeleteBtn) {
+      bulkDeleteBtn.addEventListener("click", bulkDeleteSessions);
+    }
+
+    const bulkMoveBtn = document.getElementById("bulkMoveBtn");
+    if (bulkMoveBtn) {
+      bulkMoveBtn.addEventListener("click", showBulkProjectPanel);
+    }
+
+    const bulkProjectApplyBtn = document.getElementById("bulkProjectApplyBtn");
+    if (bulkProjectApplyBtn) {
+      bulkProjectApplyBtn.addEventListener("click", async () => {
+        const selectEl = document.getElementById("bulkProjectSelect");
+        const newNameEl = document.getElementById("bulkProjectNewName");
+        const errorEl = document.getElementById("bulkProjectError");
+
+        const selected = selectEl?.value || "";
+        const newName = (newNameEl?.value || "").trim();
+
+        let target = null;
+
+        if (newName) {
+          target = newName;
+        } else if (selected && selected !== "none") {
+          target = selected;
+        }
+
+        if (!target) {
+          if (errorEl) {
+            errorEl.textContent = "Pick a project or type a name.";
+            errorEl.style.display = "block";
+          }
+          return;
+        }
+
+        if (errorEl) {
+          errorEl.style.display = "none";
+        }
+
+        await bulkMoveSessionsToProject(target);
+      });
+    }
+
+    const bulkProjectCancelBtn = document.getElementById("bulkProjectCancelBtn");
+    if (bulkProjectCancelBtn) {
+      bulkProjectCancelBtn.addEventListener("click", hideBulkProjectPanel);
+    }
+
+    // Select all checkbox
+    const sessionsSelectAll = document.getElementById("sessionsSelectAll");
+    if (sessionsSelectAll) {
+      sessionsSelectAll.addEventListener("change", (e) => {
+        const checkboxes = document.querySelectorAll(".session-select");
+        checkboxes.forEach((cb) => {
+          cb.checked = e.target.checked;
+        });
+        updateSessionsBulkBar();
+      });
+    }
+
 
     loadUserInfo();
     loadEmailPreferences();
