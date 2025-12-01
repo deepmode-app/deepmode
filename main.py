@@ -15,7 +15,7 @@ from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import FileResponse
 from fastapi.responses import HTMLResponse
 
-from app.routes import sessions, billing, auth , marketing_router
+from app.routes import sessions, billing, auth, marketing_router, projects
 from app.database import init_db
 from app.jobs.email_jobs import router as jobs_router  # /jobs/... endpoints
 
@@ -38,6 +38,7 @@ app.add_middleware(
 app.include_router(auth.router)
 app.include_router(sessions.router, prefix="/sessions")
 app.include_router(billing.router, tags=["billing"])
+app.include_router(projects.router)  # /projects/ endpoints
 app.include_router(jobs_router)  # /jobs/daily-streak-digest, /jobs/weekly-summary-digest
 app.include_router(marketing_router)
 
