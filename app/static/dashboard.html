@@ -2342,11 +2342,17 @@
       if (!banner || !textEl) return;
 
       if (!session) {
+        // Hide live banner when no session
         banner.style.display = "none";
         textEl.textContent = "";
         if (liveTimerId) {
           clearInterval(liveTimerId);
           liveTimerId = null;
+        }
+        // Show last block banner when session ends
+        const lastBlockCard = document.getElementById("dm-last-block-banner");
+        if (lastBlockCard) {
+          lastBlockCard.style.display = "block";
         }
         return;
       }
@@ -2512,9 +2518,12 @@
         }
 
         if (!res.ok) {
-          errorBanner.textContent = "Couldn’t load your sessions. Try refreshing.";
+          errorBanner.textContent = "Couldn't load your sessions. Try refreshing.";
           errorBanner.style.display = "block";
           updateLiveBanner(null);
+          // Show last block banner on error (no running session)
+          const lastBlockCard = document.getElementById("dm-last-block-banner");
+          if (lastBlockCard) lastBlockCard.style.display = "block";
           updateLastBlockBannerFromSessions([]);
           return;
         }
@@ -2523,7 +2532,28 @@
 
         let sessions = Array.isArray(data) ? data : [];
 
-        updateLastBlockBannerFromSessions(sessions);
+        // Check if there's a running session
+        const hasRunningSession = sessions.some(s => {
+          const status = deriveStatus(s);
+          return status === "running";
+        });
+
+        // Get DOM elements
+        const currentBar = document.getElementById("liveSessionBanner");
+        const lastBlockCard = document.getElementById("dm-last-block-banner");
+
+        // Show/hide banners based on running session state
+        if (hasRunningSession) {
+          // Show current session bar, hide last block banner
+          if (currentBar) currentBar.style.display = "inline-flex";
+          if (lastBlockCard) lastBlockCard.style.display = "none";
+        } else {
+          // Hide current session bar, show last block banner
+          if (currentBar) currentBar.style.display = "none";
+          if (lastBlockCard) lastBlockCard.style.display = "block";
+          // Update last block banner (still compute it, but now it will be visible)
+          updateLastBlockBannerFromSessions(sessions);
+        }
 
         const body = document.getElementById("sessionsBody");
         const emptyState = document.getElementById("sessionsTable")
@@ -2542,6 +2572,10 @@
           document.getElementById("disciplineScore").textContent = "0%";
           document.getElementById("sessionCountsChip").textContent = "0 / 0";
           updateLiveBanner(null);
+          // Show last block banner when no sessions
+          const lastBlockCard = document.getElementById("dm-last-block-banner");
+          if (lastBlockCard) lastBlockCard.style.display = "block";
+          updateLastBlockBannerFromSessions([]);
           return;
         }
 
@@ -2636,7 +2670,10 @@
           }
 
           const actual = s.actual_duration_minutes ?? 0;
-          const actualDisplay = formatMinutesCompact(actual);
+          // Show "–" for running sessions instead of "0 min"
+          const actualDisplay = statusKey === "running" 
+            ? "–" 
+            : formatMinutesCompact(actual);
           const plannedDisplay = s.planned_duration_minutes
             ? formatMinutesCompact(s.planned_duration_minutes)
             : "–";
@@ -2686,12 +2723,25 @@
         document.getElementById("sessionCountsChip").textContent =
           completed + " / " + started;
 
+        // Update live banner (this will show/hide it based on runningSession)
         updateLiveBanner(runningSession);
+        
+        // If no running session, ensure last block banner is shown
+        if (!runningSession) {
+          const lastBlockCard = document.getElementById("dm-last-block-banner");
+          if (lastBlockCard && lastBlockCard.style.display !== "block") {
+            lastBlockCard.style.display = "block";
+            updateLastBlockBannerFromSessions(sessions);
+          }
+        }
       } catch (e) {
         console.error(e);
         errorBanner.textContent = "Network error while loading your stats.";
         errorBanner.style.display = "block";
         updateLiveBanner(null);
+        // Show last block banner on error (no running session)
+        const lastBlockCard = document.getElementById("dm-last-block-banner");
+        if (lastBlockCard) lastBlockCard.style.display = "block";
         updateLastBlockBannerFromSessions([]);
       }
     }
