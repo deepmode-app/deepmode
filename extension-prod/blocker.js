@@ -197,18 +197,14 @@ function removeOverlay() {
 let isRunning = false;
 let timerHandle = null;
 let endSessionHandler = null;
-let fallbackAutoEndTimeout = null;
-
 // Session config variables
 let baseMinutes = 0;
 let isShortBlock = false;
-const MAX_SESSION_SECONDS = 2 * 60 * 60; // 2 hours
 let plannedSeconds = 0;
 let remainingSeconds = 0;
 let fiveMinuteWarningSent = false;
 let sessionFinishedNotified = false;
 let taskLabel = "";
-let lastPeriodicNotification = 0; // Track last periodic notification time
 
 function updateTimerUI(seconds) {
   // Update extension badge with remaining time
@@ -233,10 +229,6 @@ function initializeTimer(activeSession) {
       clearTimeout(timerHandle);
       timerHandle = null;
     }
-    if (fallbackAutoEndTimeout) {
-      clearTimeout(fallbackAutoEndTimeout);
-      fallbackAutoEndTimeout = null;
-    }
     isRunning = false;
     return;
   }
@@ -246,9 +238,8 @@ function initializeTimer(activeSession) {
 
   // Base session config
   baseMinutes = durationMinutes;
-  isShortBlock = baseMinutes <= 5;
+  isShortBlock = baseMinutes <= 5; // <=5 means no 5-minute warning
 
-  // Hard cap: 2 hours max planned time for a single deep block
   plannedSeconds = durationMinutes * 60;
   
   // Calculate remaining time based on elapsed time from start_time
@@ -263,7 +254,6 @@ function initializeTimer(activeSession) {
   
   fiveMinuteWarningSent = false;
   sessionFinishedNotified = false;
-  lastPeriodicNotification = Date.now(); // Initialize to prevent immediate notification
 
   // Update badge immediately
   updateTimerUI(remainingSeconds);
@@ -280,79 +270,61 @@ function tickTimer() {
 
   remainingSeconds--;
 
-  // ----- PERIODIC TIMER NOTIFICATIONS (every 10 minutes for awareness) -----
-  // Show subtle notifications every 10 minutes to remind user they're in Deepmode
-  const now = Date.now();
-  const minutesRemaining = Math.ceil(remainingSeconds / 60);
-  const shouldShowPeriodic = 
-    remainingSeconds > 0 && 
-    !isShortBlock && 
-    (now - lastPeriodicNotification) >= 10 * 60 * 1000 && // 10 minutes
-    minutesRemaining % 10 === 0 && // Only at 10, 20, 30, etc. minute marks
-    minutesRemaining > 5; // Don't show if we're already in the 5-minute warning zone
-
-  if (shouldShowPeriodic) {
-    lastPeriodicNotification = now;
-    chrome.runtime.sendMessage({
-      type: "TIMER_UPDATE",
-      task: taskLabel,
-      remaining: remainingSeconds,
-      minutes: minutesRemaining
-    }, (response) => {
-      if (chrome.runtime.lastError) {
-        console.error("[Deepmode Blocker] Error sending TIMER_UPDATE:", chrome.runtime.lastError.message);
-      } else {
-        console.log(`[Deepmode Blocker] Periodic notification: ${minutesRemaining} minutes remaining`);
-      }
-    });
-  }
-
-  // ----- 5-MINUTE WARNING (only for non-short blocks) -----
+  // ----- 5-MINUTE WARNING (only for blocks > 5 minutes) -----
   if (
     !isShortBlock &&
     !fiveMinuteWarningSent &&
     remainingSeconds === 5 * 60
   ) {
     fiveMinuteWarningSent = true;
+    console.log("[Deepmode Blocker] 5 minutes left - sending notification");
 
     chrome.runtime.sendMessage({
       type: "BLOCK_5MIN_LEFT",
-      task: taskLabel,
-      remaining: remainingSeconds,
-      minutes: 5
+      task: taskLabel
+    }, (response) => {
+      if (chrome.runtime.lastError) {
+        console.error("[Deepmode Blocker] Error sending BLOCK_5MIN_LEFT:", chrome.runtime.lastError.message);
+      } else {
+        console.log("[Deepmode Blocker] BLOCK_5MIN_LEFT sent successfully");
+      }
     });
   }
 
-  // ----- HIT ZERO (do NOT auto-end; ask user what to do) -----
+  // ----- HIT ZERO - Auto-end session -----
   if (remainingSeconds <= 0 && !sessionFinishedNotified) {
     sessionFinishedNotified = true;
     remainingSeconds = 0;
+    console.log("[Deepmode Blocker] Timer reached 0 - sending BLOCK_FINISHED and auto-ending session");
 
+    // Update badge to 0
     updateTimerUI(remainingSeconds);
 
-    chrome.runtime.sendMessage({
-      type: "BLOCK_FINISHED",
-      task: taskLabel
-    });
+    // 1) Notify background so it can show a passive notification
+    chrome.runtime.sendMessage(
+      {
+        type: "BLOCK_FINISHED",
+        task: taskLabel || "your block"
+      },
+      () => {
+        // Optional: ignore errors (e.g., background unavailable)
+      }
+    );
 
-    // Set a fallback auto-end after 10 minutes if user doesn't respond
-    if (fallbackAutoEndTimeout) {
-      clearTimeout(fallbackAutoEndTimeout);
+    // 2) Auto-end the session via background (single source of truth)
+    chrome.runtime.sendMessage(
+      { type: "END_SESSION" },
+      () => {
+        // No-op; background will handle API call and storage cleanup
+      }
+    );
+
+    // Stop the local timer loop
+    isRunning = false;
+    if (timerHandle) {
+      clearTimeout(timerHandle);
+      timerHandle = null;
     }
-    fallbackAutoEndTimeout = setTimeout(() => {
-      // Check if session is still active and still at 0 (user didn't extend or end)
-      chrome.storage.local.get(["deepmode_active_session"], (result) => {
-        const active = result.deepmode_active_session;
-        if (active && active.id && remainingSeconds <= 0) {
-          // User didn't respond - auto-end the session
-          console.log("[Deepmode Blocker] Auto-ending session after 10min grace period (no user response)");
-          chrome.runtime.sendMessage({ type: "END_SESSION" });
-        }
-      });
-      fallbackAutoEndTimeout = null;
-    }, 10 * 60 * 1000); // 10 minutes grace period
-
-    // Freeze at 0 until user chooses End or Extend
     return;
   }
 
@@ -438,59 +410,20 @@ chrome.runtime.onMessage.addListener((msg) => {
   }
 
   if (msg.type === "END_SESSION") {
-    // User chose to end from notification
+    // Manual end from popup/dashboard - stop timer cleanly
+    console.log("[Deepmode Blocker] END_SESSION received - stopping timer");
     isRunning = false;
     if (timerHandle) {
       clearTimeout(timerHandle);
       timerHandle = null;
     }
-    // Clear fallback auto-end since user responded
-    if (fallbackAutoEndTimeout) {
-      clearTimeout(fallbackAutoEndTimeout);
-      fallbackAutoEndTimeout = null;
-    }
-    if (typeof endSessionHandler === "function") {
-      endSessionHandler();
-    } else {
-      // Fallback: send message to background to end session
-      chrome.runtime.sendMessage({ type: "END_SESSION_FROM_BLOCKER" });
-    }
-    return;
-  }
-
-  if (msg.type === "EXTEND_SESSION") {
-    const extraSeconds = (msg.minutes || 0) * 60;
-    if (extraSeconds <= 0) return;
-
-    const newPlanned = plannedSeconds + extraSeconds;
-
-    // Enforce hard cap at 2 hours
-    if (newPlanned > MAX_SESSION_SECONDS) {
-      chrome.runtime.sendMessage({
-        type: "BLOCK_MAX_REACHED",
-        task: taskLabel
-      });
-      return;
-    }
-
-    // Clear fallback auto-end since user responded
-    if (fallbackAutoEndTimeout) {
-      clearTimeout(fallbackAutoEndTimeout);
-      fallbackAutoEndTimeout = null;
-    }
-
-    plannedSeconds = newPlanned;
-    remainingSeconds += extraSeconds;
-
-    // Allow a new 5-minute warning near the *new* end
-    fiveMinuteWarningSent = false;
-    sessionFinishedNotified = false;
-
-    updateTimerUI(remainingSeconds);
-    if (!isRunning) {
-      isRunning = true;
-      tickTimer();
-    }
+    // Forward to background.js to handle backend call
+    chrome.runtime.sendMessage({ type: "END_SESSION" }, () => {
+      if (chrome.runtime.lastError) {
+        // Fallback if background not ready
+        chrome.runtime.sendMessage({ type: "END_SESSION_FROM_BLOCKER" });
+      }
+    });
     return;
   }
 });

@@ -132,68 +132,40 @@ chrome.runtime.onStartup.addListener(() => {
 // ---------- NOTIFICATION HANDLERS ----------
 
 chrome.runtime.onMessage.addListener((msg, sender, sendResponse) => {
-  // Periodic timer update (every 10 minutes for awareness)
-  if (msg.type === "TIMER_UPDATE") {
-    const minutes = msg.minutes || Math.ceil((msg.remaining || 0) / 60);
+  // 5-minute warning
+  if (msg.type === "BLOCK_5MIN_LEFT") {
+    console.log("[Deepmode BG] Received BLOCK_5MIN_LEFT, creating notification");
     chrome.notifications.create(
       {
         type: "basic",
         iconUrl: "icon.png",
-        title: `Deepmode: ${minutes} min remaining`,
-        message: `${msg.task} — Stay focused!`,
-        priority: 0, // Low priority - subtle reminder
-        silent: true // Don't make sound, just visual
+        title: "5 minutes left",
+        message: `${msg.task || "Your deep block"} is ending soon. Wrap up your main thought.`,
+        priority: 1
       },
       (notificationId) => {
-        console.log(`[Deepmode BG] Periodic timer notification: ${minutes} min remaining`);
+        console.log("[Deepmode BG] 5-minute warning notification created:", notificationId);
       }
     );
-    return true;
+    return;
   }
 
-  // 5-minute warning
-  if (msg.type === "BLOCK_5MIN_LEFT") {
-    const minutes = msg.minutes || 5;
-    chrome.notifications.create({
-      type: "basic",
-      iconUrl: "icon.png",
-      title: `${minutes} minutes left`,
-      message: `Wrap up strong: ${msg.task}`,
-      priority: 1
-    });
-  }
-
-  // Session finished – ask user what to do
+  // Session finished - simple informational notification
   if (msg.type === "BLOCK_FINISHED") {
-    // Update badge to show "0" (time's up)
-    chrome.action.setBadgeText({ text: "0" });
-    chrome.action.setBadgeBackgroundColor({ color: "#e50914" }); // red
-    
-    chrome.notifications.create({
-      type: "basic",
-      iconUrl: "icon.png",
-      title: "Time's up",
-      message: `${msg.task} — Deep block finished.`,
-      buttons: [
-        { title: "End session" },
-        { title: "Extend +5 min" },
-        { title: "Extend +10 min" },
-        { title: "Extend +30 min" }
-      ],
-      requireInteraction: true,
-      priority: 2
-    });
-  }
-
-  // Max session length reached (2 hours)
-  if (msg.type === "BLOCK_MAX_REACHED") {
-    chrome.notifications.create({
-      type: "basic",
-      iconUrl: "icon.png",
-      title: "Max session length reached",
-      message: `You've hit the 2-hour cap for this Deepmode block. That's a well-deserved break!`,
-      priority: 1
-    });
+    console.log("[Deepmode BG] Received BLOCK_FINISHED, creating notification");
+    chrome.notifications.create(
+      {
+        type: "basic",
+        iconUrl: "icon.png",
+        title: "Block finished",
+        message: `${msg.task || "Your deep block"} is complete. Good work — take a short break and come back stronger.`,
+        priority: 2
+      },
+      (notificationId) => {
+        console.log("[Deepmode BG] Block finished notification created:", notificationId);
+      }
+    );
+    return;
   }
 
   // Handle badge updates from blocker.js
@@ -222,8 +194,9 @@ chrome.runtime.onMessage.addListener((msg, sender, sendResponse) => {
     return;
   }
 
-  // Handle end session from blocker
-  if (msg.type === "END_SESSION_FROM_BLOCKER") {
+  // Handle END_SESSION (from notification button or fallback)
+  if (msg.type === "END_SESSION") {
+    console.log("[Deepmode BG] END_SESSION received - ending session via backend");
     chrome.storage.local.get(
       [STORAGE_KEYS.ACTIVE_SESSION, STORAGE_KEYS.ACCESS_TOKEN],
       async (res) => {
@@ -231,20 +204,25 @@ chrome.runtime.onMessage.addListener((msg, sender, sendResponse) => {
         const accessToken = res[STORAGE_KEYS.ACCESS_TOKEN] || null;
 
         if (!active || !active.id) {
+          console.log("[Deepmode BG] No active session to end");
           return;
         }
 
         const isGuest = !!active.isGuest || !accessToken;
 
         if (isGuest) {
+          console.log("[Deepmode BG] Ending guest session (local only)");
           chrome.storage.local.remove(STORAGE_KEYS.ACTIVE_SESSION, () => {
             activeSession = null;
+            // Clear badge
+            chrome.action.setBadgeText({ text: "" });
           });
           return;
         }
 
         try {
-          await fetch(
+          console.log(`[Deepmode BG] Calling backend /sessions/${active.id}/end`);
+          const response = await fetch(
             `${API_BASE_URL}/sessions/${active.id}/end`,
             {
               method: "PATCH",
@@ -254,29 +232,33 @@ chrome.runtime.onMessage.addListener((msg, sender, sendResponse) => {
               },
             }
           );
+          
+          if (response.ok) {
+            console.log("[Deepmode BG] ✅ Session ended successfully on backend");
+          } else {
+            console.error(`[Deepmode BG] Backend returned error: ${response.status}`);
+          }
         } catch (err) {
-          console.error("[Deepmode BG] Error ending session from blocker", err);
+          console.error("[Deepmode BG] Error ending session", err);
         } finally {
+          // Always clear local session and badge, even if backend call failed
           chrome.storage.local.remove(STORAGE_KEYS.ACTIVE_SESSION, () => {
             activeSession = null;
+            // Clear badge
+            chrome.action.setBadgeText({ text: "" });
+            console.log("[Deepmode BG] Local session cleared, badge cleared");
           });
         }
       }
     );
+    return;
   }
-});
 
-// Map notification buttons to END / EXTEND
-chrome.notifications.onButtonClicked.addListener((notificationId, buttonIndex) => {
-  // Button mapping for BLOCK_FINISHED notification
-  if (buttonIndex === 0) {
+  // Handle end session from blocker (legacy)
+  if (msg.type === "END_SESSION_FROM_BLOCKER") {
+    // Forward to END_SESSION handler
     chrome.runtime.sendMessage({ type: "END_SESSION" });
-  } else if (buttonIndex === 1) {
-    chrome.runtime.sendMessage({ type: "EXTEND_SESSION", minutes: 5 });
-  } else if (buttonIndex === 2) {
-    chrome.runtime.sendMessage({ type: "EXTEND_SESSION", minutes: 10 });
-  } else if (buttonIndex === 3) {
-    chrome.runtime.sendMessage({ type: "EXTEND_SESSION", minutes: 30 });
+    return;
   }
 });
 

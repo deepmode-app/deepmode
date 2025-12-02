@@ -36,8 +36,6 @@ let blockPrefs = {
   defaultSiteFlags: {},
   customSites: [],
 };
-let blockFinishedNotificationId = null;
-
 // ---------- ALARM HELPERS (NO NOTIFICATIONS) ----------
 
 function sessionAlarmName(sessionId) {
@@ -234,86 +232,40 @@ function createNotificationWithPermission(options, callback) {
 // ---------- NOTIFICATION HANDLERS ----------
 
 chrome.runtime.onMessage.addListener((msg, sender, sendResponse) => {
-  // Periodic timer update (every 10 minutes for awareness)
-  if (msg.type === "TIMER_UPDATE") {
-    const minutes = msg.minutes || Math.ceil((msg.remaining || 0) / 60);
-    createNotificationWithPermission(
-      {
-        type: "basic",
-        iconUrl: "icon.png",
-        title: `Deepmode: ${minutes} min remaining`,
-        message: `${msg.task} — Stay focused!`,
-        priority: 0, // Low priority - subtle reminder
-        silent: true // Don't make sound, just visual
-      },
-      (notificationId) => {
-        console.log(`[Deepmode BG] Periodic timer notification: ${minutes} min remaining`);
-        sendResponse({ success: notificationId !== null, notificationId: notificationId });
-      }
-    );
-    return true; // Keep message port open for async response
-  }
-
   // 5-minute warning
   if (msg.type === "BLOCK_5MIN_LEFT") {
     console.log("[Deepmode BG] Received BLOCK_5MIN_LEFT, creating notification");
-    const minutes = msg.minutes || 5;
-    createNotificationWithPermission({
-      type: "basic",
-      iconUrl: "icon.png",
-      title: `${minutes} minutes left`,
-      message: `Wrap up strong: ${msg.task}`,
-      priority: 1
-    }, (notificationId) => {
-      sendResponse({ success: notificationId !== null, notificationId: notificationId });
-    });
-    return true; // Keep message port open for async response
-  }
-
-  // Session finished – ask user what to do
-  if (msg.type === "BLOCK_FINISHED") {
-    console.log("[Deepmode BG] ✅ Received BLOCK_FINISHED message from blocker.js");
-    console.log("[Deepmode BG] Task:", msg.task);
-    console.log("[Deepmode BG] Creating notification with buttons...");
-    
-    // Update badge to show "0" (time's up)
-    chrome.action.setBadgeText({ text: "0" });
-    chrome.action.setBadgeBackgroundColor({ color: "#e50914" }); // red
-    
     createNotificationWithPermission(
       {
         type: "basic",
         iconUrl: "icon.png",
-        title: "Time's up",
-        message: `${msg.task} — Deep block finished.`,
-        buttons: [
-          { title: "End session" },
-          { title: "Extend +5 min" },
-          { title: "Extend +10 min" },
-          { title: "Extend +30 min" }
-        ],
-        requireInteraction: true,
+        title: "5 minutes left",
+        message: `${msg.task || "Your deep block"} is ending soon. Wrap up your main thought.`,
+        priority: 1
+      },
+      (notificationId) => {
+        console.log("[Deepmode BG] 5-minute warning notification created:", notificationId);
+      }
+    );
+    return;
+  }
+
+  // Session finished - simple informational notification
+  if (msg.type === "BLOCK_FINISHED") {
+    console.log("[Deepmode BG] Received BLOCK_FINISHED, creating notification");
+    createNotificationWithPermission(
+      {
+        type: "basic",
+        iconUrl: "icon.png",
+        title: "Block finished",
+        message: `${msg.task || "Your deep block"} is complete. Good work — take a short break and come back stronger.`,
         priority: 2
       },
       (notificationId) => {
-        if (notificationId) {
-          blockFinishedNotificationId = notificationId;
-        }
-        sendResponse({ success: notificationId !== null, notificationId: notificationId });
+        console.log("[Deepmode BG] Block finished notification created:", notificationId);
       }
     );
-    return true; // Keep message port open for async response
-  }
-
-  // Max session length reached (2 hours)
-  if (msg.type === "BLOCK_MAX_REACHED") {
-    createNotificationWithPermission({
-      type: "basic",
-      iconUrl: "icon.png",
-      title: "Max session length reached",
-      message: `You've hit the 2-hour cap for this Deepmode block. That's a well-deserved break!`,
-      priority: 1
-    });
+    return;
   }
 
   // Handle end session from blocker
@@ -404,28 +356,6 @@ chrome.runtime.onMessage.addListener((msg, sender, sendResponse) => {
     return;
   }
 
-  // Handle EXTEND_SESSION (from notification button)
-  if (msg.type === "EXTEND_SESSION") {
-    const minutes = msg.minutes || 0;
-    // Forward to all tabs with blocker.js injected
-    chrome.tabs.query({}, (tabs) => {
-      tabs.forEach((tab) => {
-        if (tab.id) {
-          chrome.tabs.sendMessage(tab.id, {
-            type: "EXTEND_SESSION",
-            minutes: minutes
-          }, () => {
-            // Ignore errors (tab might not have blocker.js)
-            if (chrome.runtime.lastError) {
-              // Tab doesn't have blocker.js, that's okay
-            }
-          });
-        }
-      });
-    });
-    return;
-  }
-
   // Handle badge updates from blocker.js
   if (msg.type === "UPDATE_BADGE") {
     const badgeText = msg.text || "";
@@ -450,22 +380,6 @@ chrome.runtime.onMessage.addListener((msg, sender, sendResponse) => {
   if (msg.type === "CLEAR_BADGE") {
     chrome.action.setBadgeText({ text: "" });
     return;
-  }
-});
-
-// Map notification buttons to END / EXTEND
-chrome.notifications.onButtonClicked.addListener((notificationId, buttonIndex) => {
-  // Only handle clicks on the BLOCK_FINISHED notification
-  if (notificationId === blockFinishedNotificationId) {
-    if (buttonIndex === 0) {
-      chrome.runtime.sendMessage({ type: "END_SESSION" });
-    } else if (buttonIndex === 1) {
-      chrome.runtime.sendMessage({ type: "EXTEND_SESSION", minutes: 5 });
-    } else if (buttonIndex === 2) {
-      chrome.runtime.sendMessage({ type: "EXTEND_SESSION", minutes: 10 });
-    } else if (buttonIndex === 3) {
-      chrome.runtime.sendMessage({ type: "EXTEND_SESSION", minutes: 30 });
-    }
   }
 });
 
