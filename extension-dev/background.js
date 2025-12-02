@@ -177,31 +177,54 @@ function checkNotificationPermission(callback) {
 }
 
 function createNotificationWithPermission(options, callback) {
+  console.log("[Deepmode BG] Checking notification permission...");
   checkNotificationPermission((hasPermission, level) => {
+    console.log("[Deepmode BG] Permission check result: hasPermission=", hasPermission, "level=", level);
     if (!hasPermission) {
-      console.error("[Deepmode BG] Cannot create notification - permission denied");
+      console.error("[Deepmode BG] ❌ Cannot create notification - permission denied");
       console.error("[Deepmode BG] Please enable notifications in Chrome settings or system settings");
       if (callback) callback(null);
       return;
     }
 
-    // Ensure iconUrl is relative to extension root
-    if (options.iconUrl && !options.iconUrl.startsWith("http") && !options.iconUrl.startsWith("/")) {
-      // Icon path is already relative, that's fine
-    }
-
-    console.log("[Deepmode BG] Creating notification with options:", JSON.stringify(options, null, 2));
+    console.log("[Deepmode BG] ✅ Permission granted, creating notification...");
+    console.log("[Deepmode BG] Notification options:", {
+      type: options.type,
+      title: options.title,
+      message: options.message,
+      iconUrl: options.iconUrl,
+      buttons: options.buttons ? options.buttons.length + " buttons" : "no buttons"
+    });
+    
     chrome.notifications.create(options, (notificationId) => {
       if (chrome.runtime.lastError) {
-        console.error("[Deepmode BG] Error creating notification:", chrome.runtime.lastError.message);
-        console.error("[Deepmode BG] Error code:", chrome.runtime.lastError);
-        console.error("[Deepmode BG] This might be due to:");
-        console.error("  1. Notification permission denied in Chrome");
-        console.error("  2. System notifications disabled");
-        console.error("  3. Do Not Disturb mode enabled");
+        console.error("[Deepmode BG] ❌ ERROR creating notification!");
+        console.error("[Deepmode BG] Error message:", chrome.runtime.lastError.message);
+        console.error("[Deepmode BG] Full error object:", chrome.runtime.lastError);
+        console.error("[Deepmode BG] Possible causes:");
+        console.error("  1. Notification permission denied in Chrome (chrome://settings/content/notifications)");
+        console.error("  2. System notifications disabled (Windows Settings > System > Notifications)");
+        console.error("  3. Do Not Disturb / Focus Assist enabled");
         console.error("  4. Icon file not found:", options.iconUrl);
+        console.error("  5. Extension notifications blocked at system level");
       } else {
-        console.log("[Deepmode BG] Notification created successfully, ID:", notificationId);
+        console.log("[Deepmode BG] ✅✅✅ Notification created successfully! ID:", notificationId);
+        console.log("[Deepmode BG] ⚠️ If you don't see the notification, check:");
+        console.log("[Deepmode BG]   1. Windows Settings > System > Notifications > Chrome (must be ON)");
+        console.log("[Deepmode BG]   2. Windows Focus Assist (must be OFF)");
+        console.log("[Deepmode BG]   3. Check notification center (click time/date in taskbar)");
+        console.log("[Deepmode BG]   4. Try: Windows key + A to open Action Center");
+        
+        // Verify notification exists
+        if (notificationId) {
+          chrome.notifications.getAll((notifications) => {
+            if (notifications && notifications[notificationId]) {
+              console.log("[Deepmode BG] ✅ Notification confirmed in Chrome's notification list");
+            } else {
+              console.warn("[Deepmode BG] ⚠️ Notification ID exists but not found in Chrome's list - may be system-blocked");
+            }
+          });
+        }
       }
       if (callback) callback(notificationId);
     });
@@ -228,7 +251,9 @@ chrome.runtime.onMessage.addListener((msg, sender, sendResponse) => {
 
   // Session finished – ask user what to do
   if (msg.type === "BLOCK_FINISHED") {
-    console.log("[Deepmode BG] Received BLOCK_FINISHED, creating notification with buttons");
+    console.log("[Deepmode BG] ✅ Received BLOCK_FINISHED message from blocker.js");
+    console.log("[Deepmode BG] Task:", msg.task);
+    console.log("[Deepmode BG] Creating notification with buttons...");
     createNotificationWithPermission(
       {
         type: "basic",
