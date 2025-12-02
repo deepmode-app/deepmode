@@ -273,9 +273,14 @@ function tickTimer() {
 
   remainingSeconds--;
 
-  // Debug log every 60 seconds
-  if (remainingSeconds % 60 === 0 && remainingSeconds > 0) {
+  // Debug log every 60 seconds OR when close to 0
+  if ((remainingSeconds % 60 === 0 && remainingSeconds > 0) || (remainingSeconds <= 10 && remainingSeconds > 0)) {
     console.log(`[Deepmode Blocker] Timer: ${Math.floor(remainingSeconds / 60)}m ${remainingSeconds % 60}s remaining`);
+  }
+  
+  // Critical log when about to hit 0
+  if (remainingSeconds === 1) {
+    console.log("[Deepmode Blocker] ⚠️ Timer at 1 second - next tick will trigger BLOCK_FINISHED");
   }
 
   // ----- 5-MINUTE WARNING (only for non-short blocks) -----
@@ -304,7 +309,8 @@ function tickTimer() {
   if (remainingSeconds <= 0 && !sessionFinishedNotified) {
     sessionFinishedNotified = true;
     remainingSeconds = 0;
-    console.log("[Deepmode Blocker] Timer reached 0 - sending BLOCK_FINISHED notification");
+    console.log("[Deepmode Blocker] ⏰ Timer reached 0 - sending BLOCK_FINISHED notification");
+    console.log("[Deepmode Blocker] Current state: isRunning=", isRunning, "remainingSeconds=", remainingSeconds);
 
     updateTimerUI(remainingSeconds);
 

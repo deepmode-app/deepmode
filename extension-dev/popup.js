@@ -238,12 +238,18 @@ document.addEventListener("DOMContentLoaded", () => {
       );
 
       statusDiv.style.color = "#e5e7eb";
-      statusDiv.textContent =
-        `Deepmode on – ${remainingMin}m ${remainingSec}s left`;
-
+      
       if (remainingMs <= 0) {
+        // Timer reached 0 - don't auto-end here
+        // The blocker.js timer will send BLOCK_FINISHED notification
+        // and user can choose to end or extend
+        statusDiv.textContent = "Deepmode on – Time's up! Check notifications.";
         clearInterval(timerInterval);
-        autoEndSession(sessionId, isGuest);
+        // DISABLED: autoEndSession(sessionId, isGuest);
+        // Blocker.js handles notifications and user choice now
+      } else {
+        statusDiv.textContent =
+          `Deepmode on – ${remainingMin}m ${remainingSec}s left`;
       }
     }
 
