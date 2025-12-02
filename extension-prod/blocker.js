@@ -192,12 +192,137 @@ function removeOverlay() {
   restorePageMedia();
 }
 
+// ---------- TIMER LOGIC ----------
+
+let isRunning = false;
+let timerHandle = null;
+let endSessionHandler = null;
+let fallbackAutoEndTimeout = null;
+
+// Session config variables
+let baseMinutes = 0;
+let isShortBlock = false;
+const MAX_SESSION_SECONDS = 2 * 60 * 60; // 2 hours
+let plannedSeconds = 0;
+let remainingSeconds = 0;
+let fiveMinuteWarningSent = false;
+let sessionFinishedNotified = false;
+let taskLabel = "";
+
+function updateTimerUI(seconds) {
+  // Update any timer display if needed (currently no UI in blocker.js)
+  // This is a placeholder for future UI updates
+}
+
+function initializeTimer(activeSession) {
+  if (!activeSession || !activeSession.id) {
+    if (timerHandle) {
+      clearTimeout(timerHandle);
+      timerHandle = null;
+    }
+    if (fallbackAutoEndTimeout) {
+      clearTimeout(fallbackAutoEndTimeout);
+      fallbackAutoEndTimeout = null;
+    }
+    isRunning = false;
+    return;
+  }
+
+  const durationMinutes = activeSession.planned_duration_minutes || 0;
+  taskLabel = activeSession.task || "Deepmode block";
+
+  // Base session config
+  baseMinutes = durationMinutes;
+  isShortBlock = baseMinutes <= 5;
+
+  // Hard cap: 2 hours max planned time for a single deep block
+  plannedSeconds = durationMinutes * 60;
+  
+  // Calculate remaining time based on elapsed time from start_time
+  if (activeSession.start_time) {
+    const startTime = new Date(activeSession.start_time).getTime();
+    const now = Date.now();
+    const elapsedSeconds = Math.floor((now - startTime) / 1000);
+    remainingSeconds = Math.max(0, plannedSeconds - elapsedSeconds);
+  } else {
+    remainingSeconds = plannedSeconds;
+  }
+  
+  fiveMinuteWarningSent = false;
+  sessionFinishedNotified = false;
+
+  // Start the timer
+  if (!isRunning) {
+    isRunning = true;
+    tickTimer();
+  }
+}
+
+function tickTimer() {
+  if (!isRunning) return;
+
+  remainingSeconds--;
+
+  // ----- 5-MINUTE WARNING (only for non-short blocks) -----
+  if (
+    !isShortBlock &&
+    !fiveMinuteWarningSent &&
+    remainingSeconds === 5 * 60
+  ) {
+    fiveMinuteWarningSent = true;
+
+    chrome.runtime.sendMessage({
+      type: "BLOCK_5MIN_LEFT",
+      task: taskLabel,
+      remaining: remainingSeconds
+    });
+  }
+
+  // ----- HIT ZERO (do NOT auto-end; ask user what to do) -----
+  if (remainingSeconds <= 0 && !sessionFinishedNotified) {
+    sessionFinishedNotified = true;
+    remainingSeconds = 0;
+
+    updateTimerUI(remainingSeconds);
+
+    chrome.runtime.sendMessage({
+      type: "BLOCK_FINISHED",
+      task: taskLabel
+    });
+
+    // Set a fallback auto-end after 10 minutes if user doesn't respond
+    if (fallbackAutoEndTimeout) {
+      clearTimeout(fallbackAutoEndTimeout);
+    }
+    fallbackAutoEndTimeout = setTimeout(() => {
+      // Check if session is still active and still at 0 (user didn't extend or end)
+      chrome.storage.local.get(["deepmode_active_session"], (result) => {
+        const active = result.deepmode_active_session;
+        if (active && active.id && remainingSeconds <= 0) {
+          // User didn't respond - auto-end the session
+          console.log("[Deepmode Blocker] Auto-ending session after 10min grace period (no user response)");
+          chrome.runtime.sendMessage({ type: "END_SESSION" });
+        }
+      });
+      fallbackAutoEndTimeout = null;
+    }, 10 * 60 * 1000); // 10 minutes grace period
+
+    // Freeze at 0 until user chooses End or Extend
+    return;
+  }
+
+  // Normal ticking
+  updateTimerUI(remainingSeconds);
+  timerHandle = setTimeout(tickTimer, 1000);
+}
+
 // Initial check when script loads
 chrome.storage.local.get(["deepmode_active_session"], (result) => {
   const active = result.deepmode_active_session;
   if (active && active.id) {
     console.log("Deepmode active on load — showing overlay.");
     showOverlay(active);   // pass session so we can personalize
+    initializeTimer(active);
   } else {
     console.log("No active session on load (blocker).");
   }
@@ -213,9 +338,15 @@ chrome.storage.onChanged.addListener((changes, area) => {
   if (newVal && newVal.id) {
     console.log("Deepmode started — showing overlay.");
     showOverlay(newVal);   // personalized message
+    initializeTimer(newVal);
   } else {
     console.log("Deepmode ended — removing overlay.");
     removeOverlay();
+    if (timerHandle) {
+      clearTimeout(timerHandle);
+      timerHandle = null;
+    }
+    isRunning = false;
   }
 });
 
@@ -226,6 +357,11 @@ chrome.runtime.onMessage.addListener((msg) => {
   if (msg.type === "DEEPMODE_UNBLOCK") {
     console.log("Deepmode blocker: received DEEPMODE_UNBLOCK – removing overlay");
     removeOverlay();
+    if (timerHandle) {
+      clearTimeout(timerHandle);
+      timerHandle = null;
+    }
+    isRunning = false;
     return;
   }
 
@@ -235,8 +371,66 @@ chrome.runtime.onMessage.addListener((msg) => {
       const active = result.deepmode_active_session;
       if (active && active.id) {
         showOverlay(active);
+        initializeTimer(active);
       }
     });
+    return;
+  }
+
+  if (msg.type === "END_SESSION") {
+    // User chose to end from notification
+    isRunning = false;
+    if (timerHandle) {
+      clearTimeout(timerHandle);
+      timerHandle = null;
+    }
+    // Clear fallback auto-end since user responded
+    if (fallbackAutoEndTimeout) {
+      clearTimeout(fallbackAutoEndTimeout);
+      fallbackAutoEndTimeout = null;
+    }
+    if (typeof endSessionHandler === "function") {
+      endSessionHandler();
+    } else {
+      // Fallback: send message to background to end session
+      chrome.runtime.sendMessage({ type: "END_SESSION_FROM_BLOCKER" });
+    }
+    return;
+  }
+
+  if (msg.type === "EXTEND_SESSION") {
+    const extraSeconds = (msg.minutes || 0) * 60;
+    if (extraSeconds <= 0) return;
+
+    const newPlanned = plannedSeconds + extraSeconds;
+
+    // Enforce hard cap at 2 hours
+    if (newPlanned > MAX_SESSION_SECONDS) {
+      chrome.runtime.sendMessage({
+        type: "BLOCK_MAX_REACHED",
+        task: taskLabel
+      });
+      return;
+    }
+
+    // Clear fallback auto-end since user responded
+    if (fallbackAutoEndTimeout) {
+      clearTimeout(fallbackAutoEndTimeout);
+      fallbackAutoEndTimeout = null;
+    }
+
+    plannedSeconds = newPlanned;
+    remainingSeconds += extraSeconds;
+
+    // Allow a new 5-minute warning near the *new* end
+    fiveMinuteWarningSent = false;
+    sessionFinishedNotified = false;
+
+    updateTimerUI(remainingSeconds);
+    if (!isRunning) {
+      isRunning = true;
+      tickTimer();
+    }
     return;
   }
 });

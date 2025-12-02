@@ -2,7 +2,7 @@
 // Responsibilities:
 // 1) Auto-ending Deepmode sessions at the planned end time (via chrome.alarms)
 // 2) Blocking distraction sites by injecting blocker.js while a Deepmode session is active
-// NOTE: Chrome desktop notifications have been removed. No OS notifications.
+// 3) Handling timer notifications and extend/end actions
 
 // ---------- CONSTANTS ----------
 
@@ -16,7 +16,7 @@ const BLOCK_PREFS_KEY = "deepmode_block_prefs";
 const SESSION_ALARM_PREFIX = "deepmode_session_";
 
 // Keep in sync with backend URL and popup.js
-const API_BASE_URL = "https://deepmode.onrender.com";
+const API_BASE_URL = "https://deepmode.app";
 
 
 // Must stay in sync with DEFAULT_SITES from popup.js
@@ -37,7 +37,7 @@ let blockPrefs = {
   customSites: [],
 };
 
-// ---------- ALARM HELPERS (NO NOTIFICATIONS) ----------
+// ---------- ALARM HELPERS ----------
 
 function sessionAlarmName(sessionId) {
   return `${SESSION_ALARM_PREFIX}${sessionId}`;
@@ -167,7 +167,7 @@ chrome.runtime.onMessage.addListener((msg, sender, sendResponse) => {
       type: "basic",
       iconUrl: "icon.png",
       title: "Max session length reached",
-      message: `You've hit the 2-hour cap for this Deepmode block.`,
+      message: `You've hit the 2-hour cap for this Deepmode block. That's a well-deserved break!`,
       priority: 1
     });
   }
@@ -440,7 +440,7 @@ chrome.storage.onChanged.addListener((changes, area) => {
   }
 });
 
-// ---------- ALARM HANDLER: AUTO END SESSION (NO DESKTOP NOTIFICATION) ----------
+// ---------- ALARM HANDLER: AUTO END SESSION ----------
 
 chrome.alarms.onAlarm.addListener((alarm) => {
   if (!alarm || !alarm.name || !alarm.name.startsWith(SESSION_ALARM_PREFIX)) {
@@ -540,3 +540,4 @@ chrome.tabs.onActivated.addListener((activeInfo) => {
 });
 
 console.log("[Deepmode BG] Service worker loaded (alarms and notifications enabled).");
+
