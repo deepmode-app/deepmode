@@ -36,6 +36,7 @@ let blockPrefs = {
   defaultSiteFlags: {},
   customSites: [],
 };
+let blockFinishedNotificationId = null;
 
 // ---------- ALARM HELPERS (NO NOTIFICATIONS) ----------
 
@@ -145,20 +146,25 @@ chrome.runtime.onMessage.addListener((msg, sender, sendResponse) => {
 
   // Session finished – ask user what to do
   if (msg.type === "BLOCK_FINISHED") {
-    chrome.notifications.create({
-      type: "basic",
-      iconUrl: "icon.png",
-      title: "Time's up",
-      message: `${msg.task} — Deep block finished.`,
-      buttons: [
-        { title: "End session" },
-        { title: "Extend +5 min" },
-        { title: "Extend +10 min" },
-        { title: "Extend +30 min" }
-      ],
-      requireInteraction: true,
-      priority: 2
-    });
+    chrome.notifications.create(
+      {
+        type: "basic",
+        iconUrl: "icon.png",
+        title: "Time's up",
+        message: `${msg.task} — Deep block finished.`,
+        buttons: [
+          { title: "End session" },
+          { title: "Extend +5 min" },
+          { title: "Extend +10 min" },
+          { title: "Extend +30 min" }
+        ],
+        requireInteraction: true,
+        priority: 2
+      },
+      (notificationId) => {
+        blockFinishedNotificationId = notificationId;
+      }
+    );
   }
 
   // Max session length reached (2 hours)
@@ -213,20 +219,89 @@ chrome.runtime.onMessage.addListener((msg, sender, sendResponse) => {
         }
       }
     );
+    return;
+  }
+
+  // Handle END_SESSION (from notification button or fallback)
+  if (msg.type === "END_SESSION") {
+    chrome.storage.local.get(
+      [STORAGE_KEYS.ACTIVE_SESSION, STORAGE_KEYS.ACCESS_TOKEN],
+      async (res) => {
+        const active = res[STORAGE_KEYS.ACTIVE_SESSION];
+        const accessToken = res[STORAGE_KEYS.ACCESS_TOKEN] || null;
+
+        if (!active || !active.id) {
+          return;
+        }
+
+        const isGuest = !!active.isGuest || !accessToken;
+
+        if (isGuest) {
+          chrome.storage.local.remove(STORAGE_KEYS.ACTIVE_SESSION, () => {
+            activeSession = null;
+          });
+          return;
+        }
+
+        try {
+          await fetch(
+            `${API_BASE_URL}/sessions/${active.id}/end`,
+            {
+              method: "PATCH",
+              headers: {
+                "Content-Type": "application/json",
+                "Authorization": "Bearer " + accessToken,
+              },
+            }
+          );
+        } catch (err) {
+          console.error("[Deepmode BG] Error ending session", err);
+        } finally {
+          chrome.storage.local.remove(STORAGE_KEYS.ACTIVE_SESSION, () => {
+            activeSession = null;
+          });
+        }
+      }
+    );
+    return;
+  }
+
+  // Handle EXTEND_SESSION (from notification button)
+  if (msg.type === "EXTEND_SESSION") {
+    const minutes = msg.minutes || 0;
+    // Forward to all tabs with blocker.js injected
+    chrome.tabs.query({}, (tabs) => {
+      tabs.forEach((tab) => {
+        if (tab.id) {
+          chrome.tabs.sendMessage(tab.id, {
+            type: "EXTEND_SESSION",
+            minutes: minutes
+          }, () => {
+            // Ignore errors (tab might not have blocker.js)
+            if (chrome.runtime.lastError) {
+              // Tab doesn't have blocker.js, that's okay
+            }
+          });
+        }
+      });
+    });
+    return;
   }
 });
 
 // Map notification buttons to END / EXTEND
 chrome.notifications.onButtonClicked.addListener((notificationId, buttonIndex) => {
-  // Button mapping for BLOCK_FINISHED notification
-  if (buttonIndex === 0) {
-    chrome.runtime.sendMessage({ type: "END_SESSION" });
-  } else if (buttonIndex === 1) {
-    chrome.runtime.sendMessage({ type: "EXTEND_SESSION", minutes: 5 });
-  } else if (buttonIndex === 2) {
-    chrome.runtime.sendMessage({ type: "EXTEND_SESSION", minutes: 10 });
-  } else if (buttonIndex === 3) {
-    chrome.runtime.sendMessage({ type: "EXTEND_SESSION", minutes: 30 });
+  // Only handle clicks on the BLOCK_FINISHED notification
+  if (notificationId === blockFinishedNotificationId) {
+    if (buttonIndex === 0) {
+      chrome.runtime.sendMessage({ type: "END_SESSION" });
+    } else if (buttonIndex === 1) {
+      chrome.runtime.sendMessage({ type: "EXTEND_SESSION", minutes: 5 });
+    } else if (buttonIndex === 2) {
+      chrome.runtime.sendMessage({ type: "EXTEND_SESSION", minutes: 10 });
+    } else if (buttonIndex === 3) {
+      chrome.runtime.sendMessage({ type: "EXTEND_SESSION", minutes: 30 });
+    }
   }
 });
 
