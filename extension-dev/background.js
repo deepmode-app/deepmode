@@ -135,17 +135,25 @@ chrome.runtime.onStartup.addListener(() => {
 chrome.runtime.onMessage.addListener((msg, sender, sendResponse) => {
   // 5-minute warning
   if (msg.type === "BLOCK_5MIN_LEFT") {
+    console.log("[Deepmode BG] Received BLOCK_5MIN_LEFT, creating notification");
     chrome.notifications.create({
       type: "basic",
       iconUrl: "icon.png",
       title: "5 minutes left",
       message: `Wrap up strong: ${msg.task}`,
       priority: 1
+    }, (notificationId) => {
+      if (chrome.runtime.lastError) {
+        console.error("[Deepmode BG] Error creating 5min notification:", chrome.runtime.lastError.message);
+      } else {
+        console.log("[Deepmode BG] 5min notification created, ID:", notificationId);
+      }
     });
   }
 
   // Session finished – ask user what to do
   if (msg.type === "BLOCK_FINISHED") {
+    console.log("[Deepmode BG] Received BLOCK_FINISHED, creating notification with buttons");
     chrome.notifications.create(
       {
         type: "basic",
@@ -162,7 +170,12 @@ chrome.runtime.onMessage.addListener((msg, sender, sendResponse) => {
         priority: 2
       },
       (notificationId) => {
-        blockFinishedNotificationId = notificationId;
+        if (chrome.runtime.lastError) {
+          console.error("[Deepmode BG] Error creating finished notification:", chrome.runtime.lastError.message);
+        } else {
+          console.log("[Deepmode BG] Finished notification created, ID:", notificationId);
+          blockFinishedNotificationId = notificationId;
+        }
       }
     );
   }

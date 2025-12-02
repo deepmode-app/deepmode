@@ -248,20 +248,35 @@ function initializeTimer(activeSession) {
     remainingSeconds = plannedSeconds;
   }
   
+  console.log(`[Deepmode Blocker] Timer initialized: ${durationMinutes}min planned, ${remainingSeconds}s remaining, isShortBlock=${isShortBlock}`);
+  
   fiveMinuteWarningSent = false;
   sessionFinishedNotified = false;
 
-  // Start the timer
-  if (!isRunning) {
-    isRunning = true;
-    tickTimer();
+  // Stop any existing timer
+  if (timerHandle) {
+    clearTimeout(timerHandle);
+    timerHandle = null;
   }
+  isRunning = false;
+
+  // Start the timer
+  isRunning = true;
+  tickTimer();
 }
 
 function tickTimer() {
-  if (!isRunning) return;
+  if (!isRunning) {
+    console.log("[Deepmode Blocker] Timer tick skipped - not running");
+    return;
+  }
 
   remainingSeconds--;
+
+  // Debug log every 60 seconds
+  if (remainingSeconds % 60 === 0 && remainingSeconds > 0) {
+    console.log(`[Deepmode Blocker] Timer: ${Math.floor(remainingSeconds / 60)}m ${remainingSeconds % 60}s remaining`);
+  }
 
   // ----- 5-MINUTE WARNING (only for non-short blocks) -----
   if (
@@ -270,11 +285,18 @@ function tickTimer() {
     remainingSeconds === 5 * 60
   ) {
     fiveMinuteWarningSent = true;
+    console.log("[Deepmode Blocker] 5 minutes left - sending notification");
 
     chrome.runtime.sendMessage({
       type: "BLOCK_5MIN_LEFT",
       task: taskLabel,
       remaining: remainingSeconds
+    }, (response) => {
+      if (chrome.runtime.lastError) {
+        console.error("[Deepmode Blocker] Error sending BLOCK_5MIN_LEFT:", chrome.runtime.lastError.message);
+      } else {
+        console.log("[Deepmode Blocker] BLOCK_5MIN_LEFT sent successfully");
+      }
     });
   }
 
@@ -282,12 +304,19 @@ function tickTimer() {
   if (remainingSeconds <= 0 && !sessionFinishedNotified) {
     sessionFinishedNotified = true;
     remainingSeconds = 0;
+    console.log("[Deepmode Blocker] Timer reached 0 - sending BLOCK_FINISHED notification");
 
     updateTimerUI(remainingSeconds);
 
     chrome.runtime.sendMessage({
       type: "BLOCK_FINISHED",
       task: taskLabel
+    }, (response) => {
+      if (chrome.runtime.lastError) {
+        console.error("[Deepmode Blocker] Error sending BLOCK_FINISHED:", chrome.runtime.lastError.message);
+      } else {
+        console.log("[Deepmode Blocker] BLOCK_FINISHED sent successfully");
+      }
     });
 
     // Set a fallback auto-end after 10 minutes if user doesn't respond
@@ -357,11 +386,22 @@ chrome.runtime.onMessage.addListener((msg) => {
   if (msg.type === "DEEPMODE_UNBLOCK") {
     console.log("Deepmode blocker: received DEEPMODE_UNBLOCK – removing overlay");
     removeOverlay();
-    if (timerHandle) {
-      clearTimeout(timerHandle);
-      timerHandle = null;
-    }
-    isRunning = false;
+    // Check if session is still active before stopping timer
+    chrome.storage.local.get(["deepmode_active_session"], (result) => {
+      const active = result.deepmode_active_session;
+      if (!active || !active.id) {
+        // Session actually ended - stop timer
+        console.log("[Deepmode Blocker] Session ended - stopping timer");
+        if (timerHandle) {
+          clearTimeout(timerHandle);
+          timerHandle = null;
+        }
+        isRunning = false;
+      } else {
+        // Session still active, just unblocking this tab - keep timer running
+        console.log("[Deepmode Blocker] Session still active - keeping timer running");
+      }
+    });
     return;
   }
 
