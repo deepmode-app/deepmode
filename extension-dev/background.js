@@ -123,6 +123,18 @@ function resyncOnStartup() {
 chrome.runtime.onInstalled.addListener(() => {
   console.log("[Deepmode BG] onInstalled");
   resyncOnStartup();
+  // Check notification permission on install
+  checkNotificationPermission((hasPermission, level) => {
+    if (!hasPermission) {
+      console.warn("[Deepmode BG] ⚠️ Notifications are not enabled!");
+      console.warn("[Deepmode BG] To enable notifications:");
+      console.warn("[Deepmode BG] 1. Open Chrome settings: chrome://settings/content/notifications");
+      console.warn("[Deepmode BG] 2. Add 'Deepmode AI - DEV' to allowed sites");
+      console.warn("[Deepmode BG] 3. Or check Windows Settings > System > Notifications");
+    } else {
+      console.log("[Deepmode BG] ✓ Notification permission check passed");
+    }
+  });
 });
 
 chrome.runtime.onStartup.addListener(() => {
@@ -130,25 +142,86 @@ chrome.runtime.onStartup.addListener(() => {
   resyncOnStartup();
 });
 
+// ---------- NOTIFICATION HELPERS ----------
+
+function checkNotificationPermission(callback) {
+  if (!chrome.notifications) {
+    console.error("[Deepmode BG] chrome.notifications API not available");
+    callback(false, "unavailable");
+    return;
+  }
+
+  // Check permission level (available in Chrome 42+)
+  if (chrome.notifications.getPermissionLevel) {
+    chrome.notifications.getPermissionLevel((level) => {
+      console.log("[Deepmode BG] Notification permission level:", level);
+      if (level === "denied") {
+        console.error("[Deepmode BG] Notifications are DENIED by user.");
+        console.error("[Deepmode BG] User must enable in Chrome settings: chrome://settings/content/notifications");
+        console.error("[Deepmode BG] Or check system notification settings (Windows Settings > System > Notifications)");
+        callback(false, "denied");
+      } else if (level === "granted") {
+        console.log("[Deepmode BG] Notification permission granted");
+        callback(true, "granted");
+      } else {
+        // Default level - usually means allowed
+        console.log("[Deepmode BG] Notification permission: default (usually allowed)");
+        callback(true, "default");
+      }
+    });
+  } else {
+    // Fallback for older Chrome versions - assume allowed if API exists
+    console.log("[Deepmode BG] Cannot check permission level (older Chrome), assuming allowed");
+    callback(true, "unknown");
+  }
+}
+
+function createNotificationWithPermission(options, callback) {
+  checkNotificationPermission((hasPermission, level) => {
+    if (!hasPermission) {
+      console.error("[Deepmode BG] Cannot create notification - permission denied");
+      console.error("[Deepmode BG] Please enable notifications in Chrome settings or system settings");
+      if (callback) callback(null);
+      return;
+    }
+
+    // Ensure iconUrl is relative to extension root
+    if (options.iconUrl && !options.iconUrl.startsWith("http") && !options.iconUrl.startsWith("/")) {
+      // Icon path is already relative, that's fine
+    }
+
+    console.log("[Deepmode BG] Creating notification with options:", JSON.stringify(options, null, 2));
+    chrome.notifications.create(options, (notificationId) => {
+      if (chrome.runtime.lastError) {
+        console.error("[Deepmode BG] Error creating notification:", chrome.runtime.lastError.message);
+        console.error("[Deepmode BG] Error code:", chrome.runtime.lastError);
+        console.error("[Deepmode BG] This might be due to:");
+        console.error("  1. Notification permission denied in Chrome");
+        console.error("  2. System notifications disabled");
+        console.error("  3. Do Not Disturb mode enabled");
+        console.error("  4. Icon file not found:", options.iconUrl);
+      } else {
+        console.log("[Deepmode BG] Notification created successfully, ID:", notificationId);
+      }
+      if (callback) callback(notificationId);
+    });
+  });
+}
+
 // ---------- NOTIFICATION HANDLERS ----------
 
 chrome.runtime.onMessage.addListener((msg, sender, sendResponse) => {
   // 5-minute warning
   if (msg.type === "BLOCK_5MIN_LEFT") {
     console.log("[Deepmode BG] Received BLOCK_5MIN_LEFT, creating notification");
-    chrome.notifications.create({
+    createNotificationWithPermission({
       type: "basic",
       iconUrl: "icon.png",
       title: "5 minutes left",
       message: `Wrap up strong: ${msg.task}`,
       priority: 1
     }, (notificationId) => {
-      if (chrome.runtime.lastError) {
-        console.error("[Deepmode BG] Error creating 5min notification:", chrome.runtime.lastError.message);
-      } else {
-        console.log("[Deepmode BG] 5min notification created, ID:", notificationId);
-      }
-      sendResponse({ success: true });
+      sendResponse({ success: notificationId !== null, notificationId: notificationId });
     });
     return true; // Keep message port open for async response
   }
@@ -156,7 +229,7 @@ chrome.runtime.onMessage.addListener((msg, sender, sendResponse) => {
   // Session finished – ask user what to do
   if (msg.type === "BLOCK_FINISHED") {
     console.log("[Deepmode BG] Received BLOCK_FINISHED, creating notification with buttons");
-    chrome.notifications.create(
+    createNotificationWithPermission(
       {
         type: "basic",
         iconUrl: "icon.png",
@@ -172,13 +245,10 @@ chrome.runtime.onMessage.addListener((msg, sender, sendResponse) => {
         priority: 2
       },
       (notificationId) => {
-        if (chrome.runtime.lastError) {
-          console.error("[Deepmode BG] Error creating finished notification:", chrome.runtime.lastError.message);
-        } else {
-          console.log("[Deepmode BG] Finished notification created, ID:", notificationId);
+        if (notificationId) {
           blockFinishedNotificationId = notificationId;
         }
-        sendResponse({ success: true });
+        sendResponse({ success: notificationId !== null, notificationId: notificationId });
       }
     );
     return true; // Keep message port open for async response
@@ -186,7 +256,7 @@ chrome.runtime.onMessage.addListener((msg, sender, sendResponse) => {
 
   // Max session length reached (2 hours)
   if (msg.type === "BLOCK_MAX_REACHED") {
-    chrome.notifications.create({
+    createNotificationWithPermission({
       type: "basic",
       iconUrl: "icon.png",
       title: "Max session length reached",
