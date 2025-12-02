@@ -167,7 +167,7 @@ chrome.runtime.onMessage.addListener((msg, sender, sendResponse) => {
       type: "basic",
       iconUrl: "icon.png",
       title: "Max session length reached",
-      message: `You've hit the 2-hour cap for this Deepmode block.`,
+      message: `You've hit the 2-hour cap for this Deepmode block. That's a well-deserved break!`,
       priority: 1
     });
   }

@@ -44,6 +44,47 @@ def row_to_session_read(row) -> SessionRead:
     )
 
 
+def derive_status_and_discipline(planned: Optional[int], actual_minutes: int) -> tuple[str, int]:
+    """
+    Given planned duration (minutes) and actual work duration (minutes),
+    return (status, discipline_score).
+
+    Status is one of: "abandoned", "completed_early", "completed".
+    Discipline_score is 0 or 1.
+
+    Rules:
+    - General rule (non-micro blocks, planned > 5):
+      * actual < 5 → "abandoned", discipline_score = 0
+      * actual >= 5 AND actual < planned → "completed_early", discipline_score = 1
+      * actual >= planned OR planned is None → "completed", discipline_score = 1
+
+    - Special case for 5-minute "inertia" blocks (planned <= 5):
+      * actual >= 1 AND actual < planned → "completed_early", discipline_score = 1
+      * actual >= planned → "completed", discipline_score = 1
+      * Only "abandoned" if effectively no work (theoretical due to max(1, ...) in caller)
+    """
+    # Special case: 5-minute "inertia" blocks (planned <= 5)
+    if planned is not None and planned <= 5:
+        if actual_minutes < 1:
+            # Theoretical case: effectively no work done
+            return ("abandoned", 0)
+        elif actual_minutes < planned:
+            # Any real work (>= 1 min) but didn't finish planned duration
+            return ("completed_early", 1)
+        else:
+            # Finished the planned duration or more
+            return ("completed", 1)
+
+    # General rule for blocks > 5 minutes
+    if actual_minutes < 5:
+        return ("abandoned", 0)
+    elif planned is not None and actual_minutes < planned:
+        return ("completed_early", 1)
+    else:
+        # actual >= planned OR planned is None
+        return ("completed", 1)
+
+
 def auto_close_expired_sessions_for_user(user_id: int) -> None:
     """
     Auto-close any 'running' sessions that are clearly stale.
@@ -308,19 +349,8 @@ def end_session(
     actual_minutes = max(1, int(diff.total_seconds() // 60))
     planned = row["planned_duration_minutes"]
 
-    # derive status + discipline based on actual work done
-    # If user worked < 5 minutes, mark as abandoned (failure)
-    # If user worked >= 5 minutes but < planned, mark as completed_early (success)
-    # If user worked >= planned (or no planned duration), mark as completed (full success)
-    if actual_minutes < 5:
-        status_val = "abandoned"
-        discipline_score = 0
-    elif planned is not None and actual_minutes < planned:
-        status_val = "completed_early"
-        discipline_score = 1
-    else:
-        status_val = "completed"
-        discipline_score = 1
+    # Derive status and discipline using the standardized helper
+    status_val, discipline_score = derive_status_and_discipline(planned, actual_minutes)
 
     cur.execute(
         """
@@ -347,8 +377,8 @@ def end_session(
     conn.commit()
     conn.close()
 
-    # 🔥 Update streak only if actual work was >= 5 minutes (not abandoned)
-    if actual_minutes >= 5:
+    # 🔥 Update streak only if this block counts as a success
+    if discipline_score == 1:
         try:
             update_streak_for_user(user_id)
         except Exception as e:
