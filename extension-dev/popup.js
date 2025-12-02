@@ -55,6 +55,66 @@ document.addEventListener("DOMContentLoaded", () => {
   let accessToken = null;
   let isProUser = false;
 
+  // ---------- NOTIFICATION PERMISSION CHECK ----------
+
+  function checkNotificationPermission() {
+    if (!chrome.notifications) {
+      return;
+    }
+
+    if (chrome.notifications.getPermissionLevel) {
+      chrome.notifications.getPermissionLevel((level) => {
+        if (level === "denied") {
+          // Show helpful message in status area
+          if (statusDiv) {
+            const hasActiveSession = currentSessionBox && currentSessionBox.style.display !== "none";
+            
+            if (!hasActiveSession) {
+              // Only show if no active session (don't interfere with timer display)
+              const originalText = statusDiv.textContent;
+              statusDiv.style.color = "#ffb84d";
+              statusDiv.style.fontSize = "11px";
+              statusDiv.style.lineHeight = "1.4";
+              statusDiv.textContent = "🔔 Enable notifications for timer alerts: Windows Settings > System > Notifications > Chrome";
+              statusDiv.title = "Notifications help you know when your block finishes. Enable in Windows Settings.";
+              
+              // Restore after 10 seconds
+              setTimeout(() => {
+                chrome.storage.local.get([STORAGE_KEYS.ACTIVE_SESSION], (result) => {
+                  if (!result[STORAGE_KEYS.ACTIVE_SESSION] && statusDiv.textContent.includes("Enable notifications")) {
+                    statusDiv.textContent = originalText || "";
+                    statusDiv.style.color = "";
+                    statusDiv.style.fontSize = "";
+                    statusDiv.style.lineHeight = "";
+                    statusDiv.title = "";
+                  }
+                });
+              }, 10000);
+            }
+          }
+        } else if (level === "granted") {
+          // Notifications enabled - all good
+          console.log("[Deepmode Popup] Notifications enabled ✓");
+        }
+      });
+    }
+  }
+
+  // Check notification permission on popup open
+  checkNotificationPermission();
+  
+  // Re-check when popup is opened again (user might have enabled notifications)
+  let lastPermissionCheck = 0;
+  document.addEventListener("visibilitychange", () => {
+    if (document.visibilityState === "visible") {
+      const now = Date.now();
+      if (now - lastPermissionCheck > 5000) { // Check max once per 5 seconds
+        checkNotificationPermission();
+        lastPermissionCheck = now;
+      }
+    }
+  });
+
   let blockPrefs = {
     defaultSiteFlags: {},
     customSites: [],

@@ -208,10 +208,23 @@ let remainingSeconds = 0;
 let fiveMinuteWarningSent = false;
 let sessionFinishedNotified = false;
 let taskLabel = "";
+let lastPeriodicNotification = 0; // Track last periodic notification time
 
 function updateTimerUI(seconds) {
-  // Update any timer display if needed (currently no UI in blocker.js)
-  // This is a placeholder for future UI updates
+  // Update extension badge with remaining time
+  const minutes = Math.ceil(seconds / 60);
+  const badgeText = seconds > 0 ? minutes.toString() : "0";
+  
+  chrome.runtime.sendMessage({
+    type: "UPDATE_BADGE",
+    text: badgeText,
+    seconds: seconds
+  }, () => {
+    // Ignore errors (background might not be ready)
+    if (chrome.runtime.lastError) {
+      // Background not ready, that's okay
+    }
+  });
 }
 
 function initializeTimer(activeSession) {
@@ -252,6 +265,7 @@ function initializeTimer(activeSession) {
   
   fiveMinuteWarningSent = false;
   sessionFinishedNotified = false;
+  lastPeriodicNotification = Date.now(); // Initialize to prevent immediate notification
 
   // Stop any existing timer
   if (timerHandle) {
@@ -259,6 +273,9 @@ function initializeTimer(activeSession) {
     timerHandle = null;
   }
   isRunning = false;
+
+  // Update badge immediately
+  updateTimerUI(remainingSeconds);
 
   // Start the timer
   isRunning = true;
@@ -283,6 +300,33 @@ function tickTimer() {
     console.log("[Deepmode Blocker] ⚠️ Timer at 1 second - next tick will trigger BLOCK_FINISHED");
   }
 
+  // ----- PERIODIC TIMER NOTIFICATIONS (every 10 minutes for awareness) -----
+  // Show subtle notifications every 10 minutes to remind user they're in Deepmode
+  const now = Date.now();
+  const minutesRemaining = Math.ceil(remainingSeconds / 60);
+  const shouldShowPeriodic = 
+    remainingSeconds > 0 && 
+    !isShortBlock && 
+    (now - lastPeriodicNotification) >= 10 * 60 * 1000 && // 10 minutes
+    minutesRemaining % 10 === 0 && // Only at 10, 20, 30, etc. minute marks
+    minutesRemaining > 5; // Don't show if we're already in the 5-minute warning zone
+
+  if (shouldShowPeriodic) {
+    lastPeriodicNotification = now;
+    chrome.runtime.sendMessage({
+      type: "TIMER_UPDATE",
+      task: taskLabel,
+      remaining: remainingSeconds,
+      minutes: minutesRemaining
+    }, (response) => {
+      if (chrome.runtime.lastError) {
+        console.error("[Deepmode Blocker] Error sending TIMER_UPDATE:", chrome.runtime.lastError.message);
+      } else {
+        console.log(`[Deepmode Blocker] Periodic notification: ${minutesRemaining} minutes remaining`);
+      }
+    });
+  }
+
   // ----- 5-MINUTE WARNING (only for non-short blocks) -----
   if (
     !isShortBlock &&
@@ -295,7 +339,8 @@ function tickTimer() {
     chrome.runtime.sendMessage({
       type: "BLOCK_5MIN_LEFT",
       task: taskLabel,
-      remaining: remainingSeconds
+      remaining: remainingSeconds,
+      minutes: 5
     }, (response) => {
       if (chrome.runtime.lastError) {
         console.error("[Deepmode Blocker] Error sending BLOCK_5MIN_LEFT:", chrome.runtime.lastError.message);
@@ -396,13 +441,15 @@ chrome.runtime.onMessage.addListener((msg) => {
     chrome.storage.local.get(["deepmode_active_session"], (result) => {
       const active = result.deepmode_active_session;
       if (!active || !active.id) {
-        // Session actually ended - stop timer
+        // Session actually ended - stop timer and clear badge
         console.log("[Deepmode Blocker] Session ended - stopping timer");
         if (timerHandle) {
           clearTimeout(timerHandle);
           timerHandle = null;
         }
         isRunning = false;
+        // Clear badge
+        chrome.runtime.sendMessage({ type: "CLEAR_BADGE" }, () => {});
       } else {
         // Session still active, just unblocking this tab - keep timer running
         console.log("[Deepmode Blocker] Session still active - keeping timer running");
@@ -472,6 +519,7 @@ chrome.runtime.onMessage.addListener((msg) => {
     fiveMinuteWarningSent = false;
     sessionFinishedNotified = false;
 
+    // Update badge with new time
     updateTimerUI(remainingSeconds);
     if (!isRunning) {
       isRunning = true;

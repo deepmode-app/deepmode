@@ -234,13 +234,34 @@ function createNotificationWithPermission(options, callback) {
 // ---------- NOTIFICATION HANDLERS ----------
 
 chrome.runtime.onMessage.addListener((msg, sender, sendResponse) => {
+  // Periodic timer update (every 10 minutes for awareness)
+  if (msg.type === "TIMER_UPDATE") {
+    const minutes = msg.minutes || Math.ceil((msg.remaining || 0) / 60);
+    createNotificationWithPermission(
+      {
+        type: "basic",
+        iconUrl: "icon.png",
+        title: `Deepmode: ${minutes} min remaining`,
+        message: `${msg.task} — Stay focused!`,
+        priority: 0, // Low priority - subtle reminder
+        silent: true // Don't make sound, just visual
+      },
+      (notificationId) => {
+        console.log(`[Deepmode BG] Periodic timer notification: ${minutes} min remaining`);
+        sendResponse({ success: notificationId !== null, notificationId: notificationId });
+      }
+    );
+    return true; // Keep message port open for async response
+  }
+
   // 5-minute warning
   if (msg.type === "BLOCK_5MIN_LEFT") {
     console.log("[Deepmode BG] Received BLOCK_5MIN_LEFT, creating notification");
+    const minutes = msg.minutes || 5;
     createNotificationWithPermission({
       type: "basic",
       iconUrl: "icon.png",
-      title: "5 minutes left",
+      title: `${minutes} minutes left`,
       message: `Wrap up strong: ${msg.task}`,
       priority: 1
     }, (notificationId) => {
@@ -254,6 +275,11 @@ chrome.runtime.onMessage.addListener((msg, sender, sendResponse) => {
     console.log("[Deepmode BG] ✅ Received BLOCK_FINISHED message from blocker.js");
     console.log("[Deepmode BG] Task:", msg.task);
     console.log("[Deepmode BG] Creating notification with buttons...");
+    
+    // Update badge to show "0" (time's up)
+    chrome.action.setBadgeText({ text: "0" });
+    chrome.action.setBadgeBackgroundColor({ color: "#e50914" }); // red
+    
     createNotificationWithPermission(
       {
         type: "basic",
@@ -397,6 +423,32 @@ chrome.runtime.onMessage.addListener((msg, sender, sendResponse) => {
         }
       });
     });
+    return;
+  }
+
+  // Handle badge updates from blocker.js
+  if (msg.type === "UPDATE_BADGE") {
+    const badgeText = msg.text || "";
+    const seconds = msg.seconds || 0;
+    
+    // Update extension badge with remaining minutes
+    chrome.action.setBadgeText({ text: badgeText });
+    
+    // Color code: green for >5min, yellow for 1-5min, red for 0
+    let badgeColor = "#22c55e"; // green
+    if (seconds <= 0) {
+      badgeColor = "#e50914"; // red
+    } else if (seconds <= 5 * 60) {
+      badgeColor = "#ffb84d"; // yellow/orange
+    }
+    
+    chrome.action.setBadgeBackgroundColor({ color: badgeColor });
+    return;
+  }
+
+  // Handle badge clear
+  if (msg.type === "CLEAR_BADGE") {
+    chrome.action.setBadgeText({ text: "" });
     return;
   }
 });
