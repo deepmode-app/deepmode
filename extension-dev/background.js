@@ -148,7 +148,9 @@ chrome.runtime.onMessage.addListener((msg, sender, sendResponse) => {
       } else {
         console.log("[Deepmode BG] 5min notification created, ID:", notificationId);
       }
+      sendResponse({ success: true });
     });
+    return true; // Keep message port open for async response
   }
 
   // Session finished – ask user what to do
@@ -176,8 +178,10 @@ chrome.runtime.onMessage.addListener((msg, sender, sendResponse) => {
           console.log("[Deepmode BG] Finished notification created, ID:", notificationId);
           blockFinishedNotificationId = notificationId;
         }
+        sendResponse({ success: true });
       }
     );
+    return true; // Keep message port open for async response
   }
 
   // Max session length reached (2 hours)
@@ -528,7 +532,7 @@ chrome.storage.onChanged.addListener((changes, area) => {
   }
 });
 
-// ---------- ALARM HANDLER: AUTO END SESSION (NO DESKTOP NOTIFICATION) ----------
+// ---------- ALARM HANDLER: AUTO END SESSION (DISABLED - Timer in blocker.js handles this) ----------
 
 chrome.alarms.onAlarm.addListener((alarm) => {
   if (!alarm || !alarm.name || !alarm.name.startsWith(SESSION_ALARM_PREFIX)) {
@@ -536,8 +540,16 @@ chrome.alarms.onAlarm.addListener((alarm) => {
   }
 
   const sessionIdPart = alarm.name.substring(SESSION_ALARM_PREFIX.length);
-  console.log("[Deepmode BG] Alarm fired for session:", sessionIdPart);
-
+  console.log("[Deepmode BG] Alarm fired for session:", sessionIdPart, "- IGNORED (timer in blocker.js handles notifications and user choice)");
+  
+  // DISABLED: Don't auto-end here. The timer in blocker.js will:
+  // 1. Send BLOCK_FINISHED notification when timer reaches 0
+  // 2. User can choose to end or extend
+  // 3. Fallback auto-end after 10min grace period if no response
+  // The alarm is kept for backwards compatibility but does nothing.
+  return;
+  
+  /* OLD AUTO-END CODE - DISABLED
   chrome.storage.local.get(
     [STORAGE_KEYS.ACTIVE_SESSION, STORAGE_KEYS.ACCESS_TOKEN],
     async (res) => {
@@ -610,6 +622,7 @@ chrome.alarms.onAlarm.addListener((alarm) => {
       }
     }
   );
+  */
 });
 
 // ---------- TAB EVENTS: APPLY BLOCKER ON NAVIGATION / FOCUS ----------
