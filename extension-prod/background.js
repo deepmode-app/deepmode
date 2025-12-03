@@ -190,6 +190,20 @@ chrome.runtime.onMessage.addListener((msg, sender, sendResponse) => {
   // Note: 5-minute warning and BLOCK_FINISHED notifications are now handled by alarms, not messages
   // Note: Badge updates are now handled by alarms (updateBadgeFromSession), not messages
 
+  // Handle DEEPMODE_LOGOUT (from connect.js when user logs out from dashboard)
+  if (msg.type === "DEEPMODE_LOGOUT") {
+    console.log("[Deepmode BG] DEEPMODE_LOGOUT received - clearing session and badge");
+    // Clear any active session alarms
+    if (activeSession && activeSession.id) {
+      clearSessionAlarm(activeSession.id);
+    }
+    activeSession = null;
+    // Immediately clear badge
+    chrome.action.setBadgeText({ text: "" });
+    console.log("[Deepmode BG] Badge cleared on logout");
+    return;
+  }
+
   // Handle END_SESSION_AT_TIMER_ZERO (from blocker.js when timer hits 0 - backup to alarm)
   if (msg.type === "END_SESSION_AT_TIMER_ZERO") {
     console.log("[Deepmode BG] END_SESSION_AT_TIMER_ZERO received (backup trigger)");

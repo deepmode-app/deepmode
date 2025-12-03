@@ -1,37 +1,30 @@
 # app/routes/billing.py
 
-import os
-
-from dotenv import load_dotenv
-load_dotenv()
-
 import stripe
 from fastapi import APIRouter, HTTPException, Request
 from fastapi.responses import RedirectResponse
 from pydantic import BaseModel
 
+from app.config import (
+    STRIPE_SECRET_KEY,
+    STRIPE_PUBLIC_KEY,
+    STRIPE_PRICE_IDS,
+    STRIPE_WEBHOOK_SECRET,
+)
 from app.database import get_conn
 from app.email_utils import (
     send_pro_welcome_email,
     send_pro_cancellation_email,
 )
 
-# ---------- Stripe keys ----------
+# ---------- Stripe initialization ----------
 
-STRIPE_SECRET_KEY = os.getenv("STRIPE_SECRET_KEY") or "sk_test_dummy_for_now"
-STRIPE_PUBLISHABLE_KEY = os.getenv("STRIPE_PUBLISHABLE_KEY") or "pk_test_dummy_for_now"
-STRIPE_WEBHOOK_SECRET = os.getenv("STRIPE_WEBHOOK_SECRET", "")
-
-stripe.api_key = STRIPE_SECRET_KEY
+if not STRIPE_SECRET_KEY:
+    print("[Stripe] WARNING: STRIPE_SECRET_KEY not set in environment. Stripe features will not work.")
+else:
+    stripe.api_key = STRIPE_SECRET_KEY
 
 router = APIRouter()
-
-# ---------- Price IDs (TEST/SANDBOX) ----------
-# Swap these when you create the real £4.99 / £39.99 prices.
-PRICE_IDS = {
-    "monthly": "price_1STANe22agTN2BGyT4ncyD5B",  # test monthly
-    "yearly":  "price_1STANe22agTN2BGy6y3wqXZ8",  # test yearly
-}
 
 
 class CheckoutRequest(BaseModel):
@@ -267,11 +260,20 @@ async def create_checkout_session(request: Request, payload: CheckoutRequest):
     """
     Creates a Stripe Checkout Session and returns its URL.
     """
-    plan = payload.plan.lower()
-    if plan not in PRICE_IDS:
-        raise HTTPException(status_code=400, detail="Invalid plan. Use 'monthly' or 'yearly'.")
+    if not STRIPE_SECRET_KEY:
+        raise HTTPException(
+            status_code=500,
+            detail="Stripe is not configured. Please contact support."
+        )
 
-    price_id = PRICE_IDS[plan]
+    plan = payload.plan.lower()
+    if plan not in STRIPE_PRICE_IDS:
+        raise HTTPException(
+            status_code=500,
+            detail=f"Stripe price ID for '{plan}' plan is not configured."
+        )
+
+    price_id = STRIPE_PRICE_IDS[plan]
     base_url = str(request.base_url).rstrip("/")
 
     try:
@@ -305,8 +307,11 @@ async def stripe_webhook(request: Request):
     sig_header = request.headers.get("stripe-signature")
 
     if not STRIPE_WEBHOOK_SECRET:
-        print("[Stripe] STRIPE_WEBHOOK_SECRET is not set in env.")
-        raise HTTPException(status_code=500, detail="Webhook secret not configured.")
+        print("[Stripe] ERROR: STRIPE_WEBHOOK_SECRET is not set in environment.")
+        raise HTTPException(
+            status_code=500,
+            detail="Stripe webhook secret is not configured. Cannot verify webhook signatures."
+        )
 
     try:
         event = stripe.Webhook.construct_event(
@@ -503,6 +508,12 @@ async def create_customer_portal(request: Request, payload: CustomerPortalReques
     - If not found, return 400 with a clear message.
     - Also upserts stripe_customer_id in DB.
     """
+    if not STRIPE_SECRET_KEY:
+        raise HTTPException(
+            status_code=500,
+            detail="Stripe is not configured. Please contact support."
+        )
+
     raw_email = (payload.email or "").strip()
     if not raw_email:
         raise HTTPException(status_code=400, detail="Email is required for billing portal.")
