@@ -199,19 +199,24 @@ function showOverlay(activeSession) {
     fontLink3.href = "https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap";
     document.head.appendChild(fontLink3);
     style.textContent = `
+      #deepwork-overlay {
+        position: relative;
+      }
       .deepmode-overlay-bg-logo {
         position: absolute;
         top: 50%;
         left: 50%;
         transform: translate(-50%, -50%);
-        width: 220px;
-        height: 220px;
+        width: 320px;
+        height: 320px;
         background-image: url("${chrome.runtime.getURL("icon.png")}");
         background-size: contain;
         background-repeat: no-repeat;
-        opacity: 0.06;
+        background-position: center;
+        opacity: 0.08;
         pointer-events: none;
-        filter: drop-shadow(0 0 24px rgba(229, 9, 20, 0.5));
+        filter: blur(1px) drop-shadow(0 0 40px rgba(229, 9, 20, 0.4));
+        z-index: 0;
       }
     `;
     document.head.appendChild(style);
