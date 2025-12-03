@@ -14,6 +14,8 @@ const STORAGE_KEYS = {
 const BLOCK_PREFS_KEY = "deepmode_block_prefs";
 
 const SESSION_ALARM_PREFIX = "deepmode_session_";
+const BADGE_UPDATE_ALARM_PREFIX = "deepmode_badge_";
+const WARNING_5MIN_ALARM_PREFIX = "deepmode_warn5min_";
 
 // Keep in sync with backend URL and popup.js
 const API_BASE_URL = "https://deepmode.onrender.com";
@@ -64,7 +66,26 @@ function scheduleSessionAlarm(session) {
     delayMs = 5_000;
   }
 
+  // Main alarm for auto-end
   chrome.alarms.create(name, { when: Date.now() + delayMs });
+
+  // 5-minute warning alarm (only for blocks > 5 minutes)
+  if (session.planned_duration_minutes > 5) {
+    const warningTime = targetTime - (5 * 60 * 1000); // 5 minutes before end
+    const warningDelayMs = warningTime - Date.now();
+    if (warningDelayMs > 1000) { // Only schedule if more than 1 second away
+      const warningName = `${WARNING_5MIN_ALARM_PREFIX}${session.id}`;
+      chrome.alarms.create(warningName, { when: Date.now() + warningDelayMs });
+      console.log("[Deepmode BG] 5-minute warning alarm created, fires in", Math.round(warningDelayMs / 1000), "seconds");
+    }
+  }
+
+  // Badge update alarm (every 60 seconds)
+  const badgeName = `${BADGE_UPDATE_ALARM_PREFIX}${session.id}`;
+  chrome.alarms.create(badgeName, { periodInMinutes: 1 });
+  
+  // Initial badge update
+  updateBadgeFromSession(session);
 
   console.log(
     "[Deepmode BG] Alarm created:",
@@ -78,11 +99,42 @@ function scheduleSessionAlarm(session) {
 function clearSessionAlarm(sessionId) {
   if (!sessionId) return;
   const name = sessionAlarmName(sessionId);
-  chrome.alarms.clear(name, (wasCleared) => {
-    if (wasCleared) {
-      console.log("[Deepmode BG] Alarm cleared:", name);
+  const warningName = `${WARNING_5MIN_ALARM_PREFIX}${sessionId}`;
+  const badgeName = `${BADGE_UPDATE_ALARM_PREFIX}${sessionId}`;
+  
+  chrome.alarms.clear(name);
+  chrome.alarms.clear(warningName);
+  chrome.alarms.clear(badgeName);
+  
+  console.log("[Deepmode BG] All alarms cleared for session:", sessionId);
+}
+
+function updateBadgeFromSession(session) {
+  if (!session || !session.start_time || !session.planned_duration_minutes) {
+    chrome.action.setBadgeText({ text: "" });
+    return;
+  }
+
+  const startMs = new Date(session.start_time).getTime();
+  const durationMs = session.planned_duration_minutes * 60 * 1000;
+  const targetTime = startMs + durationMs;
+  const remainingMs = targetTime - Date.now();
+  const remainingSeconds = Math.max(0, Math.floor(remainingMs / 1000));
+  const minutesLeft = Math.max(0, Math.floor(remainingSeconds / 60));
+
+  if (minutesLeft > 0) {
+    chrome.action.setBadgeText({ text: minutesLeft.toString() });
+    
+    // Color code: green >5min, yellow 1-5min, red 0
+    let badgeColor = "#22c55e"; // green
+    if (minutesLeft <= 5) {
+      badgeColor = "#ffb84d"; // yellow/orange
     }
-  });
+    chrome.action.setBadgeBackgroundColor({ color: badgeColor });
+  } else {
+    chrome.action.setBadgeText({ text: "0" });
+    chrome.action.setBadgeBackgroundColor({ color: "#e50914" }); // red
+  }
 }
 
 // ---------- STARTUP RESYNC ----------
@@ -99,8 +151,10 @@ function resyncOnStartup() {
           active.id
         );
         scheduleSessionAlarm(active);
+        updateBadgeFromSession(active);
       } else {
         activeSession = null;
+        chrome.action.setBadgeText({ text: "" });
         console.log("[Deepmode BG] Resync: no active session on startup.");
       }
     }
@@ -232,41 +286,7 @@ function createNotificationWithPermission(options, callback) {
 // ---------- NOTIFICATION HANDLERS ----------
 
 chrome.runtime.onMessage.addListener((msg, sender, sendResponse) => {
-  // 5-minute warning
-  if (msg.type === "BLOCK_5MIN_LEFT") {
-    console.log("[Deepmode BG] Received BLOCK_5MIN_LEFT, creating notification");
-    createNotificationWithPermission(
-      {
-        type: "basic",
-        iconUrl: "icon.png",
-        title: "5 minutes left",
-        message: `${msg.task || "Your deep block"} is ending soon. Wrap up your main thought.`,
-        priority: 1
-      },
-      (notificationId) => {
-        console.log("[Deepmode BG] 5-minute warning notification created:", notificationId);
-      }
-    );
-    return;
-  }
-
-  // Session finished - simple informational notification
-  if (msg.type === "BLOCK_FINISHED") {
-    console.log("[Deepmode BG] Received BLOCK_FINISHED, creating notification");
-    createNotificationWithPermission(
-      {
-        type: "basic",
-        iconUrl: "icon.png",
-        title: "Block finished",
-        message: `${msg.task || "Your deep block"} is complete. Good work — take a short break and come back stronger.`,
-        priority: 2
-      },
-      (notificationId) => {
-        console.log("[Deepmode BG] Block finished notification created:", notificationId);
-      }
-    );
-    return;
-  }
+  // Note: 5-minute warning and BLOCK_FINISHED notifications are now handled by alarms, not messages
 
   // Handle end session from blocker
   if (msg.type === "END_SESSION_FROM_BLOCKER") {
@@ -312,7 +332,14 @@ chrome.runtime.onMessage.addListener((msg, sender, sendResponse) => {
     return;
   }
 
-  // Handle END_SESSION (from notification button or blocker.js auto-end)
+  // Handle END_SESSION_AT_TIMER_ZERO (from blocker.js when timer hits 0 - backup to alarm)
+  if (msg.type === "END_SESSION_AT_TIMER_ZERO") {
+    console.log("[Deepmode BG] END_SESSION_AT_TIMER_ZERO received (backup trigger)");
+    // Use same handler as END_SESSION
+    msg.type = "END_SESSION";
+  }
+
+  // Handle END_SESSION (from notification button, blocker.js, or manual end)
   if (msg.type === "END_SESSION") {
     console.log("[Deepmode BG] END_SESSION received - ending session via backend");
     chrome.storage.local.get(
@@ -372,31 +399,7 @@ chrome.runtime.onMessage.addListener((msg, sender, sendResponse) => {
     return;
   }
 
-  // Handle badge updates from blocker.js
-  if (msg.type === "UPDATE_BADGE") {
-    const badgeText = msg.text || "";
-    const seconds = msg.seconds || 0;
-    
-    // Update extension badge with remaining minutes
-    chrome.action.setBadgeText({ text: badgeText });
-    
-    // Color code: green for >5min, yellow for 1-5min, red for 0
-    let badgeColor = "#22c55e"; // green
-    if (seconds <= 0) {
-      badgeColor = "#e50914"; // red
-    } else if (seconds <= 5 * 60) {
-      badgeColor = "#ffb84d"; // yellow/orange
-    }
-    
-    chrome.action.setBadgeBackgroundColor({ color: badgeColor });
-    return;
-  }
-
-  // Handle badge clear
-  if (msg.type === "CLEAR_BADGE") {
-    chrome.action.setBadgeText({ text: "" });
-    return;
-  }
+  // Note: Badge updates are now handled by alarms (updateBadgeFromSession), not messages
 });
 
 // ---------- URL / BLOCKING HELPERS ----------
@@ -609,22 +612,139 @@ chrome.storage.onChanged.addListener((changes, area) => {
   }
 });
 
-// ---------- ALARM HANDLER: AUTO END SESSION (DISABLED - Timer in blocker.js handles this) ----------
+// ---------- ALARM HANDLER: AUTO END SESSION ----------
 
 chrome.alarms.onAlarm.addListener((alarm) => {
-  if (!alarm || !alarm.name || !alarm.name.startsWith(SESSION_ALARM_PREFIX)) {
+  if (!alarm || !alarm.name) {
+    return;
+  }
+
+  // Handle 5-minute warning
+  if (alarm.name.startsWith(WARNING_5MIN_ALARM_PREFIX)) {
+    const sessionIdPart = alarm.name.substring(WARNING_5MIN_ALARM_PREFIX.length);
+    chrome.storage.local.get([STORAGE_KEYS.ACTIVE_SESSION], (res) => {
+      const active = res[STORAGE_KEYS.ACTIVE_SESSION];
+      if (active && String(active.id) === String(sessionIdPart)) {
+        const taskLabel = active.task || "Your deep block";
+        console.log("[Deepmode BG] 5-minute warning alarm fired for:", taskLabel);
+        createNotificationWithPermission(
+          {
+            type: "basic",
+            iconUrl: "icon.png",
+            title: "5 minutes left in your Deepmode block",
+            message: "Wrap up this deepwork block and finish strong.",
+            priority: 1
+          },
+          (notificationId) => {
+            if (notificationId) {
+              console.log("[Deepmode BG] ✅ 5-minute warning notification created");
+            }
+          }
+        );
+      }
+    });
+    return;
+  }
+
+  // Handle badge updates
+  if (alarm.name.startsWith(BADGE_UPDATE_ALARM_PREFIX)) {
+    const sessionIdPart = alarm.name.substring(BADGE_UPDATE_ALARM_PREFIX.length);
+    chrome.storage.local.get([STORAGE_KEYS.ACTIVE_SESSION], (res) => {
+      const active = res[STORAGE_KEYS.ACTIVE_SESSION];
+      if (active && String(active.id) === String(sessionIdPart)) {
+        updateBadgeFromSession(active);
+      } else {
+        // Session ended, clear badge and stop alarm
+        chrome.alarms.clear(alarm.name);
+        chrome.action.setBadgeText({ text: "" });
+      }
+    });
+    return;
+  }
+
+  // Handle session end alarm
+  if (!alarm.name.startsWith(SESSION_ALARM_PREFIX)) {
     return;
   }
 
   const sessionIdPart = alarm.name.substring(SESSION_ALARM_PREFIX.length);
-  console.log("[Deepmode BG] Alarm fired for session:", sessionIdPart, "- IGNORED (timer in blocker.js handles notifications and user choice)");
+  console.log("[Deepmode BG] ✅ Alarm fired for session:", sessionIdPart, "- Auto-ending session");
   
-  // DISABLED: Don't auto-end here. The timer in blocker.js will:
-  // 1. Send BLOCK_FINISHED notification when timer reaches 0
-  // 2. User can choose to end or extend
-  // 3. Fallback auto-end after 10min grace period if no response
-  // The alarm is kept for backwards compatibility but does nothing.
-  return;
+  // Auto-end session when alarm fires (timer reached planned duration)
+  chrome.storage.local.get(
+    [STORAGE_KEYS.ACTIVE_SESSION, STORAGE_KEYS.ACCESS_TOKEN],
+    async (res) => {
+      const active = res[STORAGE_KEYS.ACTIVE_SESSION];
+      const accessToken = res[STORAGE_KEYS.ACCESS_TOKEN] || null;
+
+      if (!active || !active.id) {
+        console.log("[Deepmode BG] No active session found on alarm, skipping auto-end.");
+        return;
+      }
+
+      if (String(active.id) !== String(sessionIdPart)) {
+        console.log("[Deepmode BG] Active session id mismatch on alarm, skipping auto-end.");
+        return;
+      }
+
+      const isGuest = !!active.isGuest || !accessToken;
+      const taskLabel = active.task || "your block";
+
+      console.log("[Deepmode BG] Auto-ending session from alarm. guest=", isGuest);
+
+      // Send notification BEFORE ending
+      createNotificationWithPermission(
+        {
+          type: "basic",
+          iconUrl: "icon.png",
+          title: "Deepmode block finished",
+          message: "Good work. Take a short break, then start your next block.",
+          priority: 2
+        },
+        (notificationId) => {
+          if (notificationId) {
+            console.log("[Deepmode BG] ✅ End notification created:", notificationId);
+          }
+        }
+      );
+
+      if (isGuest) {
+        chrome.storage.local.remove(STORAGE_KEYS.ACTIVE_SESSION, () => {
+          activeSession = null;
+          chrome.action.setBadgeText({ text: "" });
+          console.log("[Deepmode BG] Guest session auto-ended and cleared from storage.");
+        });
+        return;
+      }
+
+      try {
+        const resp = await fetch(
+          `${API_BASE_URL}/sessions/${active.id}/end`,
+          {
+            method: "PATCH",
+            headers: {
+              "Content-Type": "application/json",
+              "Authorization": "Bearer " + accessToken,
+            },
+          }
+        );
+
+        if (!resp.ok) {
+          console.error("[Deepmode BG] Auto-end PATCH failed", resp.status);
+        } else {
+          console.log("[Deepmode BG] ✅ Auto-end PATCH succeeded.");
+        }
+      } catch (err) {
+        console.error("[Deepmode BG] Error calling backend on auto-end", err);
+      } finally {
+        chrome.storage.local.remove(STORAGE_KEYS.ACTIVE_SESSION, () => {
+          activeSession = null;
+          chrome.action.setBadgeText({ text: "" });
+          console.log("[Deepmode BG] Session cleared from storage after auto-end.");
+        });
+      }
+    }
+  );
   
   /* OLD AUTO-END CODE - DISABLED
   chrome.storage.local.get(

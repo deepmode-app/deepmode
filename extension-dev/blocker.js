@@ -322,19 +322,12 @@ function initializeTimer(activeSession) {
     if (!sessionFinishedNotified) {
       sessionFinishedNotified = true;
       chrome.runtime.sendMessage(
-        {
-          type: "BLOCK_FINISHED",
-          task: taskLabel || "your block"
-        },
-        () => {}
-      );
-      chrome.runtime.sendMessage(
-        { type: "END_SESSION" },
+        { type: "END_SESSION_AT_TIMER_ZERO" },
         (response) => {
           if (chrome.runtime.lastError) {
-            console.error("[Deepmode Blocker] Error sending END_SESSION:", chrome.runtime.lastError.message);
+            console.error("[Deepmode Blocker] Error sending END_SESSION_AT_TIMER_ZERO:", chrome.runtime.lastError.message);
           } else {
-            console.log("[Deepmode Blocker] ✅ END_SESSION sent successfully");
+            console.log("[Deepmode Blocker] ✅ END_SESSION_AT_TIMER_ZERO sent successfully");
           }
         }
       );
@@ -355,55 +348,24 @@ function tickTimer() {
     console.log(`[Deepmode Blocker] Timer: ${Math.floor(remainingSeconds / 60)}m ${remainingSeconds % 60}s remaining`);
   }
   
-  // ----- 5-MINUTE WARNING (only for blocks > 5 minutes) -----
-  if (
-    !isShortBlock &&
-    !fiveMinuteWarningSent &&
-    remainingSeconds === 5 * 60
-  ) {
-    fiveMinuteWarningSent = true;
-    console.log("[Deepmode Blocker] 5 minutes left - sending notification");
-
-    chrome.runtime.sendMessage({
-      type: "BLOCK_5MIN_LEFT",
-      task: taskLabel
-    }, (response) => {
-      if (chrome.runtime.lastError) {
-        console.error("[Deepmode Blocker] Error sending BLOCK_5MIN_LEFT:", chrome.runtime.lastError.message);
-      } else {
-        console.log("[Deepmode Blocker] BLOCK_5MIN_LEFT sent successfully");
-      }
-    });
-  }
-
-  // ----- HIT ZERO - Auto-end session -----
+  // ----- HIT ZERO - Send END_SESSION_AT_TIMER_ZERO (alarm is primary, this is backup) -----
   if (remainingSeconds <= 0 && !sessionFinishedNotified) {
     sessionFinishedNotified = true;
     remainingSeconds = 0;
-    console.log("[Deepmode Blocker] Timer reached 0 - sending BLOCK_FINISHED and auto-ending session");
+    console.log("[Deepmode Blocker] Timer reached 0 - sending END_SESSION_AT_TIMER_ZERO (backup trigger)");
 
     // Update badge to 0
     updateTimerUI(remainingSeconds);
 
-    // 1) Notify background so it can show a passive notification
+    // Send END_SESSION_AT_TIMER_ZERO message to background.js
+    // Background.js alarm is the primary trigger, but this ensures we end even if alarm fails
     chrome.runtime.sendMessage(
-      {
-        type: "BLOCK_FINISHED",
-        task: taskLabel || "your block"
-      },
-      () => {
-        // Optional: ignore errors (e.g., background unavailable)
-      }
-    );
-
-    // 2) Auto-end the session via background (single source of truth)
-    chrome.runtime.sendMessage(
-      { type: "END_SESSION" },
+      { type: "END_SESSION_AT_TIMER_ZERO" },
       (response) => {
         if (chrome.runtime.lastError) {
-          console.error("[Deepmode Blocker] Error sending END_SESSION:", chrome.runtime.lastError.message);
+          console.error("[Deepmode Blocker] Error sending END_SESSION_AT_TIMER_ZERO:", chrome.runtime.lastError.message);
         } else {
-          console.log("[Deepmode Blocker] ✅ END_SESSION sent successfully, background will auto-end session");
+          console.log("[Deepmode Blocker] ✅ END_SESSION_AT_TIMER_ZERO sent successfully");
         }
       }
     );
