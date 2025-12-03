@@ -1,11 +1,11 @@
 {
   "manifest_version": 3,
-  "name": "Deepmode AI - DEV",
+  "name": "Deepmode Pro – DEV",
   "version": "2.3.1",
-  "description": "Start Deepwork sessions and stay focused.",
+  "description": "Dev build of Deepmode Pro – for testing only.",
   "action": {
     "default_popup": "popup.html",
-    "default_title": "Deepmode AI - DEV"
+    "default_title": "Deepmode Pro – DEV"
   },
   "permissions": [
     "storage",

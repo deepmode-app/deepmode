@@ -2,7 +2,10 @@
 <html>
   <head>
     <meta charset="UTF-8" />
-    <title>Deepmode AI</title>
+    <title>Deepmode Pro</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
     <style>
       :root {
         --dw-bg: #050509;
@@ -22,7 +25,7 @@
         min-width: 280px;
         background: radial-gradient(circle at top, #111118 0, #050509 45%, #020205 100%);
         color: var(--dw-text);
-        font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", system-ui, sans-serif;
+        font-family: Inter, -apple-system, BlinkMacSystemFont, "Segoe UI", system-ui, sans-serif;
       }
 
       .card {
@@ -263,42 +266,40 @@
         max-width: 260px;
         text-align: center;
         padding: 14px 16px 12px;
+        position: relative;
       }
 
-      .priming-label {
-        font-size: 10px;
-        text-transform: uppercase;
-        letter-spacing: 0.16em;
-        color: #9ca3af;
-        margin-bottom: 6px;
+      .countdown-wrapper {
+        position: relative;
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        justify-content: center;
+        padding: 16px 0;
       }
 
-      .priming-title {
-        font-size: 16px;
-        font-weight: 600;
-        margin-bottom: 4px;
-        animation: primingBreath 3s ease-in-out infinite;
+      .countdown-logo {
+        position: absolute;
+        width: 120px;
+        height: 120px;
+        background-image: url("icon.png");
+        background-size: contain;
+        background-repeat: no-repeat;
+        opacity: 0.08;
+        filter: blur(0.2px);
       }
 
-      .priming-sub {
-        font-size: 12px;
-        color: #e5e7eb;
-        margin-bottom: 10px;
+      .countdown-number {
+        font-size: 32px;
+        font-weight: 700;
+        z-index: 1;
       }
 
-      .priming-countdown {
-        font-size: 18px;
-        font-weight: 600;
-        margin-bottom: 4px;
-      }
-
-      .priming-countdown span {
-        font-size: 24px;
-      }
-
-      .priming-hint {
-        font-size: 10px;
-        color: #9ca3af;
+      .countdown-caption {
+        margin-top: 4px;
+        font-size: 11px;
+        opacity: 0.75;
+        z-index: 1;
       }
 
       @keyframes primingFadeIn {
@@ -367,12 +368,53 @@
         border-color: #9ca3af;
       }
 
+      .popup-header {
+        display: flex;
+        align-items: center;
+        margin-bottom: 12px;
+      }
+
+      .popup-logo {
+        display: flex;
+        align-items: center;
+      }
+
+      .popup-logo-mark {
+        width: 32px;
+        height: 32px;
+        margin-right: 8px;
+      }
+
+      .popup-title-block {
+        display: flex;
+        flex-direction: column;
+      }
+
+      .popup-title {
+        font-weight: 600;
+        font-size: 14px;
+      }
+
+      .popup-subtitle {
+        font-size: 11px;
+        color: rgba(255, 255, 255, 0.55);
+      }
+
     </style>
   </head>
   <body>
     <div class="card">
-      <div class="badge">Deepmode AI</div>
-      <h3>Focus Block</h3>
+      <div class="popup-header">
+        <div class="popup-logo">
+          <img src="icon.png" alt="Deepmode" class="popup-logo-mark" />
+          <div class="popup-title-block">
+            <div class="popup-title">Deepmode Pro</div>
+            <div class="popup-subtitle">
+              Focus blocks for serious work.
+            </div>
+          </div>
+        </div>
+      </div>
 
       <!-- auth/plan state -->
       <div id="authState"
@@ -424,16 +466,10 @@
       <!-- Priming overlay -->
       <div id="primingOverlay" class="priming-overlay">
         <div class="priming-card">
-          <div class="priming-label">Deepwork AI</div>
-          <div class="priming-title">Breathe in. Breathe out.</div>
-          <div class="priming-sub">
-            Phone away. Distractions off. Let's get some work done!
-          </div>
-          <div class="priming-countdown">
-            Starting in <span id="primingCountdown">5</span>…
-          </div>
-          <div class="priming-hint">
-            If you’re not ready, just close this popup.
+          <div class="countdown-wrapper">
+            <div class="countdown-logo"></div>
+            <div class="countdown-number" id="primingCountdown">5</div>
+            <div class="countdown-caption">Deepwork starting…</div>
           </div>
         </div>
       </div>

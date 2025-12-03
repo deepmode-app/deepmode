@@ -2,9 +2,13 @@
 <html lang="en">
 <head>
   <meta charset="UTF-8" />
-  <title>Deepmode – One block, one win.</title>
+  <title>Deepmode – Focus, on command</title>
   <meta name="viewport" content="width=device-width, initial-scale=1" />
   <meta name="description" content="Deepmode helps you block distraction and work in focused 25, 50 or 90-minute sessions, with a clean dashboard for streaks and discipline.">
+  <link rel="icon" type="image/png" href="{{ url_for('static', path='img/deepmode-favicon.png') }}">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
   <style>
     :root {
       --dw-bg: #050509;
@@ -22,7 +26,7 @@
     }
 
     body {
-      font-family: -apple-system, BlinkMacSystemFont, "SF Pro Text", system-ui, sans-serif;
+      font-family: Inter, -apple-system, BlinkMacSystemFont, "SF Pro Text", system-ui, sans-serif;
       background: radial-gradient(circle at top, #171724 0, #050509 52%, #020205 100%);
       color: var(--dw-text);
       min-height: 100vh;
@@ -58,20 +62,17 @@
       color: var(--dw-muted);
     }
 
-    .logo-dot {
-      width: 16px;
-      height: 16px;
-      border-radius: 999px;
-      border: 2px solid var(--dw-accent);
-      position: relative;
+    .nav-logo-mark {
+      width: 24px;
+      height: 24px;
+      margin-right: 8px;
     }
 
-    .logo-dot::after {
-      content: "";
-      position: absolute;
-      inset: 3px;
-      border-radius: inherit;
-      background: var(--dw-accent);
+    .nav-logo-text {
+      font-weight: 700;
+      letter-spacing: 0.12em;
+      text-transform: uppercase;
+      font-size: 12px;
     }
 
     .nav-links {
@@ -327,8 +328,10 @@
     <!-- NAV -->
     <header class="nav">
       <div class="nav-left">
-        <div class="logo-dot"></div>
-        <span>Deepmode</span>
+        <img src="{{ url_for('static', path='img/deepmode-logo-mark.png') }}"
+             alt="Deepmode"
+             class="nav-logo-mark" />
+        <span class="nav-logo-text">DEEPMODE</span>
       </div>
       <nav class="nav-links">
         <a href="#how" class="nav-link">How it works</a>

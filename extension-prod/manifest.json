@@ -1,11 +1,11 @@
 {
     "manifest_version": 3,
-    "name": "Deepmode AI",
+    "name": "Deepmode Pro – Focus Blocks",
     "version": "2.3.1",
-    "description": "Start Deepwork sessions and stay focused.",
+    "description": "Block distractions and finish deep work in 5, 25, 50 or 90 minute focus blocks.",
     "action": {
       "default_popup": "popup.html",
-      "default_title": "Deepmode AI"
+      "default_title": "Deepmode Pro – Focus Blocks"
     },
     "permissions": [
       "storage",

@@ -155,6 +155,7 @@ function showOverlay(activeSession) {
   overlay.style.zIndex = "999999";
 
   overlay.innerHTML = `
+    <div class="deepmode-overlay-bg-logo"></div>
     <div style="
       background:#111118;
       padding:24px 28px;
@@ -163,10 +164,12 @@ function showOverlay(activeSession) {
       max-width:480px;
       text-align:center;
       color:#f5f5f5;
-      font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',system-ui,sans-serif;
+      font-family:Inter,-apple-system,BlinkMacSystemFont,'Segoe UI',system-ui,sans-serif;
+      position:relative;
+      z-index:1;
     ">
       <div style="font-size:11px; text-transform:uppercase; letter-spacing:0.15em; color:#9ca3af; margin-bottom:6px;">
-        Deepmode AI
+        Deepmode Pro
       </div>
       <h2 style="margin:0 0 10px; font-size:22px;">You're in a Deepwork Session</h2>
       <p style="margin:0; font-size:14px; color:#e5e7eb; line-height:1.5;">
@@ -177,6 +180,42 @@ function showOverlay(activeSession) {
       </p>
     </div>
   `;
+
+  // Add CSS for background logo and Inter font
+  if (!document.getElementById("deepmode-overlay-styles")) {
+    const style = document.createElement("style");
+    style.id = "deepmode-overlay-styles";
+    const fontLink = document.createElement("link");
+    fontLink.rel = "preconnect";
+    fontLink.href = "https://fonts.googleapis.com";
+    document.head.appendChild(fontLink);
+    const fontLink2 = document.createElement("link");
+    fontLink2.rel = "preconnect";
+    fontLink2.href = "https://fonts.gstatic.com";
+    fontLink2.crossOrigin = "anonymous";
+    document.head.appendChild(fontLink2);
+    const fontLink3 = document.createElement("link");
+    fontLink3.rel = "stylesheet";
+    fontLink3.href = "https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap";
+    document.head.appendChild(fontLink3);
+    style.textContent = `
+      .deepmode-overlay-bg-logo {
+        position: absolute;
+        top: 50%;
+        left: 50%;
+        transform: translate(-50%, -50%);
+        width: 220px;
+        height: 220px;
+        background-image: url("${chrome.runtime.getURL("icon.png")}");
+        background-size: contain;
+        background-repeat: no-repeat;
+        opacity: 0.06;
+        pointer-events: none;
+        filter: drop-shadow(0 0 24px rgba(229, 9, 20, 0.5));
+      }
+    `;
+    document.head.appendChild(style);
+  }
 
   document.body.appendChild(overlay);
 
