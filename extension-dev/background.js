@@ -312,8 +312,9 @@ chrome.runtime.onMessage.addListener((msg, sender, sendResponse) => {
     return;
   }
 
-  // Handle END_SESSION (from notification button or fallback)
+  // Handle END_SESSION (from notification button or blocker.js auto-end)
   if (msg.type === "END_SESSION") {
+    console.log("[Deepmode BG] END_SESSION received - ending session via backend");
     chrome.storage.local.get(
       [STORAGE_KEYS.ACTIVE_SESSION, STORAGE_KEYS.ACCESS_TOKEN],
       async (res) => {
@@ -321,20 +322,25 @@ chrome.runtime.onMessage.addListener((msg, sender, sendResponse) => {
         const accessToken = res[STORAGE_KEYS.ACCESS_TOKEN] || null;
 
         if (!active || !active.id) {
+          console.log("[Deepmode BG] No active session to end");
           return;
         }
 
         const isGuest = !!active.isGuest || !accessToken;
 
         if (isGuest) {
+          console.log("[Deepmode BG] Ending guest session (local only)");
           chrome.storage.local.remove(STORAGE_KEYS.ACTIVE_SESSION, () => {
             activeSession = null;
+            // Clear badge
+            chrome.action.setBadgeText({ text: "" });
           });
           return;
         }
 
         try {
-          await fetch(
+          console.log(`[Deepmode BG] Calling backend /sessions/${active.id}/end`);
+          const response = await fetch(
             `${API_BASE_URL}/sessions/${active.id}/end`,
             {
               method: "PATCH",
@@ -344,11 +350,21 @@ chrome.runtime.onMessage.addListener((msg, sender, sendResponse) => {
               },
             }
           );
+          
+          if (response.ok) {
+            console.log("[Deepmode BG] ✅ Session ended successfully on backend");
+          } else {
+            console.error(`[Deepmode BG] Backend returned error: ${response.status}`);
+          }
         } catch (err) {
           console.error("[Deepmode BG] Error ending session", err);
         } finally {
+          // Always clear local session and badge, even if backend call failed
           chrome.storage.local.remove(STORAGE_KEYS.ACTIVE_SESSION, () => {
             activeSession = null;
+            // Clear badge
+            chrome.action.setBadgeText({ text: "" });
+            console.log("[Deepmode BG] Local session cleared, badge cleared");
           });
         }
       }

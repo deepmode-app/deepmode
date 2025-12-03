@@ -144,7 +144,12 @@ chrome.runtime.onMessage.addListener((msg, sender, sendResponse) => {
         priority: 1
       },
       (notificationId) => {
-        console.log("[Deepmode BG] 5-minute warning notification created:", notificationId);
+        if (chrome.runtime.lastError) {
+          console.error("[Deepmode BG] ❌ ERROR creating notification:", chrome.runtime.lastError.message);
+          console.error("[Deepmode BG] Check notification permissions in Chrome settings");
+        } else {
+          console.log("[Deepmode BG] ✅ 5-minute warning notification created:", notificationId);
+        }
       }
     );
     return;
@@ -162,7 +167,12 @@ chrome.runtime.onMessage.addListener((msg, sender, sendResponse) => {
         priority: 2
       },
       (notificationId) => {
-        console.log("[Deepmode BG] Block finished notification created:", notificationId);
+        if (chrome.runtime.lastError) {
+          console.error("[Deepmode BG] ❌ ERROR creating notification:", chrome.runtime.lastError.message);
+          console.error("[Deepmode BG] Check notification permissions in Chrome settings");
+        } else {
+          console.log("[Deepmode BG] ✅ Block finished notification created:", notificationId);
+        }
       }
     );
     return;

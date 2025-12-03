@@ -312,8 +312,34 @@ function initializeTimer(activeSession) {
   updateTimerUI(remainingSeconds);
 
   // Start the timer
-  isRunning = true;
-  tickTimer();
+  if (remainingSeconds > 0) {
+    isRunning = true;
+    console.log(`[Deepmode Blocker] ✅ Timer started! Will auto-end in ${remainingSeconds} seconds`);
+    tickTimer();
+  } else {
+    console.log(`[Deepmode Blocker] ⚠️ Timer already expired (${remainingSeconds}s), triggering immediate auto-end`);
+    // Timer already expired, trigger auto-end immediately
+    if (!sessionFinishedNotified) {
+      sessionFinishedNotified = true;
+      chrome.runtime.sendMessage(
+        {
+          type: "BLOCK_FINISHED",
+          task: taskLabel || "your block"
+        },
+        () => {}
+      );
+      chrome.runtime.sendMessage(
+        { type: "END_SESSION" },
+        (response) => {
+          if (chrome.runtime.lastError) {
+            console.error("[Deepmode Blocker] Error sending END_SESSION:", chrome.runtime.lastError.message);
+          } else {
+            console.log("[Deepmode Blocker] ✅ END_SESSION sent successfully");
+          }
+        }
+      );
+    }
+  }
 }
 
 function tickTimer() {
@@ -373,8 +399,12 @@ function tickTimer() {
     // 2) Auto-end the session via background (single source of truth)
     chrome.runtime.sendMessage(
       { type: "END_SESSION" },
-      () => {
-        // No-op; background will handle API call and storage cleanup
+      (response) => {
+        if (chrome.runtime.lastError) {
+          console.error("[Deepmode Blocker] Error sending END_SESSION:", chrome.runtime.lastError.message);
+        } else {
+          console.log("[Deepmode Blocker] ✅ END_SESSION sent successfully, background will auto-end session");
+        }
       }
     );
 
