@@ -815,15 +815,6 @@ document.addEventListener("DOMContentLoaded", () => {
               false
             );
             taskInput.value = "";
-            
-            // Tell dashboard to update instantly
-            chrome.tabs.query({}, (tabs) => {
-              tabs.forEach(tab => {
-                chrome.tabs.sendMessage(tab.id, { type: "DEEPMODE_SESSION_STARTED" }).catch(() => {
-                  // Ignore errors (tab might not have content script)
-                });
-              });
-            });
           }
         );
       } catch (err) {
@@ -929,15 +920,6 @@ document.addEventListener("DOMContentLoaded", () => {
         } finally {
           chrome.storage.local.remove(STORAGE_KEYS.ACTIVE_SESSION, () => {
             setUIForActiveSession(null);
-            
-            // Tell dashboard to update instantly
-            chrome.tabs.query({}, (tabs) => {
-              tabs.forEach(tab => {
-                chrome.tabs.sendMessage(tab.id, { type: "DEEPMODE_SESSION_ENDED" }).catch(() => {
-                  // Ignore errors (tab might not have content script)
-                });
-              });
-            });
           });
         }
       })();
