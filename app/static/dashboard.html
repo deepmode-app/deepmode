@@ -4,7 +4,7 @@
   <meta charset="UTF-8" />
   <title>Deepmode Pro – Your focus stats</title>
   <meta name="viewport" content="width=device-width, initial-scale=1" />
-  <link rel="icon" type="image/png" href="{{ url_for('static', path='img/deepmode-favicon.png') }}">
+  <link rel="icon" type="image/png" href="/static/logos/Logo - Red BG.png">
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
@@ -1538,7 +1538,7 @@
     <!-- Top navigation -->
     <header class="nav">
         <div class="nav-left">
-          <img id="navLogoMark" src="{{ url_for('static', path='logos/Logo with text.png') }}"
+          <img id="navLogoMark" src="/static/logos/Logo - Red BG.png"
                alt="Deepmode"
                class="nav-logo" />
         </div>
@@ -2113,7 +2113,6 @@
           if (navLogoMark) {
             navLogoMark.src = "/static/logos/Deepmode Pro.png";
             navLogoMark.alt = "Deepmode Pro";
-            navLogoMark.className = "nav-logo";
           }
           if (upgradeBtn) {
             upgradeBtn.style.display = "none";
@@ -2126,7 +2125,7 @@
           }
         } else {
           if (navLogoMark) {
-            navLogoMark.src = "/static/logos/icon128.png";
+            navLogoMark.src = "/static/logos/Logo - Red BG.png";
             navLogoMark.alt = "Deepmode";
           }
           if (upgradeBtn) {

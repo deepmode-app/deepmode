@@ -79,6 +79,19 @@ def install_page():
     return FileResponse(STATIC_DIR / "install.html")
 
 
+# ---------- Static file serving ----------
+
+@app.get("/static/{file_path:path}", include_in_schema=False)
+def serve_static(file_path: str):
+    """
+    Serve static files (images, CSS, etc.) from app/static/
+    """
+    file_path_obj = STATIC_DIR / file_path
+    if not file_path_obj.exists() or not file_path_obj.is_file():
+        raise HTTPException(status_code=404, detail="File not found")
+    return FileResponse(file_path_obj)
+
+
 
 
 # ---------- Extension ZIP download ----------

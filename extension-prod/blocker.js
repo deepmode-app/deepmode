@@ -209,13 +209,13 @@ function showOverlay(activeSession) {
         transform: translate(-50%, -50%);
         width: 320px;
         height: 320px;
-        background-image: url("${chrome.runtime.getURL("icon.png")}");
+        background-image: url("https://deepmode.app/static/logos/Logo%20-%20Red%20BG.png");
         background-size: contain;
         background-repeat: no-repeat;
         background-position: center;
-        opacity: 0.08;
+        opacity: 0.12;
         pointer-events: none;
-        filter: blur(1px) drop-shadow(0 0 40px rgba(229, 9, 20, 0.4));
+        filter: blur(0.5px) drop-shadow(0 0 40px rgba(229, 9, 20, 0.5));
         z-index: 0;
       }
     `;
