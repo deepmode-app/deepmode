@@ -1584,7 +1584,6 @@
 
       <div class="header">
         <div class="left-header">
-          <div class="badge badge-pro" id="headerBadge">Deepmode</div>
           <h1>Your focus stats</h1>
           <div class="subhead" id="userHint">
             Laptop on. Distractions off. Let's see what you actually did.
@@ -2106,13 +2105,9 @@
         }
 
         const navLogoMark = document.getElementById("navLogoMark");
-        const headerBadge = document.getElementById("headerBadge");
         if (user.is_pro) {
           if (badgeEl) {
             badgeEl.textContent = "Deepmode Pro";
-          }
-          if (headerBadge) {
-            headerBadge.textContent = "Deepmode Pro";
           }
           if (navLogoMark) {
             navLogoMark.src = "/static/logos/Deepmode Pro.png";
@@ -2130,9 +2125,6 @@
         } else {
           if (badgeEl) {
             badgeEl.textContent = "Deepmode";
-          }
-          if (headerBadge) {
-            headerBadge.textContent = "Deepmode";
           }
           if (navLogoMark) {
             navLogoMark.src = "/static/logos/Logo - Red BG.png";

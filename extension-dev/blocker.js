@@ -100,10 +100,33 @@ function forcePlayInPage() {
 function showOverlay(activeSession) {
   if (document.getElementById("deepwork-overlay")) return;
 
+  // Determine if user is Pro - check session first, then storage
+  let isPro = false;
+  if (activeSession && activeSession.is_pro !== undefined) {
+    isPro = activeSession.is_pro;
+  } else {
+    // Check storage for user info
+    chrome.storage.local.get(["deepmode_user"], (result) => {
+      if (result.deepmode_user && result.deepmode_user.is_pro) {
+        isPro = true;
+      }
+      renderOverlay(activeSession, isPro);
+    });
+    return; // Will render in callback
+  }
+  
+  renderOverlay(activeSession, isPro);
+}
+
+function renderOverlay(activeSession, isPro) {
+  if (document.getElementById("deepwork-overlay")) return;
+
   // Try to personalize with the current task
   const taskLabel = (activeSession && activeSession.task)
-    ? `“${activeSession.task}”`
+    ? `"${activeSession.task}"`
     : "your current Deepmode block";
+  
+  const brandText = isPro ? "Deepmode Pro AI" : "DeepMode AI";
 
   // Pool of random one-liners
   const messages = [
@@ -169,7 +192,7 @@ function showOverlay(activeSession) {
       z-index:1;
     ">
       <div style="font-size:11px; text-transform:uppercase; letter-spacing:0.15em; color:#9ca3af; margin-bottom:6px;">
-        Deepmode Pro
+        ${brandText}
       </div>
       <h2 style="margin:0 0 10px; font-size:22px;">You're in a Deepwork Session</h2>
       <p style="margin:0; font-size:14px; color:#e5e7eb; line-height:1.5;">
@@ -207,15 +230,15 @@ function showOverlay(activeSession) {
         top: 50%;
         left: 50%;
         transform: translate(-50%, -50%);
-        width: 320px;
-        height: 320px;
+        width: 480px;
+        height: 480px;
         background-image: url("https://deepmode.onrender.com/static/logos/Logo%20-%20Red%20BG.png");
         background-size: contain;
         background-repeat: no-repeat;
         background-position: center;
-        opacity: 0.12;
+        opacity: 0.05;
         pointer-events: none;
-        filter: blur(0.5px) drop-shadow(0 0 40px rgba(229, 9, 20, 0.5));
+        filter: blur(1.5px) drop-shadow(0 0 60px rgba(229, 9, 20, 0.3));
         z-index: 0;
       }
     `;
