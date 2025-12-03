@@ -319,6 +319,30 @@
       animation: dotPulse 1.4s ease-in-out infinite;
     }
 
+    .live-banner .current-label {
+      font-weight: 500;
+      opacity: 0.9;
+      margin-right: 2px;
+    }
+
+    .live-banner .current-task {
+      font-weight: 600;
+    }
+
+    .live-banner .current-separator {
+      opacity: 0.6;
+      margin: 0 4px;
+    }
+
+    .live-banner .current-category {
+      opacity: 0.85;
+    }
+
+    .live-banner .current-timer {
+      font-variant-numeric: tabular-nums;
+      font-weight: 500;
+    }
+
     /* Last block banner */
     .last-block-banner {
       border-radius: 14px;
@@ -1108,6 +1132,87 @@
       margin-top: 10px;
     }
 
+    /* Toggle switches for email preferences */
+    .toggle-row {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      margin-bottom: 12px;
+    }
+
+    .toggle-text {
+      flex: 1;
+      margin-right: 12px;
+    }
+
+    .toggle-title {
+      font-size: 0.9rem;
+      font-weight: 500;
+      color: var(--dw-text);
+      margin-bottom: 2px;
+    }
+
+    .toggle-sub {
+      font-size: 0.8rem;
+      opacity: 0.7;
+      color: var(--dw-muted);
+      line-height: 1.4;
+    }
+
+    .switch {
+      position: relative;
+      display: inline-block;
+      width: 40px;
+      height: 22px;
+      flex-shrink: 0;
+    }
+
+    .switch input {
+      opacity: 0;
+      width: 0;
+      height: 0;
+    }
+
+    .slider {
+      position: absolute;
+      cursor: pointer;
+      top: 0;
+      left: 0;
+      right: 0;
+      bottom: 0;
+      background-color: #262626;
+      transition: 0.2s;
+      border-radius: 999px;
+    }
+
+    .slider:before {
+      position: absolute;
+      content: "";
+      height: 16px;
+      width: 16px;
+      left: 3px;
+      top: 3px;
+      background-color: #f5f5f5;
+      transition: 0.2s;
+      border-radius: 50%;
+    }
+
+    .switch input:checked + .slider {
+      background-color: #e50914;
+    }
+
+    .switch input:checked + .slider:before {
+      transform: translateX(18px);
+    }
+
+    .switch:hover .slider {
+      background-color: #3a3a3a;
+    }
+
+    .switch input:checked:hover + .slider {
+      background-color: #f3121f;
+    }
+
     .session-modal-btn-primary {
       background: var(--dw-accent);
       border: none;
@@ -1501,7 +1606,12 @@
     <!-- Centered live session banner -->
     <div id="liveSessionBanner" class="live-banner">
       <span class="live-dot"></span>
-      <span id="liveSessionText"></span>
+      <span class="current-label">Current deepwork session:</span>
+      <span class="current-task" id="currentSessionTask"></span>
+      <span class="current-separator">—</span>
+      <span class="current-category" id="currentSessionCategory"></span>
+      <span class="current-separator">—</span>
+      <span class="current-timer" id="currentSessionTimer"></span>
     </div>
 
       <div class="cards-row">
@@ -1715,25 +1825,27 @@
         <div class="session-modal-label">Notifications</div>
         
         <div style="margin-top: 12px;">
-          <label style="display: flex; flex-direction: column; gap: 4px; margin-bottom: 16px; cursor: pointer;">
-            <div style="display: flex; align-items: center; gap: 8px;">
-              <input id="dailyEmailToggle" type="checkbox" style="width: 16px; height: 16px; cursor: pointer;" />
-              <span style="font-size: 13px; font-weight: 500; color: var(--dw-text);">Daily streak reminder</span>
+          <div class="toggle-row">
+            <div class="toggle-text">
+              <div class="toggle-title">Daily streak reminder</div>
+              <div class="toggle-sub">Short nudge to keep your streak alive.</div>
             </div>
-            <div style="font-size: 11px; color: var(--dw-muted); margin-left: 24px; line-height: 1.4;">
-              A gentle nudge to keep your streak alive.
-            </div>
-          </label>
+            <label class="switch">
+              <input type="checkbox" id="dailyEmailToggle">
+              <span class="slider"></span>
+            </label>
+          </div>
 
-          <label style="display: flex; flex-direction: column; gap: 4px; margin-bottom: 16px; cursor: pointer;">
-            <div style="display: flex; align-items: center; gap: 8px;">
-              <input id="weeklyEmailToggle" type="checkbox" style="width: 16px; height: 16px; cursor: pointer;" />
-              <span style="font-size: 13px; font-weight: 500; color: var(--dw-text);">Weekly focus report</span>
+          <div class="toggle-row">
+            <div class="toggle-text">
+              <div class="toggle-title">Weekly focus report</div>
+              <div class="toggle-sub">A summary of your wins and where to improve.</div>
             </div>
-            <div style="font-size: 11px; color: var(--dw-muted); margin-left: 24px; line-height: 1.4;">
-              A summary of your wins and where to improve.
-            </div>
-          </label>
+            <label class="switch">
+              <input type="checkbox" id="weeklyEmailToggle">
+              <span class="slider"></span>
+            </label>
+          </div>
         </div>
 
         <p id="emailPrefsStatus" style="font-size: 11px; color: var(--dw-muted); margin-top: 8px; min-height: 14px;"></p>
@@ -1756,7 +1868,8 @@
     const userEmailLine = document.getElementById("userEmailLine");
 
     // Background polling interval for /sessions/ (in ms)
-    const SESSIONS_POLL_INTERVAL_MS = 20000; // 20s
+    const SESSIONS_POLL_INTERVAL_ACTIVE_MS = 5000; // 5s when session is running
+    const SESSIONS_POLL_INTERVAL_IDLE_MS = 20000; // 20s when idle
 
     let sessionsIndex = {};
     let currentSessionId = null;
@@ -2338,13 +2451,18 @@
 
     function updateLiveBanner(session) {
       const banner = document.getElementById("liveSessionBanner");
-      const textEl = document.getElementById("liveSessionText");
-      if (!banner || !textEl) return;
+      const taskEl = document.getElementById("currentSessionTask");
+      const categoryEl = document.getElementById("currentSessionCategory");
+      const timerEl = document.getElementById("currentSessionTimer");
+      
+      if (!banner || !taskEl || !categoryEl || !timerEl) return;
 
       if (!session) {
         // Hide live banner when no session
         banner.style.display = "none";
-        textEl.textContent = "";
+        taskEl.textContent = "";
+        categoryEl.textContent = "";
+        timerEl.textContent = "";
         if (liveTimerId) {
           clearInterval(liveTimerId);
           liveTimerId = null;
@@ -2362,17 +2480,17 @@
         liveTimerId = null;
       }
 
+      // Set task and category (static)
+      taskEl.textContent = session.task || "Deepwork";
+      categoryEl.textContent = session.category ? categoryLabel(session.category) : "General";
+
       function render() {
         const start = new Date(session.start_time);
         const now = new Date();
         const elapsedSec = Math.max(0, Math.floor((now - start) / 1000));
         const planned = session.planned_duration_minutes || 0;
 
-        const catLabel = session.category
-          ? `${categoryLabel(session.category)} — `
-          : "";
-
-        let label;
+        let timerLabel;
 
         if (planned > 0) {
           const totalSec = planned * 60;
@@ -2381,28 +2499,20 @@
           if (remaining >= 0) {
             const rm = Math.floor(remaining / 60);
             const rs = remaining % 60;
-            const taskTitle = session.task
-              ? session.task.charAt(0).toUpperCase() + session.task.slice(1)
-              : "Deepmode session";
-
-            label = `${catLabel}${taskTitle} • ${rm}m ${String(rs).padStart(2, "0")}s left`;
+            timerLabel = `${rm}m ${String(rs).padStart(2, "0")}s left`;
           } else {
             const over = -remaining;
             const om = Math.floor(over / 60);
             const os = over % 60;
-            label =
-              `${catLabel}${session.task || "Deepmode session"} · ` +
-              `+${om}m ${String(os).padStart(2, "0")}s overtime`;
+            timerLabel = `+${om}m ${String(os).padStart(2, "0")}s overtime`;
           }
         } else {
           const em = Math.floor(elapsedSec / 60);
           const es = elapsedSec % 60;
-          label =
-            `${catLabel}${session.task || "Deepmode session"} · ` +
-            `${em}m ${String(es).padStart(2, "0")}s in`;
+          timerLabel = `${em}m ${String(es).padStart(2, "0")}s in`;
         }
 
-        textEl.textContent = label;
+        timerEl.textContent = timerLabel;
       }
 
       render();
@@ -2537,6 +2647,15 @@
           const status = deriveStatus(s);
           return status === "running";
         });
+
+        // Dynamic polling: switch interval based on running session
+        const desiredInterval = hasRunningSession
+          ? SESSIONS_POLL_INTERVAL_ACTIVE_MS
+          : SESSIONS_POLL_INTERVAL_IDLE_MS;
+        
+        if (desiredInterval !== currentPollInterval && sessionsPollHandle !== null) {
+          restartSessionsPolling(desiredInterval);
+        }
 
         // Get DOM elements
         const currentBar = document.getElementById("liveSessionBanner");
@@ -2749,23 +2868,38 @@
     // ---------- Background polling for /sessions/ ----------
 
     let sessionsPollHandle = null;
+    let currentPollInterval = SESSIONS_POLL_INTERVAL_IDLE_MS;
 
     function pollSessionsOnce() {
       // Reuse the main loader so manual refresh logic stays unchanged
       return loadSessions();
     }
 
-    function startSessionsPolling() {
-      if (sessionsPollHandle !== null) return;
+    function restartSessionsPolling(intervalMs) {
+      // Clear any existing interval
+      if (sessionsPollHandle !== null) {
+        clearInterval(sessionsPollHandle);
+        sessionsPollHandle = null;
+      }
+
+      // Set new interval
+      currentPollInterval = intervalMs;
 
       // Initial immediate load for good UX
       pollSessionsOnce();
 
+      // Create new interval with the desired timing
       sessionsPollHandle = setInterval(() => {
         // Only poll when the tab is visible
         if (document.visibilityState !== "visible") return;
         pollSessionsOnce();
-      }, SESSIONS_POLL_INTERVAL_MS);
+      }, intervalMs);
+    }
+
+    function startSessionsPolling() {
+      if (sessionsPollHandle !== null) return;
+      // Start with idle interval, will auto-switch to active when session appears
+      restartSessionsPolling(SESSIONS_POLL_INTERVAL_IDLE_MS);
     }
 
     function stopSessionsPolling() {
