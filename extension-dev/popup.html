@@ -289,16 +289,53 @@
         filter: blur(0.2px);
       }
 
+      .priming-label {
+        font-size: 10px;
+        text-transform: uppercase;
+        letter-spacing: 0.16em;
+        color: #9ca3af;
+        margin-bottom: 6px;
+        z-index: 1;
+      }
+
+      .priming-title {
+        font-size: 16px;
+        font-weight: 600;
+        margin-bottom: 4px;
+        animation: primingBreath 3s ease-in-out infinite;
+        z-index: 1;
+      }
+
+      .priming-sub {
+        font-size: 12px;
+        color: #e5e7eb;
+        margin-bottom: 10px;
+        z-index: 1;
+      }
+
+      .countdown-number-wrapper {
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        z-index: 1;
+        margin-top: 8px;
+      }
+
       .countdown-number {
         font-size: 32px;
         font-weight: 700;
-        z-index: 1;
       }
 
       .countdown-caption {
         margin-top: 4px;
         font-size: 11px;
         opacity: 0.75;
+      }
+
+      .priming-hint {
+        font-size: 10px;
+        color: #9ca3af;
+        margin-top: 8px;
         z-index: 1;
       }
 
@@ -468,8 +505,18 @@
         <div class="priming-card">
           <div class="countdown-wrapper">
             <div class="countdown-logo"></div>
-            <div class="countdown-number" id="primingCountdown">5</div>
-            <div class="countdown-caption">Deepwork starting…</div>
+            <div class="priming-label">Deepmode Pro</div>
+            <div class="priming-title">Breathe in. Breathe out.</div>
+            <div class="priming-sub">
+              Phone away. Distractions off. Let's get some work done!
+            </div>
+            <div class="countdown-number-wrapper">
+              <div class="countdown-number" id="primingCountdown">5</div>
+              <div class="countdown-caption">Deepwork starting…</div>
+            </div>
+            <div class="priming-hint">
+              If you're not ready, just close this popup.
+            </div>
           </div>
         </div>
       </div>

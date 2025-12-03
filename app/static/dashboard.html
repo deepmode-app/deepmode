@@ -1546,8 +1546,8 @@
     <!-- Top navigation -->
     <header class="nav">
         <div class="nav-left">
-          <img src="{{ url_for('static', path='logos/icon128.png') }}"
-               alt="Deepmode Pro"
+          <img id="navLogoMark" src="{{ url_for('static', path='logos/icon128.png') }}"
+               alt="Deepmode"
                class="nav-logo-mark" />
           <span class="nav-logo-text">DEEPMODE</span>
         </div>
@@ -2114,9 +2114,14 @@
           userEmailLine.textContent = user.email;
         }
 
+        const navLogoMark = document.getElementById("navLogoMark");
         if (user.is_pro) {
           if (badgeEl) {
             badgeEl.textContent = "Deepmode Pro";
+          }
+          if (navLogoMark) {
+            navLogoMark.src = "/static/logos/Deepmode Pro.png";
+            navLogoMark.alt = "Deepmode Pro";
           }
           if (upgradeBtn) {
             upgradeBtn.style.display = "none";
@@ -2128,6 +2133,10 @@
             manageBillingBtn.style.display = "block";
           }
         } else {
+          if (navLogoMark) {
+            navLogoMark.src = "/static/logos/icon128.png";
+            navLogoMark.alt = "Deepmode";
+          }
           if (upgradeBtn) {
             upgradeBtn.style.display = "inline-block";
           }
