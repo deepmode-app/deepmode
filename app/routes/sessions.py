@@ -347,8 +347,27 @@ def end_session(
         start = start.replace(tzinfo=timezone.utc)
 
     diff = now - start
-    actual_minutes = max(1, int(diff.total_seconds() // 60))
+    actual_seconds = diff.total_seconds()
     planned = row["planned_duration_minutes"]
+    planned_seconds = planned * 60
+    
+    # Calculate actual minutes from seconds (integer division truncates)
+    actual_minutes = max(1, int(actual_seconds // 60))
+    
+    # CRITICAL FIX: When a session auto-ends (alarm fires at planned time),
+    # timing precision or slight delays can cause actual_seconds to be slightly
+    # less than planned_seconds. When converted to minutes, this truncates down
+    # (e.g., 4 min 59 sec → 4 minutes), incorrectly resulting in "completed_early"
+    # instead of "completed".
+    #
+    # Solution: If we're within 30 seconds of the planned time (likely auto-ended),
+    # round up to at least the planned duration to ensure "completed" status.
+    # This buffer (30 seconds) is small enough that manual early ends won't be affected,
+    # but large enough to handle timing precision issues.
+    if actual_seconds >= planned_seconds - 30:
+        # Very close to planned time (within 30 seconds) - treat as auto-ended
+        # Ensure we record at least the planned duration
+        actual_minutes = max(actual_minutes, planned)
 
     # Derive status and discipline using the standardized helper
     status_val, discipline_score = derive_status_and_discipline(planned, actual_minutes)
