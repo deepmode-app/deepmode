@@ -203,88 +203,148 @@
     /* HOW IT WORKS */
 
     .section {
-      margin-bottom: 26px;
+      margin-bottom: 48px;
     }
 
     .section-title {
       font-size: 15px;
       font-weight: 600;
-      margin-bottom: 10px;
+      margin-bottom: 16px;
     }
 
-    .how-grid {
-      display: grid;
-      grid-template-columns: repeat(3, minmax(0, 1fr));
-      gap: 12px;
+    /* Simple step strip */
+    .steps-strip {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 24px;
+      padding: 20px 0;
+      font-size: 13px;
+      color: var(--dw-muted);
+      border-top: 1px solid rgba(39, 39, 47, 0.5);
+      border-bottom: 1px solid rgba(39, 39, 47, 0.5);
+    }
+
+    .step-item {
+      flex: 1;
+      min-width: 200px;
+    }
+
+    .step-number {
+      font-weight: 600;
+      color: var(--dw-text);
+      margin-right: 8px;
     }
 
     @media (max-width: 840px) {
-      .how-grid {
-        grid-template-columns: 1fr;
+      .steps-strip {
+        flex-direction: column;
+        gap: 16px;
       }
     }
 
-    .how-card {
+    /* Why Deepmode - simple text */
+    .why-text {
+      font-size: 14px;
+      line-height: 1.6;
+      color: var(--dw-text);
+      margin-bottom: 16px;
+      max-width: 600px;
+    }
+
+    .why-bullets {
+      list-style: none;
+      padding: 0;
+      margin: 0;
+      max-width: 600px;
+    }
+
+    .why-bullets li {
+      font-size: 13px;
+      color: var(--dw-muted);
+      line-height: 1.8;
+      padding-left: 16px;
+      position: relative;
+    }
+
+    .why-bullets li::before {
+      content: "•";
+      position: absolute;
+      left: 0;
+      color: var(--dw-accent);
+    }
+
+    /* PRICING CARD - dominant visual element */
+    .pricing-card {
       background: var(--dw-card);
-      border-radius: 12px;
-      padding: 10px 11px 11px;
-      border: 1px solid #1f2933;
-      font-size: 12px;
+      border-radius: 16px;
+      border: 1px solid var(--dw-border);
+      padding: 32px;
+      box-shadow: 0 20px 60px rgba(0, 0, 0, 0.4);
+      max-width: 700px;
+      margin: 0 auto;
     }
 
-    .how-step {
-      font-size: 10px;
-      text-transform: uppercase;
-      letter-spacing: 0.16em;
-      color: var(--dw-muted);
-      margin-bottom: 4px;
+    .pricing-title-row {
+      text-align: center;
+      margin-bottom: 24px;
     }
 
-    .how-title {
+    .pricing-price {
+      font-size: 32px;
+      font-weight: 600;
+      color: var(--dw-text);
+      margin: 8px 0;
+    }
+
+    .comparison-table {
+      width: 100%;
+      border-collapse: collapse;
+      margin: 24px 0;
+      font-size: 13px;
+    }
+
+    .comparison-table th {
+      text-align: left;
+      padding: 12px 0;
       font-weight: 500;
-      margin-bottom: 4px;
-      font-size: 12px;
+      color: var(--dw-text);
+      border-bottom: 1px solid var(--dw-border);
     }
 
-    .how-text {
+    .comparison-table th.center {
+      text-align: center;
+    }
+
+    .comparison-table td {
+      padding: 12px 0;
       color: var(--dw-muted);
-      line-height: 1.5;
+      border-bottom: 1px solid rgba(39, 39, 47, 0.5);
     }
 
-    /* MINI PRICING STRIP */
+    .comparison-table td.center {
+      text-align: center;
+      color: var(--dw-text);
+    }
 
-    .pricing-strip {
-      margin-top: 8px;
-      background: rgba(15,23,42,0.85);
-      border-radius: 12px;
-      border: 1px solid #111827;
-      padding: 10px 12px;
+    .comparison-table td.pro {
+      color: var(--dw-text);
+      font-weight: 500;
+    }
+
+    .pricing-cta-row {
       display: flex;
-      flex-wrap: wrap;
-      align-items: center;
-      justify-content: space-between;
-      gap: 8px;
-      font-size: 12px;
-      color: var(--dw-muted);
+      gap: 12px;
+      margin-top: 24px;
     }
 
-    .pricing-strip strong {
-      color: #e5e7eb;
-    }
-
-    .pricing-link {
-      font-size: 12px;
-      border-radius: 999px;
-      padding: 6px 10px;
-      border: 1px solid #27272f;
-      cursor: pointer;
-      background: transparent;
-      color: #e5e7eb;
-    }
-
-    .pricing-link:hover {
-      border-color: var(--dw-accent);
-      color: #fca5a5;
+    .mission-line {
+      text-align: center;
+      font-size: 14px;
+      color: var(--dw-text);
+      padding: 32px 0;
+      border-top: 1px solid rgba(39, 39, 47, 0.3);
+      border-bottom: 1px solid rgba(39, 39, 47, 0.3);
+      margin: 48px 0;
     }
 
     /* FOOTER */
@@ -367,128 +427,94 @@
     <!-- 3-STEP ONBOARDING -->
     <section id="how" class="section">
       <h2 class="section-title">How Deepmode works</h2>
-
-      <div class="how-grid">
-        <div class="how-card">
-          <div class="how-step">Step 1</div>
-          <div class="how-title">Install the Chrome extension</div>
-          <p class="how-text">
-            Connect Deepmode to your browser in one click and sign in.
-          </p>
+      <div class="steps-strip">
+        <div class="step-item">
+          <span class="step-number">1</span> Install the Chrome extension
         </div>
-        <div class="how-card">
-          <div class="how-step">Step 2</div>
-          <div class="how-title">Start your first deepwork session</div>
-          <p class="how-text">
-            Pick 25, 50, or 90 minutes, choose a project, and press Start.
-          </p>
+        <div class="step-item">
+          <span class="step-number">2</span> Start your first deepwork session
         </div>
-        <div class="how-card">
-          <div class="how-step">Step 3</div>
-          <div class="how-title">Let Deepmode block distractions & track your progress</div>
-          <p class="how-text">
-            We protect your focus, and you build your streak.
-          </p>
+        <div class="step-item">
+          <span class="step-number">3</span> Let Deepmode block distractions and track your progress
         </div>
       </div>
-    </section>
-
-    <!-- MISSION STATEMENT -->
-    <section class="section" style="text-align: center; margin-bottom: 32px;">
-      <p style="font-size: 14px; color: #e5e7eb; max-width: 600px; margin: 0 auto; line-height: 1.6;">
-        Deepmode exists to help high-performers protect their time and master deep work.
-      </p>
     </section>
 
     <!-- VALUE PROPOSITION -->
     <section class="section">
       <h2 class="section-title">Why Deepmode?</h2>
-
-      <div class="how-grid">
-        <div class="how-card">
-          <div class="how-title">Distraction blocking</div>
-          <p class="how-text">
-            Deepmode blocks your chosen sites during sessions so you stay in flow.
-          </p>
-        </div>
-        <div class="how-card">
-          <div class="how-title">Session tracking</div>
-          <p class="how-text">
-            Every block is logged — completed, early, or abandoned — so you see real behavior.
-          </p>
-        </div>
-        <div class="how-card">
-          <div class="how-title">Progress & streaks</div>
-          <p class="how-text">
-            Daily and weekly streaks show your actual consistency.
-          </p>
-        </div>
-        <div class="how-card">
-          <div class="how-title">Built for high-performers</div>
-          <p class="how-text">
-            Designed for people who need long, uninterrupted focus to do meaningful work.
-          </p>
-        </div>
-      </div>
+      <p class="why-text">
+        Deepmode is built for people who need long, uninterrupted focus to do meaningful work.
+      </p>
+      <ul class="why-bullets">
+        <li>Distraction blocking</li>
+        <li>Accurate session tracking</li>
+        <li>Progress, streaks, and insights</li>
+      </ul>
     </section>
+
+    <!-- MISSION STATEMENT -->
+    <div class="mission-line">
+      Deepmode exists to help high-performers protect their time and master deep work.
+    </div>
 
     <!-- PRICING -->
     <section class="section">
-      <h2 class="section-title">Deepmode Pro</h2>
-      <p class="hero-sub" style="max-width: 600px; margin: 0 auto 20px;">
-        One tool to protect your focus and track who you're becoming through deep work.
-      </p>
-
-      <div class="pricing-strip" style="flex-direction: column; align-items: flex-start; gap: 16px; padding: 20px;">
-        <div style="font-size: 24px; font-weight: 600; color: #f5f5f5;">£9.99/month</div>
-        
-        <!-- Comparison Table -->
-        <div style="width: 100%; border-collapse: collapse; font-size: 13px; margin-top: 8px;">
-          <div style="display: grid; grid-template-columns: 1fr auto auto; gap: 12px; padding: 8px 0; border-bottom: 1px solid #27272f;">
-            <div style="font-weight: 500; color: #e5e7eb;">Feature</div>
-            <div style="text-align: center; color: #9ca3af;">Free</div>
-            <div style="text-align: center; color: #e50914; font-weight: 500;">Pro</div>
-          </div>
-          <div style="display: grid; grid-template-columns: 1fr auto auto; gap: 12px; padding: 8px 0; border-bottom: 1px solid #27272f;">
-            <div style="color: #e5e7eb;">Deepwork sessions</div>
-            <div style="text-align: center; color: #9ca3af;">3/day</div>
-            <div style="text-align: center; color: #e5e7eb;">Unlimited</div>
-          </div>
-          <div style="display: grid; grid-template-columns: 1fr auto auto; gap: 12px; padding: 8px 0; border-bottom: 1px solid #27272f;">
-            <div style="color: #e5e7eb;">Session length</div>
-            <div style="text-align: center; color: #9ca3af;">5m, 25m</div>
-            <div style="text-align: center; color: #e5e7eb;">5m, 25m, 50m, 90m</div>
-          </div>
-          <div style="display: grid; grid-template-columns: 1fr auto auto; gap: 12px; padding: 8px 0; border-bottom: 1px solid #27272f;">
-            <div style="color: #e5e7eb;">Progress tracking</div>
-            <div style="text-align: center; color: #9ca3af;">Basic</div>
-            <div style="text-align: center; color: #e5e7eb;">Advanced</div>
-          </div>
-          <div style="display: grid; grid-template-columns: 1fr auto auto; gap: 12px; padding: 8px 0;">
-            <div style="color: #e5e7eb;">Reports & insights</div>
-            <div style="text-align: center; color: #9ca3af;">—</div>
-            <div style="text-align: center; color: #e5e7eb;">Daily & weekly</div>
-          </div>
+      <div class="pricing-card">
+        <div class="pricing-title-row">
+          <h2 class="section-title" style="margin-bottom: 0;">Deepmode Pro</h2>
+          <div class="pricing-price">£9.99/month</div>
         </div>
 
-        <div style="display: flex; gap: 10px; width: 100%; margin-top: 8px;">
-          <button class="btn btn-primary" onclick="window.location.href='/install'" style="flex: 1;">
-            Install Chrome Extension
-          </button>
-          <button class="btn btn-secondary" onclick="window.location.href='/signup'" style="flex: 1;">
+        <table class="comparison-table">
+          <thead>
+            <tr>
+              <th>Feature</th>
+              <th class="center">Free</th>
+              <th class="center" style="color: var(--dw-accent);">Pro</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr>
+              <td>Deepwork sessions</td>
+              <td class="center">up to 3/day</td>
+              <td class="center pro">unlimited</td>
+            </tr>
+            <tr>
+              <td>Session length</td>
+              <td class="center">up to 25 min</td>
+              <td class="center pro">5m, 25m, 50m, 90m</td>
+            </tr>
+            <tr>
+              <td>Progress tracking</td>
+              <td class="center">basic today</td>
+              <td class="center pro">full history + discipline</td>
+            </tr>
+            <tr>
+              <td>Reports & insights</td>
+              <td class="center">none</td>
+              <td class="center pro">daily & weekly</td>
+            </tr>
+          </tbody>
+        </table>
+
+        <div class="pricing-cta-row">
+          <button class="btn btn-primary" onclick="window.location.href='/signup'" style="flex: 1;">
             Start Free Trial
           </button>
+          <button class="btn btn-secondary" onclick="window.location.href='/install'" style="flex: 1;">
+            Install Chrome Extension
+          </button>
         </div>
-        <div style="font-size: 11px; color: #9ca3af; margin-top: 4px; text-align: center; width: 100%;">
+        <div style="font-size: 11px; color: #9ca3af; margin-top: 16px; text-align: center;">
           Cancel anytime. Your time is worth more than your subscriptions.
         </div>
       </div>
     </section>
 
     <!-- START TODAY -->
-    <section class="section" style="text-align: center; margin-top: 40px;">
-      <h2 class="section-title" style="margin-bottom: 12px;">Start today</h2>
-      <p class="hero-sub" style="margin-bottom: 20px;">
+    <section class="section" style="text-align: center;">
+      <p style="font-size: 14px; color: var(--dw-muted); margin-bottom: 16px;">
         Install the extension and begin your first deepwork session in under 60 seconds.
       </p>
       <button class="btn btn-primary" onclick="window.location.href='/install'">
