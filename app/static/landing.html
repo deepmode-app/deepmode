@@ -591,9 +591,18 @@
     // Show logged-in email in nav if user is authenticated
     (async function() {
       try {
+        const token = localStorage.getItem('access_token') || localStorage.getItem('deepmode_token');
+        if (!token) {
+          return; // Not logged in
+        }
+
         const res = await fetch('/auth/me', {
-          credentials: 'include'
+          headers: {
+            'Accept': 'application/json',
+            'Authorization': 'Bearer ' + token
+          }
         });
+
         if (res.ok) {
           const user = await res.json();
           const navUserEmail = document.getElementById('navUserEmail');
