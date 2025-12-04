@@ -237,6 +237,24 @@ chrome.runtime.onMessage.addListener((msg, sender, sendResponse) => {
           return;
         }
 
+        // Send end notification for manual end
+        chrome.notifications.create(
+          {
+            type: "basic",
+            iconUrl: "icon.png",
+            title: "Deepwork block complete",
+            message: "Great work. Take a short break and come back. You're building your future one session at a time.",
+            priority: 2
+          },
+          (notificationId) => {
+            if (chrome.runtime.lastError) {
+              console.error("[Deepmode BG] ❌ ERROR creating end notification:", chrome.runtime.lastError.message);
+            } else {
+              console.log("[Deepmode BG] ✅ End notification created:", notificationId);
+            }
+          }
+        );
+
         try {
           console.log(`[Deepmode BG] Calling backend /sessions/${active.id}/end`);
           const response = await fetch(
@@ -528,7 +546,7 @@ chrome.alarms.onAlarm.addListener((alarm) => {
             type: "basic",
             iconUrl: "icon.png",
             title: "5 minutes left",
-            message: "Stay with it.",
+            message: "Stay with it. Finish this block strong.",
             priority: 1
           },
           (notificationId) => {
@@ -598,8 +616,8 @@ chrome.alarms.onAlarm.addListener((alarm) => {
         {
           type: "basic",
           iconUrl: "icon.png",
-          title: "Deepwork block finished",
-          message: "You finished your deepwork block.",
+          title: "Deepwork block complete",
+          message: "Great work. Take a short break and come back. You're building your future one session at a time.",
           priority: 2
         },
         (notificationId) => {

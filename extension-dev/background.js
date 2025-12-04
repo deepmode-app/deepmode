@@ -370,6 +370,22 @@ chrome.runtime.onMessage.addListener((msg, sender, sendResponse) => {
 
         const isGuest = !!active.isGuest || !accessToken;
 
+        // Send end notification for manual end
+        createNotificationWithPermission(
+          {
+            type: "basic",
+            iconUrl: "icon.png",
+            title: "Deepwork block complete",
+            message: "Great work. Take a short break and come back. You're building your future one session at a time.",
+            priority: 2
+          },
+          (notificationId) => {
+            if (notificationId) {
+              console.log("[Deepmode BG] ✅ End notification created:", notificationId);
+            }
+          }
+        );
+
         if (isGuest) {
           console.log("[Deepmode BG] Ending guest session (local only)");
           chrome.storage.local.remove(STORAGE_KEYS.ACTIVE_SESSION, () => {
@@ -666,7 +682,7 @@ chrome.alarms.onAlarm.addListener((alarm) => {
             type: "basic",
             iconUrl: "icon.png",
             title: "5 minutes left",
-            message: "Stay with it.",
+            message: "Stay with it. Finish this block strong.",
             priority: 1
           },
           (notificationId) => {
@@ -731,8 +747,8 @@ chrome.alarms.onAlarm.addListener((alarm) => {
         {
           type: "basic",
           iconUrl: "icon.png",
-          title: "Deepwork block finished",
-          message: "You finished your deepwork block.",
+          title: "Deepwork block complete",
+          message: "Great work. Take a short break and come back. You're building your future one session at a time.",
           priority: 2
         },
         (notificationId) => {

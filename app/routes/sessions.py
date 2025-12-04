@@ -49,40 +49,41 @@ def derive_status_and_discipline(planned: Optional[int], actual_minutes: int) ->
     Given planned duration (minutes) and actual work duration (minutes),
     return (status, discipline_score).
 
-    Status is one of: "abandoned", "completed_early", "completed".
+    Status is one of: "abandoned", "stopped_early", "completed_early", "completed".
     Discipline_score is 0 or 1.
 
-    Rules:
-    - General rule (non-micro blocks, planned > 5):
+    Rules (ratio-based for ALL durations, including 5-minute blocks):
+    - ratio = actual_minutes / planned_minutes (0.0 if planned <= 0)
+    - ratio >= 1.0 → "completed", discipline_score = 1
+    - 0.5 <= ratio < 1.0 → "completed_early", discipline_score = 1
+    - 0.25 <= ratio < 0.5 → "stopped_early", discipline_score = 0
+    - ratio < 0.25 → "abandoned", discipline_score = 0
+
+    - If planned is None:
+      * actual >= 5 → "completed", discipline_score = 1
       * actual < 5 → "abandoned", discipline_score = 0
-      * actual >= 5 AND actual < planned → "completed_early", discipline_score = 1
-      * actual >= planned OR planned is None → "completed", discipline_score = 1
-
-    - Special case for 5-minute "inertia" blocks (planned <= 5):
-      * actual >= 1 AND actual < planned → "completed_early", discipline_score = 1
-      * actual >= planned → "completed", discipline_score = 1
-      * Only "abandoned" if effectively no work (theoretical due to max(1, ...) in caller)
     """
-    # Special case: 5-minute "inertia" blocks (planned <= 5)
-    if planned is not None and planned <= 5:
-        if actual_minutes < 1:
-            # Theoretical case: effectively no work done
-            return ("abandoned", 0)
-        elif actual_minutes < planned:
-            # Any real work (>= 1 min) but didn't finish planned duration
-            return ("completed_early", 1)
-        else:
-            # Finished the planned duration or more
+    # Handle None planned duration
+    if planned is None:
+        if actual_minutes >= 5:
             return ("completed", 1)
+        else:
+            return ("abandoned", 0)
 
-    # General rule for blocks > 5 minutes
-    if actual_minutes < 5:
-        return ("abandoned", 0)
-    elif planned is not None and actual_minutes < planned:
-        return ("completed_early", 1)
+    # Ratio-based logic for all durations (5, 25, 50, 90 minutes)
+    if planned > 0:
+        ratio = actual_minutes / planned
     else:
-        # actual >= planned OR planned is None
+        ratio = 0.0
+
+    if ratio >= 1.0:
         return ("completed", 1)
+    elif ratio >= 0.5:
+        return ("completed_early", 1)
+    elif ratio >= 0.25:
+        return ("stopped_early", 0)
+    else:
+        return ("abandoned", 0)
 
 
 def auto_close_expired_sessions_for_user(user_id: int) -> None:
