@@ -95,6 +95,11 @@
       width: 100%;
     }
 
+    .nav-user-email {
+      font-size: 11px;
+      color: var(--dw-muted);
+    }
+
     .nav-cta {
       padding: 6px 10px;
       border-radius: 999px;
@@ -401,9 +406,11 @@
     <!-- NAV -->
     <header class="nav">
       <div class="nav-left">
-        <img src="/static/logos/Logo with text.png"
-             alt="Deepmode"
-             class="nav-logo" />
+        <a href="/" style="text-decoration: none;">
+          <img src="/static/logos/Logo with text.png"
+               alt="Deepmode"
+               class="nav-logo" />
+        </a>
       </div>
       <nav class="nav-links">
         <a href="#how" class="nav-link">How it works</a>
@@ -412,6 +419,7 @@
         <button class="nav-cta" onclick="window.location.href='/signup'">
           Sign up free
         </button>
+        <span id="navUserEmail" class="nav-user-email" style="display: none;"></span>
       </nav>
     </header>
 
@@ -506,7 +514,7 @@
         </div>
         <div style="font-size: 11px; color: #9ca3af; margin-top: 16px; text-align: center;">
           Cancel anytime. Your time is worth more than your subscriptions.
-        </div>
+      </div>
 
         <!-- Free vs Pro Comparison Table -->
         <table class="comparison-table" style="margin-top: 32px;">
@@ -578,5 +586,27 @@
       </div>
     </footer>
   </div>
+
+  <script>
+    // Show logged-in email in nav if user is authenticated
+    (async function() {
+      try {
+        const res = await fetch('/auth/me', {
+          credentials: 'include'
+        });
+        if (res.ok) {
+          const user = await res.json();
+          const navUserEmail = document.getElementById('navUserEmail');
+          if (navUserEmail && user.email) {
+            navUserEmail.textContent = `Logged in as ${user.email}`;
+            navUserEmail.style.display = 'inline-block';
+            navUserEmail.style.marginLeft = '16px';
+          }
+        }
+      } catch (err) {
+        // Silently fail - user not logged in
+      }
+    })();
+  </script>
 </body>
 </html>

@@ -69,6 +69,26 @@
       display: block;
     }
 
+    .nav-logo-link {
+      display: inline-block;
+      text-decoration: none;
+    }
+
+    .nav-logo-link:hover {
+      opacity: 0.9;
+    }
+
+    .nav-home-link {
+      font-size: 13px;
+      color: var(--dw-muted);
+      text-decoration: none;
+      margin-left: 8px;
+    }
+
+    .nav-home-link:hover {
+      color: var(--dw-text);
+    }
+
     .nav-links {
       display: flex;
       align-items: center;
@@ -541,6 +561,53 @@
       text-transform: uppercase;
       letter-spacing: 0.14em;
       margin-bottom: 4px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+    }
+
+    .card-locked {
+      opacity: 0.7;
+      position: relative;
+      border: 1px solid rgba(39, 39, 47, 0.6);
+    }
+
+    .card-pro-badge {
+      font-size: 9px;
+      text-transform: uppercase;
+      letter-spacing: 0.1em;
+      color: var(--dw-accent);
+      padding: 2px 6px;
+      border: 1px solid rgba(229, 9, 20, 0.3);
+      border-radius: 4px;
+      background: rgba(229, 9, 20, 0.08);
+      margin-left: 8px;
+    }
+
+    .card-locked-hint {
+      font-size: 10px;
+      color: var(--dw-muted);
+      margin-top: 4px;
+      font-style: italic;
+    }
+
+    .upgrade-link {
+      display: inline-block;
+      margin-top: 16px;
+      padding: 8px 16px;
+      background: var(--dw-accent);
+      color: #ffffff;
+      border: none;
+      border-radius: 6px;
+      font-size: 12px;
+      font-weight: 500;
+      text-decoration: none;
+      cursor: pointer;
+      font-family: inherit;
+    }
+
+    .upgrade-link:hover {
+      background: #f3121f;
     }
 
     .card-value {
@@ -1572,9 +1639,11 @@
     <!-- Top navigation -->
     <header class="nav">
         <div class="nav-left">
-          <img id="navLogoMark" src="/static/logos/Logo - Red BG.png"
-               alt="Deepmode"
-               class="nav-logo" />
+          <a href="/" class="nav-logo-link">
+            <img id="navLogoMark" src="/static/logos/Logo - Red BG.png"
+                 alt="Deepmode"
+                 class="nav-logo" />
+          </a>
         </div>
         <nav class="nav-links">
           <a href="/billing/checkout" class="upgrade-btn" id="upgradeBtn">Upgrade to Pro</a>
@@ -1685,20 +1754,30 @@
         <div class="card-sub">Deep blocks finished today</div>
       </div>
 
-      <div class="card">
-        <div class="card-title">All-Time</div>
+      <div class="card card-locked">
+        <div class="card-title">
+          All-Time
+          <span class="card-pro-badge">Pro</span>
+        </div>
         <div class="card-value" id="totalMinutes">0 min</div>
         <div class="card-sub">Minutes you actually sat and worked</div>
+        <div class="card-locked-hint">Available with Deepmode Pro</div>
       </div>
 
-      <div class="card">
+      <div class="card card-locked">
         <div class="card-title">
           Discipline
-          <span class="chip" id="sessionCountsChip">0 / 0</span>
+          <span class="card-pro-badge">Pro</span>
+          <span class="chip" id="sessionCountsChip" style="margin-left: auto;">0 / 0</span>
         </div>
         <div class="card-value" id="disciplineScore">0%</div>
         <div class="card-sub">Finished vs started sessions</div>
+        <div class="card-locked-hint">Available with Deepmode Pro</div>
       </div>
+      </div>
+
+      <div style="text-align: center; margin-top: 20px;">
+        <a href="/#pricing" class="upgrade-link">Upgrade to Deepmode Pro</a>
       </div>
 
     <div class="card sessions-card">
