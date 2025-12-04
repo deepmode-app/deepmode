@@ -240,6 +240,23 @@
         flex-direction: column;
         gap: 16px;
       }
+
+      .comparison-table {
+        font-size: 12px;
+      }
+
+      .comparison-table th,
+      .comparison-table td {
+        padding: 10px 8px;
+      }
+    }
+
+    @media (max-width: 600px) {
+      .comparison-table {
+        display: block;
+        overflow-x: auto;
+        -webkit-overflow-scrolling: touch;
+      }
     }
 
     /* Why Deepmode - simple text */
@@ -318,7 +335,7 @@
     .comparison-table td {
       padding: 12px 0;
       color: var(--dw-muted);
-      border-bottom: 1px solid rgba(39, 39, 47, 0.5);
+      border-bottom: 1px solid rgba(39, 39, 47, 0.3);
     }
 
     .comparison-table td.center {
@@ -329,6 +346,10 @@
     .comparison-table td.pro {
       color: var(--dw-text);
       font-weight: 500;
+    }
+
+    .comparison-table tbody tr:last-child td {
+      border-bottom: none;
     }
 
     .pricing-cta-row {
@@ -486,6 +507,49 @@
         <div style="font-size: 11px; color: #9ca3af; margin-top: 16px; text-align: center;">
           Cancel anytime. Your time is worth more than your subscriptions.
         </div>
+
+        <!-- Free vs Pro Comparison Table -->
+        <table class="comparison-table" style="margin-top: 32px;">
+          <thead>
+            <tr>
+              <th>Feature</th>
+              <th class="center">Free</th>
+              <th class="center" style="color: var(--dw-accent);">Pro</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr>
+              <td>Deepwork sessions</td>
+              <td class="center">up to 3/day</td>
+              <td class="center pro">unlimited</td>
+            </tr>
+            <tr>
+              <td>Session lengths</td>
+              <td class="center">5m, 25m</td>
+              <td class="center pro">5m, 25m, 50m, 90m</td>
+            </tr>
+            <tr>
+              <td>Progress tracking</td>
+              <td class="center">today's overview</td>
+              <td class="center pro">full history + discipline score</td>
+            </tr>
+            <tr>
+              <td>Reports & insights</td>
+              <td class="center">none</td>
+              <td class="center pro">daily & weekly reports</td>
+            </tr>
+            <tr>
+              <td>Streaks</td>
+              <td class="center">today's streak only</td>
+              <td class="center pro">full streak history & trends</td>
+            </tr>
+            <tr>
+              <td>Distraction blocking</td>
+              <td class="center">yes</td>
+              <td class="center pro">yes</td>
+            </tr>
+          </tbody>
+        </table>
       </div>
     </section>
 
