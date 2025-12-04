@@ -365,11 +365,6 @@
       margin-bottom: 18px;
       backdrop-filter: blur(10px);
     }
-      border: 1px solid rgba(59, 130, 246, 0.9);
-      box-shadow:
-        0 22px 50px rgba(15, 23, 42, 0.95),
-        0 0 0 1px rgba(15, 23, 42, 0.95);
-    }
 
     .live-dot {
       width: 8px;
@@ -997,6 +992,12 @@
       background: transparent;
       color: #fca5a5;
       border-color: #b91c1c;
+    }
+
+    .status-stopped-early {
+      background: transparent;
+      color: #fb923c;
+      border-color: #ea580c;
     }
 
     .status-auto-closed {
@@ -1762,25 +1763,25 @@
         <div class="card-sub">Deep blocks finished today</div>
       </div>
 
-      <div class="card card-locked">
+      <div class="card card-locked" id="allTimeCard">
         <div class="card-title">
           All-Time
-          <span class="card-pro-badge">Pro</span>
+          <span class="card-pro-badge" id="allTimeProBadge">Pro</span>
         </div>
         <div class="card-value" id="totalMinutes">0 min</div>
-        <div class="card-sub">Minutes you actually sat and worked</div>
-        <div class="card-locked-hint">Available with Deepmode Pro</div>
+        <div class="card-sub">Your deepwork history</div>
+        <div class="card-locked-hint" id="allTimeHint">Available with Deepmode Pro</div>
       </div>
 
-      <div class="card card-locked">
+      <div class="card card-locked" id="disciplineCard">
         <div class="card-title">
           Discipline
-          <span class="card-pro-badge">Pro</span>
+          <span class="card-pro-badge" id="disciplineProBadge">Pro</span>
           <span class="chip" id="sessionCountsChip" style="margin-left: auto;">0 / 0</span>
         </div>
         <div class="card-value" id="disciplineScore">0%</div>
-        <div class="card-sub">Finished vs started sessions</div>
-        <div class="card-locked-hint">Available with Deepmode Pro</div>
+        <div class="card-sub">Your deepwork efficiency</div>
+        <div class="card-locked-hint" id="disciplineHint">Available with Deepmode Pro</div>
       </div>
       </div>
 
@@ -1945,7 +1946,7 @@
         <div id="projectsEmpty" class="projects-empty" style="display:none;">
           <p>No projects yet.</p>
           <p style="font-size:11px;margin-top:6px;color:var(--dw-muted);">
-            Projects help you track your long-term focus. Add a new project from the sessions table on your dashboard.
+            Projects help you track your long-term focus. Assign a new project by selecting the sessions on your dashboard.
           </p>
         </div>
         <div id="projectsList" class="projects-list"></div>
@@ -2266,6 +2267,23 @@
           if (manageBillingBtn) {
             manageBillingBtn.style.display = "block";
           }
+          // Enable All-Time and Discipline cards for Pro users
+          const allTimeCard = document.getElementById('allTimeCard');
+          const disciplineCard = document.getElementById('disciplineCard');
+          if (allTimeCard) {
+            allTimeCard.classList.remove('card-locked');
+            const proBadge = document.getElementById('allTimeProBadge');
+            if (proBadge) proBadge.style.display = 'none';
+            const hint = document.getElementById('allTimeHint');
+            if (hint) hint.style.display = 'none';
+          }
+          if (disciplineCard) {
+            disciplineCard.classList.remove('card-locked');
+            const proBadge = document.getElementById('disciplineProBadge');
+            if (proBadge) proBadge.style.display = 'none';
+            const hint = document.getElementById('disciplineHint');
+            if (hint) hint.style.display = 'none';
+          }
         } else {
           if (badgeEl) {
             badgeEl.textContent = "Deepmode";
@@ -2282,6 +2300,15 @@
           }
           if (manageBillingBtn) {
             manageBillingBtn.style.display = "none";
+          }
+          // Keep All-Time and Discipline cards locked for Free users
+          const allTimeCard = document.getElementById('allTimeCard');
+          const disciplineCard = document.getElementById('disciplineCard');
+          if (allTimeCard && !allTimeCard.classList.contains('card-locked')) {
+            allTimeCard.classList.add('card-locked');
+          }
+          if (disciplineCard && !disciplineCard.classList.contains('card-locked')) {
+            disciplineCard.classList.add('card-locked');
           }
         }
       } catch (err) {
@@ -2563,9 +2590,19 @@
           cssClass: "status-pill status-completed-early",
         },
         abandoned: {
-          label: "Stopped Early",
+          label: "Abandoned",
           icon: "⚠",
           cssClass: "status-pill status-abandoned",
+        },
+        stopped_early: {
+          label: "Stopped Early",
+          icon: "▲",
+          cssClass: "status-pill status-stopped-early",
+        },
+        "stopped-early": {
+          label: "Stopped Early",
+          icon: "▲",
+          cssClass: "status-pill status-stopped-early",
         },
         auto_closed: {
           label: "Auto-closed",
@@ -2859,9 +2896,19 @@
           if (emptyState) emptyState.style.display = "block";
           if (table) table.style.display = "none";
           document.getElementById("todayMinutes").textContent = "0 min";
-          document.getElementById("totalMinutes").textContent = "0 min";
-          document.getElementById("disciplineScore").textContent = "0%";
-          document.getElementById("sessionCountsChip").textContent = "0 / 0";
+          // Update All-Time and Discipline based on Pro status
+          const totalMinutesEl = document.getElementById("totalMinutes");
+          const disciplineScoreEl = document.getElementById("disciplineScore");
+          const sessionCountsChipEl = document.getElementById("sessionCountsChip");
+          if (currentUser && currentUser.is_pro) {
+            if (totalMinutesEl) totalMinutesEl.textContent = "0 min";
+            if (disciplineScoreEl) disciplineScoreEl.textContent = "0%";
+            if (sessionCountsChipEl) sessionCountsChipEl.textContent = "0 / 0";
+          } else {
+            if (totalMinutesEl) totalMinutesEl.textContent = "--";
+            if (disciplineScoreEl) disciplineScoreEl.textContent = "--";
+            if (sessionCountsChipEl) sessionCountsChipEl.textContent = "--";
+          }
           updateLiveBanner(null);
           // Show last block banner when no sessions
           const lastBlockCard = document.getElementById("dm-last-block-banner");
@@ -2931,7 +2978,8 @@
             todayTotal += actual;
           }
 
-          const statusKey = deriveStatus(s);
+          // Use backend status if available, otherwise derive from session data
+          const statusKey = s.status || deriveStatus(s);
           if (statusKey === "completed" || statusKey === "completed_early") completed += 1;
           if (statusKey === "running" && !runningSession) {
             runningSession = s;
@@ -2940,7 +2988,8 @@
 
         sessions.forEach((s) => {
           const projName = (s.project_name || "").trim();
-          const statusKey = deriveStatus(s);
+          // Use backend status if available, otherwise derive from session data
+          const statusKey = s.status || deriveStatus(s);
 
           if (activeProjectFilter === "__NONE__" && projName) {
             return;
@@ -3019,14 +3068,24 @@
 
         document.getElementById("todayMinutes").textContent =
           todayTotal + " min";
-        document.getElementById("totalMinutes").textContent =
-          total + " min";
-
-        const score = started > 0 ? Math.round((completed / started) * 100) : 0;
-        document.getElementById("disciplineScore").textContent =
-          score + "%";
-        document.getElementById("sessionCountsChip").textContent =
-          completed + " / " + started;
+        
+        // Update All-Time and Discipline cards based on Pro status
+        const totalMinutesEl = document.getElementById("totalMinutes");
+        const disciplineScoreEl = document.getElementById("disciplineScore");
+        const sessionCountsChipEl = document.getElementById("sessionCountsChip");
+        
+        if (currentUser && currentUser.is_pro) {
+          // Pro users see actual values
+          if (totalMinutesEl) totalMinutesEl.textContent = total + " min";
+          const score = started > 0 ? Math.round((completed / started) * 100) : 0;
+          if (disciplineScoreEl) disciplineScoreEl.textContent = score + "%";
+          if (sessionCountsChipEl) sessionCountsChipEl.textContent = completed + " / " + started;
+        } else {
+          // Free users see "--" to create psychological desire
+          if (totalMinutesEl) totalMinutesEl.textContent = "--";
+          if (disciplineScoreEl) disciplineScoreEl.textContent = "--";
+          if (sessionCountsChipEl) sessionCountsChipEl.textContent = "--";
+        }
 
         // Update live banner (this will show/hide it based on runningSession)
         // This also handles the start session callout visibility
