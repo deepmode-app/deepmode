@@ -1626,7 +1626,7 @@
       </div>
 
       <!-- Start Session Callout -->
-      <div id="startSessionCallout" class="start-session-callout" style="display: none;">
+      <div id="startSessionCallout" class="start-session-callout" style="display: block;">
         <div style="display: flex; align-items: flex-start; gap: 12px;">
           <div style="flex: 1;">
             <div style="font-size: 13px; font-weight: 500; color: #e5e7eb; margin-bottom: 4px;">Start a deepwork session</div>
@@ -2533,6 +2533,16 @@
       
       if (!banner || !taskEl || !categoryEl || !timerEl) return;
 
+      // Update start session callout visibility
+      const startSessionCallout = document.getElementById("startSessionCallout");
+      if (startSessionCallout) {
+        if (!session) {
+          startSessionCallout.style.display = "block";
+        } else {
+          startSessionCallout.style.display = "none";
+        }
+      }
+
       if (!session) {
         // Hide live banner when no session
         banner.style.display = "none";
@@ -2919,18 +2929,8 @@
           completed + " / " + started;
 
         // Update live banner (this will show/hide it based on runningSession)
+        // This also handles the start session callout visibility
         updateLiveBanner(runningSession);
-        
-        // Show/hide start session callout
-        const startSessionCallout = document.getElementById("startSessionCallout");
-        if (startSessionCallout) {
-          if (!runningSession && sessions.length === 0) {
-            // Show callout if no sessions at all (first-time user)
-            startSessionCallout.style.display = "block";
-          } else {
-            startSessionCallout.style.display = "none";
-          }
-        }
         
         // If no running session, ensure last block banner is shown
         if (!runningSession) {
