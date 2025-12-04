@@ -100,6 +100,44 @@
       color: var(--dw-muted);
     }
 
+    .nav-link-dashboard,
+    .nav-link-logout {
+      font-size: 13px;
+      color: var(--dw-muted);
+      text-decoration: none;
+      cursor: pointer;
+    }
+
+    .nav-link-dashboard:hover,
+    .nav-link-logout:hover {
+      color: var(--dw-text);
+    }
+
+    .nav-link-logout {
+      margin-left: 8px;
+    }
+
+    .auth-hidden {
+      display: none !important;
+    }
+
+    .guest-hidden {
+      display: none !important;
+    }
+
+    .auth-only {
+      display: none;
+    }
+
+    .guest-only {
+      display: inline-block;
+    }
+
+    .pro-only,
+    .free-only {
+      display: none;
+    }
+
     .nav-cta {
       padding: 6px 10px;
       border-radius: 999px;
@@ -414,12 +452,14 @@
       </div>
       <nav class="nav-links">
         <a href="#how" class="nav-link">How it works</a>
-        <a href="/pricing" class="nav-link">Pricing</a>
-        <a href="/login" class="nav-link">Log in</a>
-        <button class="nav-cta" onclick="window.location.href='/signup'">
+        <a href="/pricing" class="nav-link guest-only">Pricing</a>
+        <a href="/login" class="nav-link guest-only">Log in</a>
+        <button class="nav-cta guest-only" onclick="window.location.href='/signup'">
           Sign up free
         </button>
-        <span id="navUserEmail" class="nav-user-email" style="display: none;"></span>
+        <span id="navUserEmail" class="nav-user-email auth-only" style="display: none;"></span>
+        <a href="/dashboard" id="navDashboardLink" class="nav-link-dashboard auth-only" style="display: none;">Dashboard</a>
+        <a href="#" id="navLogoutLink" class="nav-link-logout auth-only" style="display: none;">Logout</a>
       </nav>
     </header>
 
@@ -433,16 +473,42 @@
 
       <div class="hero-cta-row">
         <button
-          class="btn btn-primary"
+          id="heroPrimaryBtn"
+          class="btn btn-primary guest-only"
+          onclick="window.location.href='/signup'"
+        >
+          Start Free Trial
+        </button>
+        <button
+          id="heroSecondaryBtn"
+          class="btn btn-secondary guest-only"
           onclick="window.location.href='/install'"
         >
           Install Chrome Extension
         </button>
         <button
-          class="btn btn-secondary"
-          onclick="window.location.href='/signup'"
+          id="heroDashboardBtn"
+          class="btn btn-primary auth-only"
+          onclick="window.location.href='/dashboard'"
+          style="display: none;"
         >
-          Start Free Trial
+          Go to dashboard
+        </button>
+        <button
+          id="heroUpgradeBtn"
+          class="btn btn-secondary auth-only free-only"
+          onclick="window.location.href='/#pricing'"
+          style="display: none;"
+        >
+          Upgrade to Pro
+        </button>
+        <button
+          id="heroInstallBtn"
+          class="btn btn-secondary auth-only pro-only"
+          onclick="window.location.href='/install'"
+          style="display: none;"
+        >
+          Install Chrome Extension
         </button>
       </div>
 
@@ -486,7 +552,7 @@
     </div>
 
     <!-- PRICING -->
-    <section class="section">
+    <section id="pricing" class="section">
       <div class="pricing-card">
         <div class="pricing-title-row">
           <h2 class="section-title" style="margin-bottom: 0;">Deepmode Pro</h2>
@@ -588,12 +654,116 @@
   </div>
 
   <script>
-    // Show logged-in email in nav if user is authenticated
+    // Auth state management
     (async function() {
+      let currentUser = null;
+
+      // Logout function
+      function logout() {
+        localStorage.removeItem('access_token');
+        localStorage.removeItem('deepmode_token');
+        // Notify extension if needed
+        if (window.postMessage) {
+          window.postMessage({ type: 'DEEPMODE_LOGOUT' }, '*');
+        }
+        window.location.href = '/';
+      }
+
+      // Bind logout handler
+      const logoutLink = document.getElementById('navLogoutLink');
+      if (logoutLink) {
+        logoutLink.addEventListener('click', (e) => {
+          e.preventDefault();
+          logout();
+        });
+      }
+
+      // Update UI based on auth state
+      function updateUIForGuest() {
+        // Show guest-only elements
+        document.querySelectorAll('.guest-only').forEach(el => {
+          if (el.tagName === 'BUTTON') {
+            el.style.display = 'inline-block';
+          } else if (el.tagName === 'A') {
+            el.style.display = '';
+          } else {
+            el.style.display = '';
+          }
+        });
+        // Hide auth-only elements
+        document.querySelectorAll('.auth-only').forEach(el => {
+          el.style.display = 'none';
+        });
+        // Hide pricing is already visible (no class)
+      }
+
+      function updateUIForAuth(user) {
+        currentUser = user;
+        
+        // Hide guest-only elements
+        document.querySelectorAll('.guest-only').forEach(el => {
+          el.style.display = 'none';
+        });
+        
+        // Show auth-only base elements
+        document.querySelectorAll('.auth-only').forEach(el => {
+          if (el.tagName === 'BUTTON') {
+            el.style.display = 'inline-block';
+          } else if (el.tagName === 'A' || el.tagName === 'SPAN') {
+            el.style.display = '';
+          } else {
+            el.style.display = '';
+          }
+        });
+
+        // Update email in nav
+        const navUserEmail = document.getElementById('navUserEmail');
+        if (navUserEmail && user.email) {
+          navUserEmail.textContent = `Logged in as ${user.email}`;
+          navUserEmail.style.display = 'inline-block';
+          navUserEmail.style.marginLeft = '16px';
+        }
+
+        // Show dashboard and logout links
+        const navDashboardLink = document.getElementById('navDashboardLink');
+        const navLogoutLink = document.getElementById('navLogoutLink');
+        if (navDashboardLink) navDashboardLink.style.display = '';
+        if (navLogoutLink) navLogoutLink.style.display = '';
+
+        // Update hero CTAs based on Pro status
+        if (user.is_pro) {
+          // Pro user: Show dashboard + install extension
+          const heroDashboardBtn = document.getElementById('heroDashboardBtn');
+          const heroInstallBtn = document.getElementById('heroInstallBtn');
+          const heroUpgradeBtn = document.getElementById('heroUpgradeBtn');
+          if (heroDashboardBtn) heroDashboardBtn.style.display = 'inline-block';
+          if (heroInstallBtn) heroInstallBtn.style.display = 'inline-block';
+          if (heroUpgradeBtn) heroUpgradeBtn.style.display = 'none';
+          
+          // Hide pricing section for Pro users
+          const pricingSection = document.getElementById('pricing');
+          if (pricingSection) {
+            pricingSection.style.display = 'none';
+          }
+        } else {
+          // Free user: Show dashboard + upgrade
+          const heroDashboardBtn = document.getElementById('heroDashboardBtn');
+          const heroUpgradeBtn = document.getElementById('heroUpgradeBtn');
+          const heroInstallBtn = document.getElementById('heroInstallBtn');
+          if (heroDashboardBtn) heroDashboardBtn.style.display = 'inline-block';
+          if (heroUpgradeBtn) heroUpgradeBtn.style.display = 'inline-block';
+          if (heroInstallBtn) heroInstallBtn.style.display = 'none';
+          
+          // Pricing section stays visible for Free users
+        }
+      }
+
+      // Check auth state
       try {
         const token = localStorage.getItem('access_token') || localStorage.getItem('deepmode_token');
         if (!token) {
-          return; // Not logged in
+          updateUIForGuest();
+          return;
         }
 
         const res = await fetch('/auth/me', {
@@ -605,15 +775,14 @@
 
         if (res.ok) {
           const user = await res.json();
-          const navUserEmail = document.getElementById('navUserEmail');
-          if (navUserEmail && user.email) {
-            navUserEmail.textContent = `Logged in as ${user.email}`;
-            navUserEmail.style.display = 'inline-block';
-            navUserEmail.style.marginLeft = '16px';
-          }
+          updateUIForAuth(user);
+        } else {
+          // Token invalid, treat as guest
+          updateUIForGuest();
         }
       } catch (err) {
-        // Silently fail - user not logged in
+        // Error fetching user, treat as guest
+        updateUIForGuest();
       }
     })();
   </script>
