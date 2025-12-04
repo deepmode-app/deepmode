@@ -64,3 +64,18 @@ def faq_page():
     """
     return _static_file("faq.html")
 
+
+@router.get("/streak", include_in_schema=False)
+def streak_page():
+    """
+    Streak insights page.
+    """
+    return _static_file("streak.html")
+
+
+@router.get("/reports", include_in_schema=False)
+def reports_page():
+    """
+    Reports and analytics page.
+    """
+    return _static_file("reports.html")

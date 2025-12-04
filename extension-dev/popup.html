@@ -8,14 +8,22 @@
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
     <style>
       :root {
-        --dw-bg: #050509;
+        /* Base colors - prepared for dark mode */
+        --background: #050509;
+        --foreground: #f5f5f5;
+        --accent: #e50914;
+        --muted: #9ca3af;
+        --border: #27272f;
+        
+        /* Legacy vars (for compatibility) */
+        --dw-bg: var(--background);
         --dw-card: #111118;
-        --dw-accent: #e50914;
-        --dw-text: #f5f5f5;
-        --dw-muted: #9ca3af;
-        --dw-border: #27272f;
-        --dw-pill-bg: #050509;
-        --dw-pill-active-bg: #e50914;
+        --dw-accent: var(--accent);
+        --dw-text: var(--foreground);
+        --dw-muted: var(--muted);
+        --dw-border: var(--border);
+        --dw-pill-bg: var(--background);
+        --dw-pill-active-bg: var(--accent);
         --dw-pill-active-text: #ffffff;
       }
 

@@ -311,6 +311,40 @@
         rgba(15, 23, 42, 0.98) 55%
       );
       color: #dbeafe;
+      position: relative;
+      overflow: hidden;
+    }
+
+    .live-banner::before {
+      content: "";
+      position: absolute;
+      top: 50%;
+      left: 50%;
+      transform: translate(-50%, -50%);
+      width: 200px;
+      height: 200px;
+      background-image: url("/static/logos/Logo - Red BG.png");
+      background-size: contain;
+      background-repeat: no-repeat;
+      background-position: center;
+      opacity: 0.03;
+      pointer-events: none;
+      z-index: 0;
+    }
+
+    .live-banner > * {
+      position: relative;
+      z-index: 1;
+    }
+
+    .start-session-callout {
+      background: rgba(17, 17, 24, 0.6);
+      border: 1px solid rgba(39, 39, 47, 0.5);
+      border-radius: 12px;
+      padding: 14px 16px;
+      margin-bottom: 18px;
+      backdrop-filter: blur(10px);
+    }
       border: 1px solid rgba(59, 130, 246, 0.9);
       box-shadow:
         0 22px 50px rgba(15, 23, 42, 0.95),
@@ -1588,6 +1622,22 @@
           <div class="subhead" id="userHint">
             Protect your focus. Track your discipline. Build your streaks.
           </div>
+        </div>
+      </div>
+
+      <!-- Start Session Callout -->
+      <div id="startSessionCallout" class="start-session-callout" style="display: none;">
+        <div style="display: flex; align-items: flex-start; gap: 12px;">
+          <div style="flex: 1;">
+            <div style="font-size: 13px; font-weight: 500; color: #e5e7eb; margin-bottom: 4px;">Start a deepwork session</div>
+            <div style="font-size: 12px; color: #9ca3af; line-height: 1.5; margin-bottom: 4px;">
+              To start a session, click the Deepmode icon in your Chrome toolbar to open the extension.
+            </div>
+            <div style="font-size: 11px; color: #6b7280;">
+              If you don't see it, pin Deepmode from the extensions menu.
+            </div>
+          </div>
+          <button onclick="document.getElementById('startSessionCallout').style.display='none'" style="background: transparent; border: none; color: #9ca3af; cursor: pointer; font-size: 18px; line-height: 1; padding: 0; width: 20px; height: 20px;">×</button>
         </div>
       </div>
 
@@ -2870,6 +2920,17 @@
 
         // Update live banner (this will show/hide it based on runningSession)
         updateLiveBanner(runningSession);
+        
+        // Show/hide start session callout
+        const startSessionCallout = document.getElementById("startSessionCallout");
+        if (startSessionCallout) {
+          if (!runningSession && sessions.length === 0) {
+            // Show callout if no sessions at all (first-time user)
+            startSessionCallout.style.display = "block";
+          } else {
+            startSessionCallout.style.display = "none";
+          }
+        }
         
         // If no running session, ensure last block banner is shown
         if (!runningSession) {

@@ -37,24 +37,10 @@
       display: flex;
       align-items: center;
       gap: 8px;
-      font-size: 13px;
-      letter-spacing: 0.14em;
-      text-transform: uppercase;
-      color: var(--dw-muted);
     }
-    .logo-dot {
-      width: 16px;
-      height: 16px;
-      border-radius: 999px;
-      border: 2px solid var(--dw-accent);
-      position: relative;
-    }
-    .logo-dot::after {
-      content: "";
-      position: absolute;
-      inset: 3px;
-      border-radius: inherit;
-      background: var(--dw-accent);
+    .nav-logo {
+      height: 32px;
+      opacity: 0.9;
     }
     .nav-links {
       display: flex;
@@ -116,8 +102,7 @@
   <div class="page">
     <header class="nav">
       <div class="nav-left">
-        <div class="logo-dot"></div>
-        <span>Deepmode</span>
+        <img src="/static/logos/Logo - Red BG.png" alt="Deepmode" class="nav-logo" />
       </div>
       <nav class="nav-links">
         <a href="/" class="nav-link">Home</a>
