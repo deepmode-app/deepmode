@@ -549,6 +549,22 @@ chrome.storage.onChanged.addListener((changes, area) => {
     if (newValue && newValue.id) {
       console.log("[Deepmode BG] New active session:", newValue.id);
       scheduleSessionAlarm(newValue);
+      
+      // Send start notification
+      chrome.notifications.create(
+        {
+          type: "basic",
+          iconUrl: "icon.png",
+          title: "Deepmode",
+          message: "Deepwork session started. Lock in.",
+          priority: 1
+        },
+        (notificationId) => {
+          if (chrome.runtime.lastError) {
+            console.error("[Deepmode BG] Error creating start notification:", chrome.runtime.lastError.message);
+          }
+        }
+      );
     } else {
       console.log("[Deepmode BG] No active session after change.");
       // Clear badge when session is removed
@@ -649,8 +665,8 @@ chrome.alarms.onAlarm.addListener((alarm) => {
           {
             type: "basic",
             iconUrl: "icon.png",
-            title: "5 minutes left in your Deepmode block",
-            message: "Wrap up this deepwork block and finish strong.",
+            title: "5 minutes left",
+            message: "Stay with it.",
             priority: 1
           },
           (notificationId) => {
@@ -715,8 +731,8 @@ chrome.alarms.onAlarm.addListener((alarm) => {
         {
           type: "basic",
           iconUrl: "icon.png",
-          title: "Deepmode block finished",
-          message: "Good work. Take a short break, then start your next block.",
+          title: "Deepwork block finished",
+          message: "You finished your deepwork block.",
           priority: 2
         },
         (notificationId) => {

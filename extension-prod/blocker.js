@@ -126,37 +126,13 @@ function renderOverlay(activeSession, isPro) {
   
   const brandText = isPro ? "Deepmode Pro AI" : "DeepMode AI";
 
-  // Pool of random one-liners
+  // Pool of minimal, calm messages (exactly 5)
   const messages = [
-    `This tab is bait. Get back to ${taskLabel}.`,
-    `Scroll later. Finish ${taskLabel} first.`,
-    `Your future self doesn’t care about this page. It cares that you finish ${taskLabel}.`,
-    `You opened this out of habit, not intention. Return to ${taskLabel}.`,
-    `Tiny distraction. Huge cost. Close this and push ${taskLabel} forward.`,
-    `Every tab like this steals time from ${taskLabel}. Don’t donate your focus.`,
-    `This doesn’t move your life. ${taskLabel} does. Go back.`,
-    `You already know what’s here. You *don’t* know how far ${taskLabel} can go.`,
-    `Distraction is free. Progress isn’t. Choose ${taskLabel}.`,
-    `One more click here = one less rep on ${taskLabel}.`,
-    `You said you wanted deep work. Prove it. Back to ${taskLabel}.`,
-    `This tab is how you stay the same. ${taskLabel} is how you change.`,
-    `Your best work isn’t on this site. It’s inside ${taskLabel}.`,
-    `Close this. Breathe. Do 5 more focused minutes on ${taskLabel}.`,
-    `Attention is a currency. Don’t tip this site with it. Invest in ${taskLabel}.`,
-    `You’re not missing anything here. You *are* missing progress on ${taskLabel}.`,
-    `You came here on autopilot. Go back to ${taskLabel} on purpose.`,
-    `This is the old loop. ${taskLabel} is the new path. Pick the new path.`,
-    `Be the person who finishes ${taskLabel}, not the person who refreshes this site.`,
-    `You’re in Deepmode. This tab isn’t. Go where your focus is supposed to be.`,
-    `Close this and make 10 intentional minutes on ${taskLabel}.`,
-    `This page gives you a hit. ${taskLabel} gives you momentum.`,
-    `If it’s not helping ${taskLabel}, it’s stealing from it.`,
-    `The work that matters is waiting. Hint: it’s ${taskLabel}.`,
-    `You can doomscroll or you can finish ${taskLabel}. Not both.`,
-    `You’re already in power mode. Don’t leak it here. Back to ${taskLabel}.`,
-    `Momentum dies here. Momentum grows in ${taskLabel}.`,
-    `You don’t need this. You *do* need progress on ${taskLabel}.`,
-    `Close this tab. Resume ${taskLabel}. That’s the move.`
+    `Deepwork in progress.`,
+    `This site is blocked during your session.`,
+    `Return to your work and stay in Deepmode.`,
+    `Future you is watching.`,
+    `Stay with it. You're close.`
   ];
 
   const randomMessage =
@@ -192,12 +168,12 @@ function renderOverlay(activeSession, isPro) {
       <div style="font-size:11px; text-transform:uppercase; letter-spacing:0.15em; color:#9ca3af; margin-bottom:6px;">
         ${brandText}
       </div>
-      <h2 style="margin:0 0 10px; font-size:22px;">You're in a Deepwork Session</h2>
+      <h2 style="margin:0 0 10px; font-size:22px;">Deepwork in progress.</h2>
       <p style="margin:0; font-size:14px; color:#e5e7eb; line-height:1.5;">
         ${randomMessage}
       </p>
       <p style="margin:10px 0 0; font-size:12px; color:#9ca3af;">
-        Close this tab or end your session from the Deepmode extension popup.
+        Close this tab or end your block from the Deepmode extension popup.
       </p>
     </div>
   `;

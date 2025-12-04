@@ -1586,7 +1586,7 @@
         <div class="left-header">
           <h1>Your focus stats</h1>
           <div class="subhead" id="userHint">
-            Laptop on. Distractions off. Let's see what you actually did.
+            Protect your focus. Track your discipline. Build your streaks.
           </div>
         </div>
       </div>
@@ -1602,8 +1602,8 @@
       <div class="last-block-left">
         <div class="last-block-icon"></div>
         <div class="last-block-text">
-          <div class="last-block-title">No deep blocks yet.</div>
-          <div class="last-block-subtitle">Start your first focused session to see your progress here.</div>
+          <div class="last-block-title">No sessions yet today.</div>
+          <div class="last-block-subtitle">Start your first session — momentum begins with the first block.</div>
         </div>
       </div>
       <div class="last-block-meta">Deep blocks are saved here right after you finish.</div>
@@ -1611,13 +1611,21 @@
 
     <!-- Centered live session banner -->
     <div id="liveSessionBanner" class="live-banner">
-      <span class="live-dot"></span>
-      <span class="current-label">Current deepwork session:</span>
-      <span class="current-task" id="currentSessionTask"></span>
-      <span class="current-separator">—</span>
-      <span class="current-category" id="currentSessionCategory"></span>
-      <span class="current-separator">—</span>
-      <span class="current-timer" id="currentSessionTimer"></span>
+      <div style="display: flex; flex-direction: column; gap: 4px;">
+        <div style="display: flex; align-items: center; gap: 8px;">
+          <span class="live-dot"></span>
+          <span class="current-label">Current deepwork session:</span>
+          <span class="current-task" id="currentSessionTask"></span>
+          <span class="current-separator">—</span>
+          <span class="current-category" id="currentSessionCategory"></span>
+          <span class="current-separator">—</span>
+          <span class="current-timer" id="currentSessionTimer"></span>
+        </div>
+        <div style="font-size: 11px; color: #9ca3af; margin-left: 20px;">
+          Stay in Deepmode until the timer ends.
+          <span style="margin-left: 8px; font-style: italic;">One session at a time.</span>
+        </div>
+      </div>
     </div>
 
       <div class="cards-row">
@@ -1628,14 +1636,14 @@
       </div>
 
       <div class="card">
-        <div class="card-title">All time</div>
+        <div class="card-title">All-Time</div>
         <div class="card-value" id="totalMinutes">0 min</div>
         <div class="card-sub">Minutes you actually sat and worked</div>
       </div>
 
       <div class="card">
         <div class="card-title">
-          Discipline score
+          Discipline
           <span class="chip" id="sessionCountsChip">0 / 0</span>
         </div>
         <div class="card-value" id="disciplineScore">0%</div>
@@ -1685,7 +1693,7 @@
       </div>
       
       <div id="emptyState" class="empty" style="display:none;">
-        No sessions yet. Start a Deepmode block from the Chrome extension and earn your stats.
+        No sessions yet today. Start a 25-minute block and give yourself clean focus.
       </div>
       <table id="sessionsTable" style="display:none;">
         <thead>
@@ -2567,9 +2575,9 @@
       if (!lastSession) {
         banner.className = "last-block-banner last-block--empty";
         iconEl.textContent = "";
-        titleEl.textContent = "No deep blocks yet.";
-        subtitleEl.textContent = "Start your first focused session to see your progress here.";
-        metaEl.textContent = "Deep blocks are saved here right after you finish.";
+        titleEl.textContent = "No sessions yet today.";
+        subtitleEl.textContent = "Start a 25-minute block and give yourself clean focus.";
+        metaEl.textContent = "";
         banner.style.display = "block";
         return;
       }

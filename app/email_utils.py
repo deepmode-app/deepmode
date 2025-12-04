@@ -58,66 +58,50 @@ def _build_verification_email(to_email: str, token: str) -> EmailMessage:
     verify_link = f"{BASE_URL}/auth/verify?token={token}"
 
     msg = EmailMessage()
-    msg["Subject"] = "Verify your Deepmode account (30 seconds, then you’re in)"
+    msg["Subject"] = "Verify your Deepmode account"
     msg["From"] = SMTP_USER
     msg["To"] = to_email
 
-    text_body = f"""Hey,
+    text_body = f"""Welcome to Deepmode.
 
-Welcome to Deepmode. You just told your future self you’re serious about focus and improving your productvity with your work!
-
-Before we start blocking your bad habits, we need to confirm this email belongs to you.
-
-Verify your account:
+Verify your account to start protecting your focus:
 {verify_link}
 
-Once you’re verified, you’ll be able to:
-- Start tracked focus blocks from the Chrome extension
-- See your minutes of real work add up in the dashboard
-- Watch your discipline score climb instead of your screen time
+Once verified, you'll be able to start deepwork blocks, track your progress, and build your discipline score.
 
-If you didn’t request this, you can ignore the email — nothing else will happen.
+If you didn't request this, you can ignore this email.
 
-See you in your next focus block,
 — Deepmode
 """
 
     html_body = f"""\
 <html>
   <body style="font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;background:#050509;color:#f9fafb;padding:16px;">
-    <div style="max-width:520px;margin:0 auto;background:#111118;border-radius:12px;padding:18px 18px 16px;border:1px solid #27272f;">
-      <div style="font-size:11px;text-transform:uppercase;letter-spacing:0.16em;color:#9ca3af;margin-bottom:6px;">
+    <div style="max-width:520px;margin:0 auto;background:#111118;border-radius:12px;padding:24px;border:1px solid #27272f;">
+      <div style="font-size:11px;text-transform:uppercase;letter-spacing:0.16em;color:#9ca3af;margin-bottom:12px;font-weight:600;">
         Deepmode
       </div>
-      <h1 style="font-size:18px;margin:0 0 8px;">Welcome to your new focus muscle.</h1>
-      <p style="font-size:13px;line-height:1.6;margin:0 0 10px;">
-        You just signed up for Deepmode. Before we start blocking your worst tabs,
-        we need to quickly confirm this email belongs to you.
+      <h1 style="font-size:20px;margin:0 0 12px;font-weight:600;">Welcome to Deepmode</h1>
+      <p style="font-size:14px;line-height:1.6;margin:0 0 20px;color:#e5e7eb;">
+        Verify your account to start protecting your focus and tracking your deep work.
       </p>
-      <p style="margin:0 0 12px;">
+      <p style="margin:0 0 20px;">
         <a href="{verify_link}"
            style="display:inline-block;background:#e50914;color:#ffffff;text-decoration:none;
-                  padding:8px 14px;border-radius:999px;font-size:13px;font-weight:500;">
+                  padding:10px 18px;border-radius:999px;font-size:14px;font-weight:500;">
           Verify my account
         </a>
       </p>
-      <p style="font-size:12px;color:#9ca3af;margin:0 0 10px;">
+      <p style="font-size:12px;color:#9ca3af;margin:0 0 20px;line-height:1.6;">
         Or paste this link into your browser:<br/>
-        <span style="color:#e5e7eb;font-size:11px;">{verify_link}</span>
+        <span style="color:#e5e7eb;font-size:11px;word-break:break-all;">{verify_link}</span>
       </p>
-      <hr style="border:none;border-top:1px solid #27272f;margin:10px 0;" />
-      <p style="font-size:11px;color:#9ca3af;margin:0;">
-        Once verified, you’ll be able to:
-        <br>– Start tracked focus blocks from the Chrome extension
-        <br>– See your minutes of deep work stack up
-        <br>– Watch your discipline score climb instead of your screen time
+      <hr style="border:none;border-top:1px solid #27272f;margin:20px 0;" />
+      <p style="font-size:12px;color:#9ca3af;margin:0 0 8px;line-height:1.6;">
+        Once verified, you'll be able to start deepwork blocks, track your progress, and build your discipline score.
       </p>
-      <p style="font-size:11px;color:#6b7280;margin:8px 0 0;">
-        Didn’t sign up? You can safely ignore this — no blocks will start without you.
-      </p>
-      <p style="font-size:11px;color:#9ca3af;margin:10px 0 0;">
-        See you on the other side of your next block,<br/>
-        <span style="color:#e5e7eb;">— Deepmode</span>
+      <p style="font-size:11px;color:#6b7280;margin:0;">
+        If you didn't request this, you can ignore this email.
       </p>
     </div>
   </body>
@@ -174,26 +158,30 @@ def send_daily_streak_email(
 ) -> None:
     subject = f"Deepmode • Day {current_streak} of your focus streak"
     body = f"""
-    <div style="font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;
-                padding:24px;background:#020617;color:#f9fafb;">
-      <h1 style="margin:0 0 10px;font-size:20px;">Don’t break it today.</h1>
-      <p style="font-size:14px;line-height:1.6;margin:0 0 10px;">
-        You’re on a <strong>{current_streak}-day</strong> Deepmode streak.
-      </p>
-      <p style="font-size:13px;line-height:1.6;margin:0 0 10px;color:#9ca3af;">
-        Yesterday you logged about <strong>{minutes_yesterday} minutes</strong> of real work.
-      </p>
-      <p style="font-size:13px;line-height:1.6;margin:0 0 16px;color:#9ca3af;">
-        Your longest streak so far: <strong>{longest_streak} days</strong>.
-      </p>
-      <a href="https://deepmode.app/login"
-         style="display:inline-block;padding:8px 14px;border-radius:999px;background:#e50914;
-                color:#ffffff;text-decoration:none;font-size:13px;font-weight:500;">
-        Start today’s first block
-      </a>
-      <p style="font-size:11px;color:#6b7280;margin-top:16px;">
-        If you don’t want daily nudges, you can turn them off in email settings at any time.
-      </p>
+    <div style="font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;background:#050509;color:#f9fafb;padding:16px;">
+      <div style="max-width:520px;margin:0 auto;background:#111118;border-radius:12px;padding:24px;border:1px solid #27272f;">
+        <div style="font-size:11px;text-transform:uppercase;letter-spacing:0.16em;color:#9ca3af;margin-bottom:12px;font-weight:600;">
+          Deepmode
+        </div>
+        <h1 style="margin:0 0 12px;font-size:20px;font-weight:600;">Day {current_streak} of your focus streak</h1>
+        <p style="font-size:14px;line-height:1.6;margin:0 0 12px;color:#e5e7eb;">
+          Yesterday you logged <strong>{minutes_yesterday} minutes</strong> of deep work.
+        </p>
+        <p style="font-size:13px;line-height:1.6;margin:0 0 20px;color:#9ca3af;">
+          Longest streak: <strong>{longest_streak} days</strong>.
+        </p>
+        <p style="font-size:12px;color:#9ca3af;margin:0 0 20px;font-style:italic;line-height:1.6;">
+          Your streak reflects your consistency, not your mood.
+        </p>
+        <a href="https://deepmode.app/login"
+           style="display:inline-block;padding:10px 18px;border-radius:999px;background:#e50914;
+                  color:#ffffff;text-decoration:none;font-size:14px;font-weight:500;">
+          Start today's first block
+        </a>
+        <p style="font-size:11px;color:#6b7280;margin-top:20px;">
+          You can turn off daily emails in your email settings.
+        </p>
+      </div>
     </div>
     """
     send_email_html(to_email, subject, body)
@@ -214,36 +202,38 @@ def send_weekly_summary_email(
 
     subject = "Deepmode • Your weekly focus report"
     body = f"""
-    <div style="font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;
-                padding:24px;background:#020617;color:#f9fafb;">
-      <h1 style="margin:0 0 10px;font-size:20px;">Your Deepmode week in review</h1>
+    <div style="font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;background:#050509;color:#f9fafb;padding:16px;">
+      <div style="max-width:520px;margin:0 auto;background:#111118;border-radius:12px;padding:24px;border:1px solid #27272f;">
+        <div style="font-size:11px;text-transform:uppercase;letter-spacing:0.16em;color:#9ca3af;margin-bottom:12px;font-weight:600;">
+          Deepmode
+        </div>
+        <h1 style="margin:0 0 12px;font-size:20px;font-weight:600;">Your weekly focus report</h1>
 
-      <p style="font-size:14px;line-height:1.6;margin:0 0 12px;">
-        This week you logged <strong>{minutes_this_week} minutes</strong> of tracked deep work.
-      </p>
-      <p style="font-size:13px;line-height:1.6;margin:0 0 10px;color:#9ca3af;">
-        Last week: <strong>{minutes_last_week} minutes</strong>.<br/>
-        Change: <strong>{sign}{delta_abs} minutes</strong>.
-      </p>
+        <p style="font-size:14px;line-height:1.6;margin:0 0 12px;color:#e5e7eb;">
+          This week: <strong>{minutes_this_week} minutes</strong> of deep work.
+        </p>
+        <p style="font-size:13px;line-height:1.6;margin:0 0 12px;color:#9ca3af;">
+          Last week: <strong>{minutes_last_week} minutes</strong> ({sign}{delta_abs} minutes change).
+        </p>
 
-      <p style="font-size:13px;line-height:1.6;margin:0 0 10px;color:#9ca3af;">
-        Sessions: <strong>{completed_sessions} completed</strong> out of {total_sessions} started.
-      </p>
+        <p style="font-size:13px;line-height:1.6;margin:0 0 12px;color:#9ca3af;">
+          <strong>{completed_sessions} completed</strong> out of {total_sessions} started.
+        </p>
 
-      <p style="font-size:13px;line-height:1.6;margin:0 0 16px;color:#9ca3af;">
-        Current streak: <strong>{current_streak} days</strong><br/>
-        Longest streak: <strong>{longest_streak} days</strong>
-      </p>
+        <p style="font-size:13px;line-height:1.6;margin:0 0 20px;color:#9ca3af;">
+          Current streak: <strong>{current_streak} days</strong> • Longest: <strong>{longest_streak} days</strong>
+        </p>
 
-      <a href="https://deepmode.app/login"
-         style="display:inline-block;padding:8px 14px;border-radius:999px;background:#e50914;
-                color:#ffffff;text-decoration:none;font-size:13px;font-weight:500;">
-        Plan next week’s blocks
-      </a>
+        <a href="https://deepmode.app/login"
+           style="display:inline-block;padding:10px 18px;border-radius:999px;background:#e50914;
+                  color:#ffffff;text-decoration:none;font-size:14px;font-weight:500;">
+          View dashboard
+        </a>
 
-      <p style="font-size:11px;color:#6b7280;margin-top:16px;">
-        If weekly reports aren’t your thing, you can switch them off in email settings.
-      </p>
+        <p style="font-size:11px;color:#6b7280;margin-top:20px;">
+          You can turn off weekly emails in your email settings.
+        </p>
+      </div>
     </div>
     """
     send_email_html(to_email, subject, body)
@@ -257,38 +247,36 @@ def send_pro_welcome_email(to_email: str) -> None:
     if not to_email:
         return
 
-    subject = "Deepmode Pro unlocked — your work now compounds"
+    subject = "Welcome to Deepmode Pro"
 
     html_body = """
-    <div style="font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',system-ui,sans-serif;
-                background-color:#050509;padding:24px;color:#f5f5f5;">
-      <h1 style="color:#e50914;margin:0 0 12px;font-size:24px;">
-        Deepmode Pro activated — time to build your advantage.
-      </h1>
+    <div style="font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',system-ui,sans-serif;background:#050509;color:#f9fafb;padding:16px;">
+      <div style="max-width:520px;margin:0 auto;background:#111118;border-radius:12px;padding:24px;border:1px solid #27272f;">
+        <div style="font-size:11px;text-transform:uppercase;letter-spacing:0.16em;color:#9ca3af;margin-bottom:12px;font-weight:600;">
+          Deepmode
+        </div>
+        <h1 style="color:#e50914;margin:0 0 12px;font-size:24px;font-weight:600;">
+          Welcome to Deepmode Pro
+        </h1>
 
       <p style="margin:0 0 12px;font-size:14px;line-height:1.6;">
-        From now on your sessions aren’t “study vibes” or “busy work”.
-        They’re blocks of measurable, compounding focus.
+        You now have access to unlimited deepwork blocks, advanced tracking, and detailed progress insights.
       </p>
 
-      <h2 style="margin:18px 0 8px;font-size:16px;">What you just unlocked</h2>
+      <h2 style="margin:18px 0 8px;font-size:16px;">What's included</h2>
 
       <ul style="margin:0 0 12px 18px;font-size:14px;line-height:1.6;">
-        <li><strong>Deep focus blocks</strong> – Deepmode, Pomodoro and custom timers for deliberate work, not guesswork.</li>
-        <li><strong>Project-based tracking</strong> – attach every block to a project so you see where your time actually goes.</li>
-        <li><strong>Smart categories</strong> – Design, Research, Study, Fitness, Freelance, Admin… or your own labels to map your real workload.</li>
-        <li><strong>Session notes</strong> – capture distractions, wins and ideas right inside each block so nothing gets lost.</li>
-        <li><strong>Streaks & discipline score</strong> – daily minutes, weekly summaries and a finish-rate that keeps you honest.</li>
+        <li>Unlimited deepwork sessions</li>
+        <li>Advanced distraction blocking</li>
+        <li>Session history and discipline metrics</li>
+        <li>Daily and weekly focus reports</li>
+        <li>Streak insights</li>
       </ul>
 
-      <p style="margin:0 0 12px;font-size:14px;line-height:1.6;">
-        Use Deepmode like a gym for your attention: short, hard sessions that you actually finish, repeated often.
-      </p>
-
       <p style="margin:0;font-size:14px;line-height:1.6;">
-        Welcome to the serious lane.<br/>
-        <span style="color:#e50914;">— Deepmode</span>
+        Start your first Pro block from the Chrome extension.
       </p>
+      </div>
     </div>
     """
 

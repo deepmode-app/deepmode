@@ -445,11 +445,14 @@
         <div class="popup-logo">
           <img src="icon.png" alt="Deepmode" class="popup-logo-mark" />
           <div class="popup-title-block">
-            <div class="popup-title">Deepmode</div>
+            <div class="popup-title" id="popupTitleText">Deepmode</div>
             <div class="popup-subtitle">
-              Focus blocks for serious work.
+              Choose your session length and stay in Deepmode.
             </div>
           </div>
+        </div>
+        <div id="proBadge" style="display: none; font-size: 9px; text-transform: uppercase; letter-spacing: 0.1em; color: #e50914; padding: 2px 6px; border: 1px solid rgba(229, 9, 20, 0.3); border-radius: 4px; margin-left: auto;">
+          Pro
         </div>
       </div>
 
@@ -464,10 +467,10 @@
         <button id="upgradeBtn">Upgrade</button>
       </div>
 
-      <label>Task</label>
+      <label style="font-size: 12px; font-weight: 500;">Task</label>
       <input id="task" type="text" placeholder="What are you working on?" />
 
-      <label>Category</label>
+      <label style="font-size: 12px; font-weight: 500;">Category</label>
       <select id="category">
         <option value="design">Design</option>
         <option value="coding">Software / Coding</option>
@@ -481,7 +484,7 @@
         <option value="other">Other</option>
       </select>
 
-      <label>Duration (minutes)</label>
+      <label style="font-size: 12px; font-weight: 500;">Duration</label>
       <select id="duration">
         <option value="5">Micro (5m) – Break Inertia</option>
         <option value="25" selected>Sprint (25m) – Classic Pomodoro</option>
@@ -491,7 +494,7 @@
       <div id="durationHint"
            style="font-size:10px;color:#6b7280;margin-top:2px;"></div>
 
-      <button id="startBtn">Start Deepwork Session</button>
+      <button id="startBtn">Start Session</button>
       <button id="endBtn" disabled>End Session</button>
 
       <div id="currentSession" class="current-session" style="display:none;">

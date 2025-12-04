@@ -264,8 +264,8 @@ document.addEventListener("DOMContentLoaded", () => {
 
       statusDiv.style.color = "#e5e7eb";
       statusDiv.textContent = active.isGuest
-        ? "Deepmode guest session running."
-        : "Deepmode session running.";
+        ? "Deepwork block running."
+        : "Deepwork block running.";
     } else {
       startBtn.disabled = false;
       endBtn.disabled = true;
@@ -278,7 +278,7 @@ document.addEventListener("DOMContentLoaded", () => {
       currentCategoryDiv.textContent = "";
 
       statusDiv.style.color = "#9ca3af";
-      statusDiv.textContent = "No active session.";
+      statusDiv.textContent = "No active block.";
 
       if (timerInterval) clearInterval(timerInterval);
       applyPlanUI();

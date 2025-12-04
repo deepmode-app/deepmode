@@ -79,10 +79,10 @@ document.addEventListener("DOMContentLoaded", () => {
 
     if (accessToken) {
       authStateDiv.textContent =
-        "👤 Signed in — synced to dashboard.";
+        "Signed in — synced to dashboard.";
     } else {
       authStateDiv.textContent =
-        "🕶 Guest mode — local only.";
+        "Guest mode — local only.";
     }
   }
 
@@ -90,7 +90,7 @@ document.addEventListener("DOMContentLoaded", () => {
     // Plan & hint text (short, no repetition)
     if (!accessToken) {
       if (planLabel) {
-        planLabel.textContent = "Guest — 5m & 25m blocks.";
+        planLabel.textContent = "Guest — 5m & 25m blocks only.";
       }
       if (durationHint) {
         durationHint.textContent = "";
@@ -102,7 +102,7 @@ document.addEventListener("DOMContentLoaded", () => {
       }
     } else if (!isProUser) {
       if (planLabel) {
-        planLabel.textContent = "Free plan — 5m & 25m.";
+        planLabel.textContent = "Free plan — 5m & 25m blocks only.";
       }
       if (durationHint) {
         durationHint.textContent = "";
@@ -114,8 +114,13 @@ document.addEventListener("DOMContentLoaded", () => {
       }
     } else {
       if (planLabel) {
-        planLabel.textContent = "Pro — FOCUS unlocked.";
+        planLabel.textContent = "";
       }
+      // Show Pro badge
+      const proBadge = document.getElementById("proBadge");
+      const popupTitleText = document.getElementById("popupTitleText");
+      if (proBadge) proBadge.style.display = "block";
+      if (popupTitleText) popupTitleText.textContent = "Deepmode Pro";
       if (durationHint) {
         durationHint.textContent = "";
       }
@@ -179,6 +184,16 @@ document.addEventListener("DOMContentLoaded", () => {
         } else {
           const me = await res.json();
           isProUser = !!me.is_pro;
+          // Update Pro badge and title
+          const proBadge = document.getElementById("proBadge");
+          const popupTitleText = document.getElementById("popupTitleText");
+          if (isProUser) {
+            if (proBadge) proBadge.style.display = "block";
+            if (popupTitleText) popupTitleText.textContent = "Deepmode Pro";
+          } else {
+            if (proBadge) proBadge.style.display = "none";
+            if (popupTitleText) popupTitleText.textContent = "Deepmode";
+          }
         }
       } catch (err) {
         console.error("Deepmode popup: error hitting /auth/me", err);
@@ -204,8 +219,8 @@ document.addEventListener("DOMContentLoaded", () => {
 
       statusDiv.style.color = "#e5e7eb";
       statusDiv.textContent = active.isGuest
-        ? "Deepmode guest session running."
-        : "Deepmode session running.";
+        ? "Deepwork block running."
+        : "Deepwork block running.";
     } else {
       startBtn.disabled = false;
       endBtn.disabled = true;
@@ -218,7 +233,7 @@ document.addEventListener("DOMContentLoaded", () => {
       currentCategoryDiv.textContent = "";
 
       statusDiv.style.color = "#9ca3af";
-      statusDiv.textContent = "No active session.";
+      statusDiv.textContent = "No active block.";
 
       if (timerInterval) clearInterval(timerInterval);
       applyPlanUI();
@@ -239,7 +254,7 @@ document.addEventListener("DOMContentLoaded", () => {
 
       statusDiv.style.color = "#e5e7eb";
       statusDiv.textContent =
-        `Deepmode on – ${remainingMin}m ${remainingSec}s left`;
+        `Deepwork in progress – ${remainingMin}m ${remainingSec}s left`;
 
       if (remainingMs <= 0) {
         clearInterval(timerInterval);
@@ -936,6 +951,11 @@ document.addEventListener("DOMContentLoaded", () => {
         () => {
           accessToken = null;
           isProUser = false;
+          // Hide Pro badge on logout
+          const proBadge = document.getElementById("proBadge");
+          const popupTitleText = document.getElementById("popupTitleText");
+          if (proBadge) proBadge.style.display = "none";
+          if (popupTitleText) popupTitleText.textContent = "Deepmode";
           updateAuthState();
           applyPlanUI();
           setUIForActiveSession(null);
@@ -959,8 +979,13 @@ document.addEventListener("DOMContentLoaded", () => {
       updateAuthState();
 
       // If token was removed → force-clear session + timer
-      if (!newToken) {
-        isProUser = false;
+        if (!newToken) {
+          isProUser = false;
+          // Hide Pro badge when token removed
+          const proBadge = document.getElementById("proBadge");
+          const popupTitleText = document.getElementById("popupTitleText");
+          if (proBadge) proBadge.style.display = "none";
+          if (popupTitleText) popupTitleText.textContent = "Deepmode";
         if (timerInterval) clearInterval(timerInterval);
         if (primingTimerId) clearInterval(primingTimerId);
         if (primingOverlay) {
