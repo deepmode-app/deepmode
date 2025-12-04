@@ -2027,6 +2027,9 @@
     const projectFilter = document.getElementById("projectFilter");
     let activeProjectFilter = "__ALL__";
 
+    // Persistent selection model - survives table refreshes
+    const selectedSessionIds = new Set();
+
     const dailyEmailToggle = document.getElementById("dailyEmailToggle");
     const weeklyEmailToggle = document.getElementById("weeklyEmailToggle");
     const emailPrefsStatus = document.getElementById("emailPrefsStatus");
@@ -2989,7 +2992,21 @@
             e.stopPropagation();
           });
 
-          checkbox.addEventListener("change", updateSessionsBulkBar);
+          // Restore checkbox state from persistent selection
+          const sessionId = s.id;
+          if (selectedSessionIds.has(sessionId)) {
+            checkbox.checked = true;
+          }
+
+          checkbox.addEventListener("change", (e) => {
+            const isChecked = e.target.checked;
+            if (isChecked) {
+              selectedSessionIds.add(sessionId);
+            } else {
+              selectedSessionIds.delete(sessionId);
+            }
+            updateSessionsBulkBar();
+          });
 
           tr.addEventListener("click", (e) => {
             // Don't open detail if clicking on checkbox
@@ -3014,6 +3031,9 @@
         // Update live banner (this will show/hide it based on runningSession)
         // This also handles the start session callout visibility
         updateLiveBanner(runningSession);
+        
+        // Update bulk bar to reflect restored selections
+        updateSessionsBulkBar();
         
         // If no running session, ensure last block banner is shown
         if (!runningSession) {
@@ -3740,8 +3760,17 @@
     window.deepmodeProjectsCache = [];
 
     function getSelectedSessionIds() {
-      const checkboxes = document.querySelectorAll(".session-select:checked");
-      return Array.from(checkboxes).map((cb) => parseInt(cb.dataset.sessionId, 10));
+      // Use persistent Set as source of truth
+      return Array.from(selectedSessionIds);
+    }
+
+    function clearSessionSelection() {
+      selectedSessionIds.clear();
+      // Update DOM checkboxes
+      document.querySelectorAll(".session-select").forEach(cb => {
+        cb.checked = false;
+      });
+      updateSessionsBulkBar();
     }
 
     function updateSessionsBulkBar() {
@@ -3886,15 +3915,12 @@
         alert("Some sessions could not be deleted. Please try again.");
         return;
       } finally {
-        // Reload sessions + reset selection
+        // Remove deleted session IDs from selection
+        ids.forEach(id => selectedSessionIds.delete(id));
+        // Reload sessions (selection will be restored from selectedSessionIds)
         await loadSessions();
-        const bulkBar = document.getElementById("sessionsBulkBar");
-        if (bulkBar) bulkBar.classList.remove("visible");
-        const selectAll = document.getElementById("sessionsSelectAll");
-        if (selectAll) {
-          selectAll.checked = false;
-          selectAll.indeterminate = false;
-        }
+        // Update UI (bulk bar will hide automatically if no selections remain)
+        updateSessionsBulkBar();
       }
     }
 
@@ -3933,14 +3959,11 @@
         alert("Network error while moving sessions.");
         return;
       } finally {
+        // Keep selections after bulk move (sessions still exist)
+        // Reload sessions (selection will be restored from selectedSessionIds)
         await loadSessions();
-        const bulkBar = document.getElementById("sessionsBulkBar");
-        if (bulkBar) bulkBar.classList.remove("visible");
-        const selectAll = document.getElementById("sessionsSelectAll");
-        if (selectAll) {
-          selectAll.checked = false;
-          selectAll.indeterminate = false;
-        }
+        // Update UI
+        updateSessionsBulkBar();
         hideBulkProjectPanel();
       }
     }
@@ -4000,8 +4023,17 @@
     if (sessionsSelectAll) {
       sessionsSelectAll.addEventListener("change", (e) => {
         const checkboxes = document.querySelectorAll(".session-select");
+        const isChecked = e.target.checked;
+        
         checkboxes.forEach((cb) => {
-          cb.checked = e.target.checked;
+          const sessionId = parseInt(cb.dataset.sessionId, 10);
+          cb.checked = isChecked;
+          // Update persistent selection
+          if (isChecked) {
+            selectedSessionIds.add(sessionId);
+          } else {
+            selectedSessionIds.delete(sessionId);
+          }
         });
         updateSessionsBulkBar();
       });
