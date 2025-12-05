@@ -574,8 +574,48 @@ def get_me(current_user: dict = Depends(get_current_user)):
     - email
     - is_pro
     - is_verified
+    - current_streak (always returned)
+    - streak_history, streak_graph, streak_trend (Pro only)
     """
-    return current_user
+    user_id = current_user["id"]
+    is_pro = current_user["is_pro"]
+    
+    conn = get_conn()
+    cur = conn.cursor()
+    cur.execute(
+        """
+        SELECT current_streak, longest_streak
+        FROM users
+        WHERE id = %s
+        """,
+        (user_id,),
+    )
+    row = cur.fetchone()
+    conn.close()
+    
+    if not row:
+        raise HTTPException(status_code=404, detail="User not found.")
+    
+    current_streak = row["current_streak"] or 0
+    
+    response = {
+        **current_user,
+        "current_streak": current_streak,
+    }
+    
+    # Pro users get full analytics, Free users get None
+    if is_pro:
+        # For now, return None for history/graph/trend (can be implemented later)
+        # The key is that Free users explicitly get None
+        response["streak_history"] = None
+        response["streak_graph"] = None
+        response["streak_trend"] = None
+    else:
+        response["streak_history"] = None
+        response["streak_graph"] = None
+        response["streak_trend"] = None
+    
+    return response
 
 
 @router.post("/email-preferences", response_model=EmailPreferences)

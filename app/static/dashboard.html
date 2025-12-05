@@ -1783,6 +1783,23 @@
         <div class="card-sub">Your deepwork efficiency</div>
         <div class="card-locked-hint" id="disciplineHint">Available with Deepmode Pro</div>
       </div>
+
+      <div class="card" id="streakCard">
+        <div class="card-title">Streak</div>
+        <div class="card-value" id="streakNumber">0</div>
+        <div class="card-sub" id="streakSubtext">days</div>
+        <div id="streakZeroHint" style="display: none; font-size: 10px; color: var(--dw-muted); margin-top: 4px; font-style: italic;">
+          No streak yet. Start your first session today.
+        </div>
+        <div id="streakUpgradeCallout" style="display: none; font-size: 10px; color: var(--dw-muted); margin-top: 6px; line-height: 1.4;">
+          Upgrade to Deepmode Pro to see your full streak history and trends.
+        </div>
+        <div id="streakProLink" style="display: none; margin-top: 8px;">
+          <a href="/streak" class="upgrade-btn" style="font-size: 10px; padding: 4px 10px; display: inline-block;">
+            View full streak insights
+          </a>
+        </div>
+      </div>
       </div>
 
     <div class="card sessions-card">
@@ -1973,10 +1990,10 @@
         <div class="session-modal-label">Notifications</div>
         
         <div style="margin-top: 12px;">
-          <div class="toggle-row">
+          <div class="toggle-row" id="dailyEmailToggleRow">
             <div class="toggle-text">
               <div class="toggle-title">Daily streak reminder</div>
-              <div class="toggle-sub">Short nudge to keep your streak alive.</div>
+              <div class="toggle-sub" id="dailyEmailToggleSub">Short nudge to keep your streak alive.</div>
             </div>
             <label class="switch">
               <input type="checkbox" id="dailyEmailToggle">
@@ -2242,6 +2259,10 @@
 
         const user = await res.json();
         currentUser = user;
+        
+        // Update streak display (handles 0 as valid value)
+        const currentStreak = user.current_streak !== undefined ? user.current_streak : 0;
+        updateStreakDisplay(currentStreak, user.is_pro);
 
         const proPill = document.getElementById("proPill");
         
@@ -2266,6 +2287,18 @@
           }
           if (manageBillingBtn) {
             manageBillingBtn.style.display = "block";
+          }
+          // Enable daily email toggle for Pro users
+          const dailyEmailToggleRow = document.getElementById("dailyEmailToggleRow");
+          const dailyEmailToggleSub = document.getElementById("dailyEmailToggleSub");
+          if (dailyEmailToggleRow) {
+            dailyEmailToggleRow.style.display = "flex";
+          }
+          if (dailyEmailToggle) {
+            dailyEmailToggle.disabled = false;
+          }
+          if (dailyEmailToggleSub) {
+            dailyEmailToggleSub.textContent = "Short nudge to keep your streak alive.";
           }
           // Enable All-Time and Discipline cards for Pro users
           const allTimeCard = document.getElementById('allTimeCard');
@@ -2300,6 +2333,20 @@
           }
           if (manageBillingBtn) {
             manageBillingBtn.style.display = "none";
+          }
+          // Disable daily email toggle for Free users (Pro only feature)
+          // Keep it visible but disabled with Pro-only message
+          const dailyEmailToggleRow = document.getElementById("dailyEmailToggleRow");
+          const dailyEmailToggleSub = document.getElementById("dailyEmailToggleSub");
+          if (dailyEmailToggleRow) {
+            dailyEmailToggleRow.style.display = "flex";
+          }
+          if (dailyEmailToggle) {
+            dailyEmailToggle.disabled = true;
+            dailyEmailToggle.checked = false;
+          }
+          if (dailyEmailToggleSub) {
+            dailyEmailToggleSub.textContent = "Daily reports are available with Deepmode Pro.";
           }
           // Keep All-Time and Discipline cards locked for Free users
           const allTimeCard = document.getElementById('allTimeCard');
@@ -3830,6 +3877,40 @@
         cb.checked = false;
       });
       updateSessionsBulkBar();
+    }
+
+    function updateStreakDisplay(currentStreak, isPro) {
+      const streakCard = document.getElementById("streakCard");
+      const streakNumber = document.getElementById("streakNumber");
+      const streakSubtext = document.getElementById("streakSubtext");
+      const streakZeroHint = document.getElementById("streakZeroHint");
+      const streakUpgradeCallout = document.getElementById("streakUpgradeCallout");
+      const streakProLink = document.getElementById("streakProLink");
+      
+      if (!streakCard || !streakNumber) return;
+      
+      const streak = currentStreak || 0;
+      
+      // Always show streak number
+      streakNumber.textContent = streak;
+      streakSubtext.textContent = streak === 1 ? "day" : "days";
+      
+      // Show/hide zero streak hint
+      if (streak === 0) {
+        if (streakZeroHint) streakZeroHint.style.display = "block";
+      } else {
+        if (streakZeroHint) streakZeroHint.style.display = "none";
+      }
+      
+      if (isPro) {
+        // Pro users: hide upgrade callout, show link to full insights
+        if (streakUpgradeCallout) streakUpgradeCallout.style.display = "none";
+        if (streakProLink) streakProLink.style.display = "block";
+      } else {
+        // Free users: show upgrade callout, hide Pro link
+        if (streakUpgradeCallout) streakUpgradeCallout.style.display = "block";
+        if (streakProLink) streakProLink.style.display = "none";
+      }
     }
 
     function updateSessionsBulkBar() {

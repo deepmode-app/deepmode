@@ -239,6 +239,46 @@ def send_weekly_summary_email(
     send_email_html(to_email, subject, body)
 
 
+def send_minimal_weekly_summary_email(
+    to_email: str,
+    days_worked: int,
+    current_streak: int,
+) -> None:
+    """
+    Minimal weekly summary for Free users.
+    Includes only basic stats and upgrade CTA.
+    """
+    subject = "Deepmode • Your weekly summary"
+    body = f"""
+    <div style="font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;background:#050509;color:#f9fafb;padding:16px;">
+      <div style="max-width:520px;margin:0 auto;background:#111118;border-radius:12px;padding:24px;border:1px solid #27272f;">
+        <div style="font-size:11px;text-transform:uppercase;letter-spacing:0.16em;color:#9ca3af;margin-bottom:12px;font-weight:600;">
+          Deepmode
+        </div>
+        <h1 style="margin:0 0 12px;font-size:20px;font-weight:600;">Your weekly summary</h1>
+
+        <p style="font-size:14px;line-height:1.6;margin:0 0 12px;color:#e5e7eb;">
+          You worked <strong>{days_worked} day{'s' if days_worked != 1 else ''}</strong> this week.
+        </p>
+        <p style="font-size:13px;line-height:1.6;margin:0 0 20px;color:#9ca3af;">
+          Current streak: <strong>{current_streak} day{'s' if current_streak != 1 else ''}</strong>
+        </p>
+
+        <a href="https://deepmode.app/#pricing"
+           style="display:inline-block;padding:10px 18px;border-radius:999px;background:#e50914;
+                  color:#ffffff;text-decoration:none;font-size:14px;font-weight:500;">
+          Unlock full weekly insights with Deepmode Pro
+        </a>
+
+        <p style="font-size:11px;color:#6b7280;margin-top:20px;">
+          You can turn off weekly emails in your email settings.
+        </p>
+      </div>
+    </div>
+    """
+    send_email_html(to_email, subject, body)
+
+
 def send_pro_welcome_email(to_email: str) -> None:
     """
     Fire-and-forget helper to send the Deepmode Pro welcome email.
