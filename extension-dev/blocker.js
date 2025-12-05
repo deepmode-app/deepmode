@@ -166,7 +166,7 @@ function renderOverlay(activeSession, isPro) {
       position:relative;
       z-index:1;
     ">
-      <img src="https://deepmode.app/static/logos/Logo%20-%20Red%20BG.png" alt="Deepmode" style="height: 48px; opacity: 0.8; margin-bottom: 16px;" />
+      <img src="https://deepmode.app/static/logos/Logo%20-%20Red%20BG.png" alt="Deepmode" style="height: 48px; opacity: 0.9; margin: 0 auto 16px; display: block;" />
       <div style="font-size:11px; text-transform:uppercase; letter-spacing:0.15em; color:#9ca3af; margin-bottom:6px;">
         ${brandText}
       </div>
