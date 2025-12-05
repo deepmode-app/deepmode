@@ -120,15 +120,21 @@ function updateBadgeFromSession(session) {
   const targetTime = startMs + durationMs;
   const remainingMs = targetTime - Date.now();
   const remainingSeconds = Math.max(0, Math.floor(remainingMs / 1000));
-  const minutesLeft = Math.max(0, Math.floor(remainingSeconds / 60));
+  
+  // Show "1" when there's less than a minute but more than 0 seconds
+  // Use Math.ceil to round up (59 seconds = 1 minute, 1 second = 1 minute)
+  const minutesLeft = remainingSeconds > 0 ? Math.ceil(remainingSeconds / 60) : 0;
 
   if (minutesLeft > 0) {
     chrome.action.setBadgeText({ text: minutesLeft.toString() });
     
-    // Color code: green >5min, yellow 1-5min, red 0
+    // Color code: green >10min, orange 3-10min, red <3min
     let badgeColor = "#22c55e"; // green
-    if (minutesLeft <= 5) {
-      badgeColor = "#ffb84d"; // yellow/orange
+    if (minutesLeft <= 10) {
+      badgeColor = "#ffb84d"; // orange
+    }
+    if (minutesLeft <= 3) {
+      badgeColor = "#e50914"; // red
     }
     chrome.action.setBadgeBackgroundColor({ color: badgeColor });
   } else {
