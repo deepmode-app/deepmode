@@ -208,11 +208,11 @@ function renderOverlay(activeSession, isPro) {
         transform: translate(-50%, -50%);
         width: 480px;
         height: 480px;
-        background-image: url("https://deepmode.onrender.com/static/logos/Logo%20-%20Red%20BG.png");
+        background-image: url("https://deepmode.app/static/logos/Logo%20-%20Red%20BG.png");
         background-size: contain;
         background-repeat: no-repeat;
         background-position: center;
-        opacity: 0.05;
+        opacity: 0.08;
         pointer-events: none;
         filter: blur(1.5px) drop-shadow(0 0 60px rgba(229, 9, 20, 0.3));
         z-index: 0;

@@ -2024,6 +2024,32 @@
     </div>
   </div>
 
+  <!-- Custom Delete Confirmation Modal -->
+  <div id="deleteConfirmModal" class="session-modal-backdrop" style="display: none;">
+    <div class="session-modal-card" style="max-width: 400px;">
+      <div class="session-modal-header">
+        <div>
+          <div class="session-modal-title">Confirm deletion</div>
+          <div class="session-modal-sub">
+            This action cannot be undone.
+          </div>
+        </div>
+      </div>
+      <div class="session-modal-section" style="text-align: center; padding: 20px 0;">
+        <img src="/static/logos/Logo - Red BG.png" alt="Deepmode" style="height: 48px; opacity: 0.8; margin-bottom: 16px;" />
+        <p id="deleteConfirmMessage" style="font-size: 13px; color: var(--dw-text); line-height: 1.5; margin: 0;"></p>
+      </div>
+      <div class="session-modal-actions">
+        <button id="deleteConfirmCancel" class="session-modal-btn-secondary" style="margin-right: 8px;">
+          Cancel
+        </button>
+        <button id="deleteConfirmDelete" class="session-modal-btn-primary" style="background: #dc2626; border-color: #dc2626;">
+          Delete
+        </button>
+      </div>
+    </div>
+  </div>
+
   <script>
     const token = localStorage.getItem("access_token");
     const errorBanner = document.getElementById("errorBanner");
@@ -3494,8 +3520,8 @@
         return;
       }
 
-      const confirmed = window.confirm(
-        "Delete this focus block permanently? This cannot be undone."
+      const confirmed = await showDeleteConfirm(
+        "Delete this focus block permanently?"
       );
       if (!confirmed) return;
 
@@ -3879,6 +3905,50 @@
       updateSessionsBulkBar();
     }
 
+    function showDeleteConfirm(message) {
+      return new Promise((resolve) => {
+        const modal = document.getElementById("deleteConfirmModal");
+        const messageEl = document.getElementById("deleteConfirmMessage");
+        const cancelBtn = document.getElementById("deleteConfirmCancel");
+        const deleteBtn = document.getElementById("deleteConfirmDelete");
+
+        if (!modal || !messageEl || !cancelBtn || !deleteBtn) {
+          // Fallback to native confirm if modal elements not found
+          resolve(window.confirm(message + " This cannot be undone."));
+          return;
+        }
+
+        messageEl.textContent = message + " This cannot be undone.";
+        modal.style.display = "flex";
+        modal.classList.add("visible");
+
+        const cleanup = () => {
+          modal.style.display = "none";
+          modal.classList.remove("visible");
+          cancelBtn.onclick = null;
+          deleteBtn.onclick = null;
+        };
+
+        cancelBtn.onclick = () => {
+          cleanup();
+          resolve(false);
+        };
+
+        deleteBtn.onclick = () => {
+          cleanup();
+          resolve(true);
+        };
+
+        // Close on backdrop click
+        modal.onclick = (e) => {
+          if (e.target === modal) {
+            cleanup();
+            resolve(false);
+          }
+        };
+      });
+    }
+
     function updateStreakDisplay(currentStreak, isPro) {
       const streakCard = document.getElementById("streakCard");
       const streakNumber = document.getElementById("streakNumber");
@@ -4026,11 +4096,10 @@
       const ids = getSelectedSessionIds();
       if (!ids.length) return;
 
-      if (
-        !confirm(
-          `Delete ${ids.length} session(s)? This cannot be undone.`
-        )
-      ) {
+      const confirmed = await showDeleteConfirm(
+        `Delete ${ids.length} session(s)?`
+      );
+      if (!confirmed) {
         return;
       }
 

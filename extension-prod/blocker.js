@@ -210,7 +210,7 @@ function renderOverlay(activeSession, isPro) {
         background-size: contain;
         background-repeat: no-repeat;
         background-position: center;
-        opacity: 0.05;
+        opacity: 0.08;
         pointer-events: none;
         filter: blur(1.5px) drop-shadow(0 0 60px rgba(229, 9, 20, 0.3));
         z-index: 0;
