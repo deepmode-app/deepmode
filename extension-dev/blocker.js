@@ -154,6 +154,7 @@ function renderOverlay(activeSession, isPro) {
   overlay.style.zIndex = "999999";
 
   overlay.innerHTML = `
+    <div class="deepmode-overlay-bg-logo"></div>
     <div style="
       background:#111118;
       padding:24px 28px;
@@ -166,7 +167,6 @@ function renderOverlay(activeSession, isPro) {
       position:relative;
       z-index:1;
     ">
-      <img src="https://deepmode.app/static/logos/Logo%20-%20Red%20BG.png" alt="Deepmode" style="height: 48px; opacity: 0.9; margin: 0 auto 16px; display: block;" />
       <div style="font-size:11px; text-transform:uppercase; letter-spacing:0.15em; color:#9ca3af; margin-bottom:6px;">
         ${brandText}
       </div>
@@ -200,6 +200,22 @@ function renderOverlay(activeSession, isPro) {
     style.textContent = `
       #deepwork-overlay {
         position: relative;
+      }
+      .deepmode-overlay-bg-logo {
+        position: absolute;
+        top: 50%;
+        left: 50%;
+        transform: translate(-50%, -50%);
+        width: 480px;
+        height: 480px;
+        background-image: url("https://deepmode.app/static/logos/Logo%20-%20Red%20BG.png");
+        background-size: contain;
+        background-repeat: no-repeat;
+        background-position: center;
+        opacity: 0.05;
+        pointer-events: none;
+        filter: blur(1.5px) drop-shadow(0 0 60px rgba(229, 9, 20, 0.3));
+        z-index: 0;
       }
     `;
     document.head.appendChild(style);

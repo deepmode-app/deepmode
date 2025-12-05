@@ -28,11 +28,11 @@ function showOverlay() {
       font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',system-ui,sans-serif;
     ">
       <div style="font-size:11px; text-transform:uppercase; letter-spacing:0.15em; color:#9ca3af; margin-bottom:6px;">
-        Deepwork AI
+        Deepmode AI
       </div>
       <h2 style="margin:0 0 8px; font-size:22px;">You're in a Deepwork Session</h2>
       <p style="margin:0 0 4px; font-size:14px; color:#e5e7eb;">
-        Focus mode is active. Close this tab or end your session in the Deepwork popup.
+        Stay Focused on your work. Close this tab or end your session in the Deepwork popup.
       </p>
     </div>
   `;
