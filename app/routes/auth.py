@@ -1,10 +1,13 @@
 from datetime import datetime, timedelta, timezone
 from fastapi.responses import HTMLResponse
-from fastapi import APIRouter, Depends, HTTPException, status
+from fastapi import APIRouter, Depends, HTTPException, status, UploadFile, File
 from fastapi.security import HTTPBearer, HTTPAuthorizationCredentials
 from pydantic import BaseModel, EmailStr
+from typing import Optional
+from pathlib import Path
 import uuid
 import os
+import shutil
 
 from app.database import get_conn
 from app.auth_utils import (
@@ -75,6 +78,21 @@ class ResetPasswordRequest(BaseModel):
 class EmailPreferences(BaseModel):
     daily_email_enabled: bool
     weekly_email_enabled: bool
+
+
+class ProfileUpdate(BaseModel):
+    """
+    Profile update model for user profile settings.
+    All fields are optional for partial updates.
+    """
+    first_name: Optional[str] = None
+    last_name: Optional[str] = None
+    organization: Optional[str] = None
+    location: Optional[str] = None
+    timezone: Optional[str] = None
+    linkedin_url: Optional[str] = None
+    weekly_email_enabled: Optional[bool] = None
+    daily_email_enabled: Optional[bool] = None
 
 
 # ======================================================
@@ -567,6 +585,170 @@ def get_email_preferences(current_user: dict = Depends(get_current_user)):
     )
 
 
+@router.post("/email-preferences", response_model=EmailPreferences)
+def update_email_preferences(
+    payload: EmailPreferences,
+    current_user: dict = Depends(get_current_user),
+):
+    """
+    Update the current user's email notification preferences.
+    """
+    user_id = current_user["id"]
+
+    conn = get_conn()
+    cur = conn.cursor()
+
+    cur.execute(
+        """
+        UPDATE users
+        SET daily_email_enabled = %s,
+            weekly_email_enabled = %s
+        WHERE id = %s
+        """,
+        (
+            payload.daily_email_enabled,
+            payload.weekly_email_enabled,
+            user_id,
+        ),
+    )
+    conn.commit()
+    conn.close()
+
+    return EmailPreferences(
+        daily_email_enabled=payload.daily_email_enabled,
+        weekly_email_enabled=payload.weekly_email_enabled,
+    )
+
+
+@router.post("/profile")
+def update_profile(
+    payload: ProfileUpdate,
+    current_user: dict = Depends(get_current_user),
+):
+    """
+    Update the current user's profile fields.
+    """
+    user_id = current_user["id"]
+
+    conn = get_conn()
+    cur = conn.cursor()
+
+    # Build dynamic UPDATE query based on provided fields
+    updates = []
+    values = []
+    
+    if payload.first_name is not None:
+        updates.append("first_name = %s")
+        values.append(payload.first_name if payload.first_name else None)
+    if payload.last_name is not None:
+        updates.append("last_name = %s")
+        values.append(payload.last_name if payload.last_name else None)
+    if payload.organization is not None:
+        updates.append("organization = %s")
+        values.append(payload.organization if payload.organization else None)
+    if payload.location is not None:
+        updates.append("location = %s")
+        values.append(payload.location if payload.location else None)
+    if payload.timezone is not None:
+        updates.append("timezone = %s")
+        values.append(payload.timezone)
+    if payload.linkedin_url is not None:
+        updates.append("linkedin_url = %s")
+        values.append(payload.linkedin_url if payload.linkedin_url else None)
+    if payload.weekly_email_enabled is not None:
+        updates.append("weekly_email_enabled = %s")
+        values.append(payload.weekly_email_enabled)
+    if payload.daily_email_enabled is not None:
+        updates.append("daily_email_enabled = %s")
+        values.append(payload.daily_email_enabled)
+
+    if not updates:
+        conn.close()
+        return {"message": "No fields to update"}
+
+    values.append(user_id)
+    query = f"""
+        UPDATE users
+        SET {', '.join(updates)}
+        WHERE id = %s
+    """
+    
+    cur.execute(query, values)
+    conn.commit()
+    conn.close()
+
+    return {"message": "Profile updated successfully"}
+
+
+@router.post("/profile/avatar")
+def upload_avatar(
+    avatar: UploadFile = File(...),
+    current_user: dict = Depends(get_current_user),
+):
+    """
+    Upload avatar image for the current user.
+    Expects multipart/form-data with 'avatar' file field.
+    """
+    from pathlib import Path
+    import shutil
+    
+    user_id = current_user["id"]
+    
+    # Validate file type
+    allowed_extensions = {".png", ".jpg", ".jpeg", ".webp"}
+    file_ext = Path(avatar.filename).suffix.lower() if avatar.filename else ""
+    if file_ext not in allowed_extensions:
+        raise HTTPException(
+            status_code=400,
+            detail=f"Invalid file type. Allowed: {', '.join(allowed_extensions)}"
+        )
+    
+    # Validate file size (max 2MB)
+    content = avatar.file.read()
+    if len(content) > 2 * 1024 * 1024:  # 2MB
+        raise HTTPException(
+            status_code=400,
+            detail="File too large. Maximum size is 2MB."
+        )
+    avatar.file.seek(0)  # Reset file pointer
+    
+    # Determine storage path
+    STATIC_DIR = Path(__file__).resolve().parents[1] / "static"
+    AVATARS_DIR = STATIC_DIR / "uploads" / "avatars"
+    AVATARS_DIR.mkdir(parents=True, exist_ok=True)
+    
+    # Use user_id as filename with .png extension (we'll convert if needed)
+    avatar_filename = f"{user_id}.png"
+    avatar_path = AVATARS_DIR / avatar_filename
+    
+    # Save file
+    try:
+        with open(avatar_path, "wb") as f:
+            shutil.copyfileobj(avatar.file, f)
+    except Exception as e:
+        raise HTTPException(
+            status_code=500,
+            detail=f"Failed to save avatar: {str(e)}"
+        )
+    
+    # Update database with avatar URL
+    avatar_url = f"/static/uploads/avatars/{avatar_filename}"
+    conn = get_conn()
+    cur = conn.cursor()
+    cur.execute(
+        """
+        UPDATE users
+        SET avatar_url = %s
+        WHERE id = %s
+        """,
+        (avatar_url, user_id),
+    )
+    conn.commit()
+    conn.close()
+    
+    return {"avatar_url": avatar_url, "message": "Avatar uploaded successfully"}
+
+
 @router.get("/me")
 def get_me(current_user: dict = Depends(get_current_user)):
     """
@@ -584,7 +766,18 @@ def get_me(current_user: dict = Depends(get_current_user)):
     cur = conn.cursor()
     cur.execute(
         """
-        SELECT current_streak, longest_streak
+        SELECT 
+            current_streak, 
+            longest_streak,
+            first_name,
+            last_name,
+            organization,
+            location,
+            timezone,
+            linkedin_url,
+            avatar_url,
+            weekly_email_enabled,
+            daily_email_enabled
         FROM users
         WHERE id = %s
         """,
@@ -601,6 +794,15 @@ def get_me(current_user: dict = Depends(get_current_user)):
     response = {
         **current_user,
         "current_streak": current_streak,
+        "first_name": row.get("first_name"),
+        "last_name": row.get("last_name"),
+        "organization": row.get("organization"),
+        "location": row.get("location"),
+        "timezone": row.get("timezone") or "UTC",
+        "linkedin_url": row.get("linkedin_url"),
+        "avatar_url": row.get("avatar_url"),
+        "weekly_email_enabled": bool(row.get("weekly_email_enabled", True)),
+        "daily_email_enabled": bool(row.get("daily_email_enabled", False)),
     }
     
     # Pro users get full analytics, Free users get None

@@ -64,6 +64,14 @@ def dashboard():
     return FileResponse(STATIC_DIR / "dashboard.html")
 
 
+@app.get("/settings/profile", include_in_schema=False)
+def profile_settings():
+    """
+    Profile & Settings page - authenticated users only.
+    """
+    return FileResponse(STATIC_DIR / "profile.html")
+
+
 @app.get("/login", include_in_schema=False)
 def login_page():
     return FileResponse(STATIC_DIR / "login.html")

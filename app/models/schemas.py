@@ -78,3 +78,20 @@ class DistractionEventRead(BaseModel):
     user_id: int
     url: str
     created_at: datetime
+
+
+# ---------- PROFILE MODELS ----------
+
+class ProfileUpdate(BaseModel):
+    """
+    Profile update model for user profile settings.
+    All fields are optional for partial updates.
+    """
+    first_name: Optional[str] = None
+    last_name: Optional[str] = None
+    organization: Optional[str] = None
+    location: Optional[str] = None
+    timezone: Optional[str] = None
+    linkedin_url: Optional[str] = None
+    weekly_email_enabled: Optional[bool] = None
+    daily_email_enabled: Optional[bool] = None

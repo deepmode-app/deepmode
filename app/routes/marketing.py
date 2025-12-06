@@ -79,3 +79,19 @@ def reports_page():
     Reports and analytics page.
     """
     return _static_file("reports.html")
+
+
+@router.get("/about", include_in_schema=False)
+def about_page():
+    """
+    About Deepmode page.
+    """
+    return _static_file("about.html")
+
+
+@router.get("/support", include_in_schema=False)
+def support_page():
+    """
+    Support page.
+    """
+    return _static_file("support.html")

@@ -9,6 +9,9 @@ from psycopg2.extras import RealDictCursor
 # Single source of truth for DB URL
 DATABASE_URL = os.getenv("DATABASE_URL")
 
+# Determine database backend
+DB_BACKEND = "postgres" if DATABASE_URL else "sqlite"
+
 
 def get_conn():
     """
