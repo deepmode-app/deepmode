@@ -514,7 +514,7 @@
           </div>
           <div class="nav-dropdown-separator"></div>
           <a href="/settings/profile" class="nav-dropdown-item-link">Profile & Settings</a>
-          <a href="/billing/portal" id="navBillingLink" class="nav-dropdown-item-link" style="display:none;">Billing & Subscription</a>
+          <a href="#" id="navBillingLink" class="nav-dropdown-item-link" style="display:none;" onclick="event.preventDefault(); openBillingPortal();">Billing & Subscription</a>
           <div class="nav-dropdown-separator"></div>
           <a href="/about" class="nav-dropdown-item-link">About Deepmode</a>
           <a href="/faq" class="nav-dropdown-item-link">FAQ</a>
@@ -560,9 +560,18 @@
           <input type="text" id="organization" name="organization" class="form-input" placeholder="Company or organization">
         </div>
 
-        <div class="form-group">
-          <label class="form-label" for="location">Location</label>
-          <input type="text" id="location" name="location" class="form-input" placeholder="City, Country">
+        <div class="form-row">
+          <div class="form-group">
+            <label class="form-label" for="country">Country</label>
+            <select id="country" name="country" class="form-input">
+              <option value="">Select country</option>
+              <!-- Countries will be populated by JS -->
+            </select>
+          </div>
+          <div class="form-group">
+            <label class="form-label" for="city">City</label>
+            <input type="text" id="city" name="city" class="form-input" placeholder="City">
+          </div>
         </div>
 
         <div class="form-group">
@@ -673,6 +682,47 @@
       });
     }
 
+    // Countries list (comprehensive list of ~200 countries)
+    const countries = [
+      "Afghanistan", "Albania", "Algeria", "Andorra", "Angola", "Argentina", "Armenia", "Australia", 
+      "Austria", "Azerbaijan", "Bahamas", "Bahrain", "Bangladesh", "Barbados", "Belarus", "Belgium", 
+      "Belize", "Benin", "Bhutan", "Bolivia", "Bosnia and Herzegovina", "Botswana", "Brazil", "Brunei", 
+      "Bulgaria", "Burkina Faso", "Burundi", "Cambodia", "Cameroon", "Canada", "Cape Verde", 
+      "Central African Republic", "Chad", "Chile", "China", "Colombia", "Comoros", "Congo", 
+      "Costa Rica", "Croatia", "Cuba", "Cyprus", "Czech Republic", "Denmark", "Djibouti", "Dominica", 
+      "Dominican Republic", "Ecuador", "Egypt", "El Salvador", "Equatorial Guinea", "Eritrea", 
+      "Estonia", "Ethiopia", "Fiji", "Finland", "France", "Gabon", "Gambia", "Georgia", "Germany", 
+      "Ghana", "Greece", "Grenada", "Guatemala", "Guinea", "Guinea-Bissau", "Guyana", "Haiti", 
+      "Honduras", "Hungary", "Iceland", "India", "Indonesia", "Iran", "Iraq", "Ireland", "Israel", 
+      "Italy", "Jamaica", "Japan", "Jordan", "Kazakhstan", "Kenya", "Kiribati", "Kosovo", "Kuwait", 
+      "Kyrgyzstan", "Laos", "Latvia", "Lebanon", "Lesotho", "Liberia", "Libya", "Liechtenstein", 
+      "Lithuania", "Luxembourg", "Madagascar", "Malawi", "Malaysia", "Maldives", "Mali", "Malta", 
+      "Marshall Islands", "Mauritania", "Mauritius", "Mexico", "Micronesia", "Moldova", "Monaco", 
+      "Mongolia", "Montenegro", "Morocco", "Mozambique", "Myanmar", "Namibia", "Nauru", "Nepal", 
+      "Netherlands", "New Zealand", "Nicaragua", "Niger", "Nigeria", "North Korea", "North Macedonia", 
+      "Norway", "Oman", "Pakistan", "Palau", "Palestine", "Panama", "Papua New Guinea", "Paraguay", 
+      "Peru", "Philippines", "Poland", "Portugal", "Qatar", "Romania", "Russia", "Rwanda", 
+      "Saint Kitts and Nevis", "Saint Lucia", "Saint Vincent and the Grenadines", "Samoa", 
+      "San Marino", "Sao Tome and Principe", "Saudi Arabia", "Senegal", "Serbia", "Seychelles", 
+      "Sierra Leone", "Singapore", "Slovakia", "Slovenia", "Solomon Islands", "Somalia", 
+      "South Africa", "South Korea", "South Sudan", "Spain", "Sri Lanka", "Sudan", "Suriname", 
+      "Sweden", "Switzerland", "Syria", "Taiwan", "Tajikistan", "Tanzania", "Thailand", "Timor-Leste", 
+      "Togo", "Tonga", "Trinidad and Tobago", "Tunisia", "Turkey", "Turkmenistan", "Tuvalu", "Uganda", 
+      "Ukraine", "United Arab Emirates", "United Kingdom", "United States", "Uruguay", "Uzbekistan", 
+      "Vanuatu", "Vatican City", "Venezuela", "Vietnam", "Yemen", "Zambia", "Zimbabwe"
+    ];
+
+    // Populate country select
+    const countrySelect = document.getElementById("country");
+    if (countrySelect) {
+      countries.forEach(country => {
+        const option = document.createElement("option");
+        option.value = country;
+        option.textContent = country;
+        countrySelect.appendChild(option);
+      });
+    }
+
     // Common timezones list
     const timezones = [
       "UTC",
@@ -745,8 +795,11 @@
         if (user.organization) {
           document.getElementById("organization").value = user.organization;
         }
-        if (user.location) {
-          document.getElementById("location").value = user.location;
+        if (user.country) {
+          countrySelect.value = user.country;
+        }
+        if (user.city) {
+          document.getElementById("city").value = user.city;
         }
         if (user.linkedin_url) {
           document.getElementById("linkedinUrl").value = user.linkedin_url;
@@ -961,7 +1014,8 @@
             first_name: document.getElementById("firstName").value || null,
             last_name: document.getElementById("lastName").value || null,
             organization: document.getElementById("organization").value || null,
-            location: document.getElementById("location").value || null,
+            country: document.getElementById("country").value || null,
+            city: document.getElementById("city").value || null,
             timezone: document.getElementById("timezone").value || null,
             linkedin_url: document.getElementById("linkedinUrl").value || null,
             weekly_email_enabled: document.getElementById("weeklyEmailToggle").checked,

@@ -1768,7 +1768,7 @@
               </div>
               <div class="nav-dropdown-separator"></div>
               <a href="/settings/profile" class="nav-dropdown-item-link">Profile & Settings</a>
-              <a href="/billing/portal" id="navBillingLink" class="nav-dropdown-item-link" style="display:none;">Billing & Subscription</a>
+              <a href="#" id="navBillingLink" class="nav-dropdown-item-link" style="display:none;" onclick="event.preventDefault(); openBillingPortal();">Billing & Subscription</a>
               <div class="nav-dropdown-separator"></div>
               <a href="/about" class="nav-dropdown-item-link">About Deepmode</a>
               <a href="/faq" class="nav-dropdown-item-link">FAQ</a>
@@ -3666,6 +3666,48 @@
         modalDeleteBtn.textContent = "Delete";
       }
     });
+
+    // Billing portal handler (for dropdown link)
+    async function openBillingPortal() {
+      if (!token) {
+        window.location.href = "/login";
+        return;
+      }
+      
+      if (!currentUser || !currentUser.email) {
+        alert("Unable to open billing portal. Please refresh the page.");
+        return;
+      }
+
+      try {
+        const resp = await fetch("/billing/customer-portal", {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+            "Accept": "application/json",
+            "Authorization": "Bearer " + token,
+          },
+          body: JSON.stringify({ email: currentUser.email }),
+        });
+
+        if (!resp.ok) {
+          const error = await resp.json();
+          alert(error.detail || "Could not open billing portal. Try again in a minute.");
+          return;
+        }
+
+        const data = await resp.json();
+        if (!data.portal_url) {
+          alert("Billing portal URL missing from server response.");
+          return;
+        }
+
+        window.location.href = data.portal_url;
+      } catch (err) {
+        console.error("Error calling /billing/customer-portal:", err);
+        alert("Something went wrong while opening billing.");
+      }
+    }
 
     if (manageBillingBtn) {
       manageBillingBtn.addEventListener("click", async () => {

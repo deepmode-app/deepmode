@@ -88,7 +88,8 @@ class ProfileUpdate(BaseModel):
     first_name: Optional[str] = None
     last_name: Optional[str] = None
     organization: Optional[str] = None
-    location: Optional[str] = None
+    country: Optional[str] = None
+    city: Optional[str] = None
     timezone: Optional[str] = None
     linkedin_url: Optional[str] = None
     weekly_email_enabled: Optional[bool] = None
@@ -646,9 +647,12 @@ def update_profile(
     if payload.organization is not None:
         updates.append("organization = %s")
         values.append(payload.organization if payload.organization else None)
-    if payload.location is not None:
-        updates.append("location = %s")
-        values.append(payload.location if payload.location else None)
+    if payload.country is not None:
+        updates.append("country = %s")
+        values.append(payload.country if payload.country else None)
+    if payload.city is not None:
+        updates.append("city = %s")
+        values.append(payload.city if payload.city else None)
     if payload.timezone is not None:
         updates.append("timezone = %s")
         values.append(payload.timezone)
@@ -772,7 +776,8 @@ def get_me(current_user: dict = Depends(get_current_user)):
             first_name,
             last_name,
             organization,
-            location,
+            country,
+            city,
             timezone,
             linkedin_url,
             avatar_url,
@@ -797,7 +802,8 @@ def get_me(current_user: dict = Depends(get_current_user)):
         "first_name": row.get("first_name"),
         "last_name": row.get("last_name"),
         "organization": row.get("organization"),
-        "location": row.get("location"),
+        "country": row.get("country"),
+        "city": row.get("city"),
         "timezone": row.get("timezone") or "UTC",
         "linkedin_url": row.get("linkedin_url"),
         "avatar_url": row.get("avatar_url"),

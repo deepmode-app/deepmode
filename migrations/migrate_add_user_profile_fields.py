@@ -14,7 +14,9 @@ New fields:
 - first_name (text, nullable)
 - last_name (text, nullable)
 - organization (text, nullable)
-- location (text, nullable)
+- location (text, nullable) - kept for backward compatibility
+- country (text, nullable)
+- city (text, nullable)
 - timezone (text, nullable)
 - linkedin_url (text, nullable)
 - avatar_url (text, nullable)
@@ -37,7 +39,8 @@ def migrate_postgres(conn):
         "first_name",
         "last_name",
         "organization",
-        "location",
+        "country",
+        "city",
         "timezone",
         "linkedin_url",
         "avatar_url",
@@ -69,7 +72,9 @@ def migrate_sqlite(conn):
         "first_name",
         "last_name",
         "organization",
-        "location",
+        "location",  # kept for backward compatibility
+        "country",
+        "city",
         "timezone",
         "linkedin_url",
         "avatar_url",

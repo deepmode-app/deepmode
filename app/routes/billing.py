@@ -573,3 +573,181 @@ async def create_customer_portal(request: Request, payload: CustomerPortalReques
 def fake_checkout():
     # Right now this just sends to pricing. Later you can make a nice pricing page.
     return RedirectResponse("/pricing")
+
+
+# ---------- Billing Portal Route (GET) ----------
+
+@router.get("/billing/portal")
+async def billing_portal_redirect(request: Request):
+    """
+    GET route for billing portal - redirects to Stripe Customer Portal.
+    This is used by the dropdown link. Requires authentication via Bearer token.
+    """
+    from fastapi import Depends
+    from fastapi.security import HTTPBearer, HTTPAuthorizationCredentials
+    from app.auth_utils import decode_access_token
+    from app.database import get_conn
+    
+    # Extract token from Authorization header
+    authorization = request.headers.get("Authorization")
+    if not authorization or not authorization.startswith("Bearer "):
+        # If no token in header, try to get from query params (for GET links)
+        # Or redirect to login
+        return RedirectResponse("/login")
+    
+    token = authorization.replace("Bearer ", "")
+    payload = decode_access_token(token)
+    
+    if payload is None:
+        return RedirectResponse("/login")
+    
+    user_id = payload.get("user_id")
+    if not user_id:
+        return RedirectResponse("/login")
+    
+    # Get user email from database
+    conn = get_conn()
+    cur = conn.cursor()
+    cur.execute("SELECT email FROM users WHERE id = %s", (user_id,))
+    row = cur.fetchone()
+    conn.close()
+    
+    if not row:
+        return RedirectResponse("/login")
+    
+    user_email = row["email"]
+    
+    # Use the existing POST endpoint logic but redirect directly
+    if not STRIPE_SECRET_KEY:
+        raise HTTPException(
+            status_code=500,
+            detail="Stripe is not configured. Please contact support."
+        )
+    
+    base_url = str(request.base_url).rstrip("/")
+    
+    try:
+        # 1) Find Stripe customer by email
+        customers = stripe.Customer.list(email=user_email, limit=1)
+        if not customers.data:
+            raise HTTPException(
+                status_code=400,
+                detail="No billing profile found for this account yet.",
+            )
+        
+        customer = customers.data[0]
+        customer_id = customer.id
+        
+        # 2) Upsert stripe_customer_id in DB (if user row exists)
+        conn = get_conn()
+        try:
+            cur = conn.cursor()
+            cur.execute(
+                """
+                UPDATE users
+                   SET stripe_customer_id = %s
+                 WHERE email = %s
+                """,
+                (customer_id, user_email),
+            )
+            conn.commit()
+            cur.close()
+        finally:
+            conn.close()
+        
+        # 3) Create Stripe billing portal session
+        portal_session = stripe.billing_portal.Session.create(
+            customer=customer_id,
+            return_url=f"{base_url}/dashboard",
+        )
+        
+        # Redirect to portal URL
+        return RedirectResponse(url=portal_session.url)
+        
+    except HTTPException:
+        raise
+    except Exception as e:
+        print("[Stripe] Error creating customer portal:", repr(e))
+        raise HTTPException(
+            status_code=500,
+            detail="Could not open billing portal. Please try again later.",
+        )
+
+
+# ---------- Billing Portal Route (GET) ----------
+
+@router.get("/billing/portal")
+async def billing_portal_redirect(request: Request):
+    """
+    GET route for billing portal - redirects to Stripe Customer Portal.
+    This is used by the dropdown link.
+    """
+    from fastapi import Depends
+    from app.routes.auth import get_current_user
+    
+    # Get current user from token
+    try:
+        current_user = get_current_user(request)
+    except Exception:
+        # If not authenticated, redirect to login
+        return RedirectResponse("/login")
+    
+    # Use the existing POST endpoint logic but redirect directly
+    if not STRIPE_SECRET_KEY:
+        raise HTTPException(
+            status_code=500,
+            detail="Stripe is not configured. Please contact support."
+        )
+    
+    user_email = current_user.get("email")
+    if not user_email:
+        raise HTTPException(status_code=400, detail="Email is required for billing portal.")
+    
+    base_url = str(request.base_url).rstrip("/")
+    
+    try:
+        # 1) Find Stripe customer by email
+        customers = stripe.Customer.list(email=user_email, limit=1)
+        if not customers.data:
+            raise HTTPException(
+                status_code=400,
+                detail="No billing profile found for this account yet.",
+            )
+        
+        customer = customers.data[0]
+        customer_id = customer.id
+        
+        # 2) Upsert stripe_customer_id in DB (if user row exists)
+        conn = get_conn()
+        try:
+            cur = conn.cursor()
+            cur.execute(
+                """
+                UPDATE users
+                   SET stripe_customer_id = %s
+                 WHERE email = %s
+                """,
+                (customer_id, user_email),
+            )
+            conn.commit()
+            cur.close()
+        finally:
+            conn.close()
+        
+        # 3) Create Stripe billing portal session
+        portal_session = stripe.billing_portal.Session.create(
+            customer=customer_id,
+            return_url=f"{base_url}/dashboard",
+        )
+        
+        # Redirect to portal URL
+        return RedirectResponse(url=portal_session.url)
+        
+    except HTTPException:
+        raise
+    except Exception as e:
+        print("[Stripe] Error creating customer portal:", repr(e))
+        raise HTTPException(
+            status_code=500,
+            detail="Could not open billing portal. Please try again later.",
+        )
