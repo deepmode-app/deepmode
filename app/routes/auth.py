@@ -151,8 +151,8 @@ def register(payload: RegisterRequest):
 
     return {
         "message":
-            "Account created. Check your inbox to verify your email before logging in. "
-            "If you don't see it, check Spam/Junk and mark it as 'Not junk'."
+            "Account created. Welcome to Deepmode."
+            "From here on, your work is tracked and you can start protecting your focus."
     }
 
 
