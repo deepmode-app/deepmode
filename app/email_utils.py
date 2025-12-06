@@ -3,16 +3,12 @@
 import smtplib
 from email.message import EmailMessage
 import os
-SMTP_HOST = "smtppro.zoho.eu"  # <- change this
+SMTP_HOST = "smtp.zoho.eu"  
 SMTP_PORT = 587
 SMTP_USER = "hi@deepmode.app"
 SMTP_PASSWORD = os.getenv("ZOHO_SMTP_PASSWORD")
 
-print(
-    "[Deepmode SMTP] Host:", SMTP_HOST,
-    "| User:", SMTP_USER,
-    "| pw_len:", len(SMTP_PASSWORD or "")
-)
+
 
 
 BASE_URL = os.getenv("APP_BASE_URL", "http://127.0.0.1:8000")

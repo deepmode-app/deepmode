@@ -164,7 +164,7 @@ def register(payload: RegisterRequest):
 # ======================================================
 
 @router.get("/verify")
-async def verify_email(token: str, request: Request):
+async def verify_email(token: str):
     """
     Verify a user's email via token.
     """
