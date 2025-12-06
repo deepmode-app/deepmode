@@ -260,44 +260,6 @@ async def verify_email(token: str):
     )
 
 
-@router.post("/resend-verification")
-async def resend_verification_email_route(current_user: dict = Depends(get_current_user)):
-    """
-    Allow an authenticated, unverified user to request a new verification email.
-    """
-    if current_user.get("is_verified"):
-        return {"ok": True, "message": "Your email is already verified."}
-
-    user_id = current_user["id"]
-    email = current_user["email"]
-
-    conn = get_conn()
-    cur = conn.cursor()
-    token = secrets.token_urlsafe(32)
-    expires_at = datetime.now(timezone.utc) + timedelta(hours=24)
-
-    cur.execute(
-        """
-        UPDATE users
-        SET verification_token = %s,
-            verification_expires_at = %s
-        WHERE id = %s
-        """,
-        (token, expires_at, user_id),
-    )
-    conn.commit()
-    conn.close()
-
-    try:
-        send_verification_email(email, token)
-    except Exception as e:
-        print("[Deepmode] Resend verification email error:", e)
-        # Still return ok to avoid leaking details
-        return {"ok": False, "message": "There was an issue sending the email. Try again later."}
-
-    return {"ok": True, "message": "Verification email sent. Check your inbox."}
-
-
 # ======================================================
 #                        Login
 # ======================================================
@@ -597,6 +559,44 @@ def get_current_user(credentials: HTTPAuthorizationCredentials = Depends(securit
         "is_pro": bool(row["is_pro"]),
         "is_verified": bool(row["is_verified"]),
     }
+
+
+@router.post("/resend-verification")
+async def resend_verification_email_route(current_user: dict = Depends(get_current_user)):
+    """
+    Allow an authenticated, unverified user to request a new verification email.
+    """
+    if current_user.get("is_verified"):
+        return {"ok": True, "message": "Your email is already verified."}
+
+    user_id = current_user["id"]
+    email = current_user["email"]
+
+    conn = get_conn()
+    cur = conn.cursor()
+    token = secrets.token_urlsafe(32)
+    expires_at = datetime.now(timezone.utc) + timedelta(hours=24)
+
+    cur.execute(
+        """
+        UPDATE users
+        SET verification_token = %s,
+            verification_expires_at = %s
+        WHERE id = %s
+        """,
+        (token, expires_at, user_id),
+    )
+    conn.commit()
+    conn.close()
+
+    try:
+        send_verification_email(email, token)
+    except Exception as e:
+        print("[Deepmode] Resend verification email error:", e)
+        # Still return ok to avoid leaking details
+        return {"ok": False, "message": "There was an issue sending the email. Try again later."}
+
+    return {"ok": True, "message": "Verification email sent. Check your inbox."}
 
 
 @router.get("/email-preferences", response_model=EmailPreferences)
