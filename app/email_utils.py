@@ -3,11 +3,11 @@
 import smtplib
 from email.message import EmailMessage
 import os
-
-SMTP_HOST = "smtp.zoho.eu"
-SMTP_PORT = 587  # TLS
+SMTP_HOST = "smtppro.zoho.eu"  # <- change this
+SMTP_PORT = 587
 SMTP_USER = "hi@deepmode.app"
-SMTP_PASSWORD = "UftwHcwBBNZe"
+SMTP_PASSWORD = os.getenv("ZOHO_SMTP_PASSWORD")
+
 print(
     "[Deepmode SMTP] Host:", SMTP_HOST,
     "| User:", SMTP_USER,
@@ -15,7 +15,7 @@ print(
 )
 
 
-BASE_URL = "http://127.0.0.1:8000"  # change to https://deepmode.app in prod
+BASE_URL = os.getenv("APP_BASE_URL", "http://127.0.0.1:8000")
 
 
 def _send_email_message(msg: EmailMessage) -> None:
@@ -64,10 +64,10 @@ def _build_verification_email(to_email: str, token: str) -> EmailMessage:
 
     text_body = f"""Welcome to Deepmode.
 
-Verify your account to start protecting your focus:
+Verify your email to unlock weekly focus reports and protect your streak:
 {verify_link}
 
-Once verified, you'll be able to start deepwork blocks, track your progress, and build your discipline score.
+Once verified, Deepmode can safely send you weekly and daily summaries of your deep work.
 
 If you didn't request this, you can ignore this email.
 
@@ -81,9 +81,12 @@ If you didn't request this, you can ignore this email.
       <div style="font-size:11px;text-transform:uppercase;letter-spacing:0.16em;color:#9ca3af;margin-bottom:12px;font-weight:600;">
         Deepmode
       </div>
-      <h1 style="font-size:20px;margin:0 0 12px;font-weight:600;">Welcome to Deepmode</h1>
+      <h1 style="font-size:20px;margin:0 0 12px;font-weight:600;">Verify your email</h1>
       <p style="font-size:14px;line-height:1.6;margin:0 0 20px;color:#e5e7eb;">
-        Verify your account to start protecting your focus and tracking your deep work.
+        Verify your email to unlock weekly reports and protect your streak.
+      </p>
+      <p style="font-size:14px;line-height:1.6;margin:0 0 20px;color:#e5e7eb;">
+        Once verified, Deepmode can keep your streak safe and send you weekly and daily summaries of your deep work.
       </p>
       <p style="margin:0 0 20px;">
         <a href="{verify_link}"
@@ -97,9 +100,6 @@ If you didn't request this, you can ignore this email.
         <span style="color:#e5e7eb;font-size:11px;word-break:break-all;">{verify_link}</span>
       </p>
       <hr style="border:none;border-top:1px solid #27272f;margin:20px 0;" />
-      <p style="font-size:12px;color:#9ca3af;margin:0 0 8px;line-height:1.6;">
-        Once verified, you'll be able to start deepwork blocks, track your progress, and build your discipline score.
-      </p>
       <p style="font-size:11px;color:#6b7280;margin:0;">
         If you didn't request this, you can ignore this email.
       </p>
@@ -116,6 +116,69 @@ If you didn't request this, you can ignore this email.
 def send_verification_email(to_email: str, token: str) -> None:
     msg = _build_verification_email(to_email, token)
     _send_email_message(msg)
+
+
+def send_welcome_email(to_email: str) -> None:
+    """
+    Send the initial welcome email when a user signs up.
+    This is separate from the verification email.
+    """
+    if not to_email:
+        return
+
+    subject = "Welcome to Deepmode"
+
+    # Use BASE_URL for login/dashboard links
+    login_link = f"{BASE_URL}/login"
+    docs_link = f"{BASE_URL}/"  # landing
+
+    html_body = f"""
+    <div style="font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',system-ui,sans-serif;background:#050509;color:#f9fafb;padding:16px;">
+      <div style="max-width:520px;margin:0 auto;background:#111118;border-radius:12px;padding:24px;border:1px solid #27272f;">
+        <div style="font-size:11px;text-transform:uppercase;letter-spacing:0.16em;color:#9ca3af;margin-bottom:12px;font-weight:600;">
+          Deepmode
+        </div>
+        <h1 style="margin:0 0 12px;font-size:22px;font-weight:600;">Welcome to Deepmode</h1>
+
+        <p style="font-size:14px;line-height:1.6;margin:0 0 12px;color:#e5e7eb;">
+          You've created your Deepmode account. From now on, your deep work has a home.
+        </p>
+
+        <p style="font-size:14px;line-height:1.6;margin:0 0 16px;color:#9ca3af;">
+          Next steps:
+        </p>
+        <ol style="margin:0 0 16px 18px;font-size:13px;line-height:1.6;color:#9ca3af;">
+          <li>Install the Chrome extension and pin it in your toolbar.</li>
+          <li>Start a 25-minute session and stay in Deepmode until the timer ends.</li>
+          <li>Verify your email to unlock weekly focus reports and protect your streak.</li>
+        </ol>
+
+        <p style="margin:0 0 16px;">
+          <a href="{login_link}"
+             style="display:inline-block;padding:10px 18px;border-radius:999px;background:#e50914;
+                    color:#ffffff;text-decoration:none;font-size:14px;font-weight:500;">
+            Go to my dashboard
+          </a>
+        </p>
+
+        <p style="font-size:11px;color:#6b7280;margin:0;">
+          Deep work compounds. One finished session at a time.
+        </p>
+      </div>
+    </div>
+    """
+
+    text_body = (
+        "Welcome to Deepmode.\n\n"
+        "Next steps:\n"
+        "1) Install the Chrome extension and pin it.\n"
+        "2) Start a 25-minute session and finish it.\n"
+        "3) Verify your email to unlock weekly focus reports and protect your streak.\n\n"
+        "Go to your dashboard: " + login_link + "\n"
+        "Deep work compounds. One finished session at a time.\n"
+    )
+
+    send_email_html(to_email, subject, html_body, text_body)
 
 
 def send_reset_email(to_email: str, token: str) -> None:

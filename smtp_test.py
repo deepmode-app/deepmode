@@ -3,7 +3,7 @@ from dotenv import load_dotenv
 import smtplib
 from email.message import EmailMessage
 
-load_dotenv()
+load_dotenv(dotenv_path=".env", override=True)
 
 SMTP_HOST = "smtp.zoho.eu"
 SMTP_PORT = 587
@@ -12,7 +12,7 @@ SMTP_PASSWORD = os.getenv("ZOHO_SMTP_PASSWORD")
 
 print("Host:", SMTP_HOST)
 print("User:", SMTP_USER)
-print("Password length:", len(SMTP_PASSWORD) if SMTP_PASSWORD else None)
+print("Password length:",SMTP_PASSWORD, len(SMTP_PASSWORD) if SMTP_PASSWORD else None)
 
 msg = EmailMessage()
 msg["Subject"] = "Deepmode SMTP test"

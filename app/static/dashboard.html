@@ -1799,6 +1799,18 @@
 
       <div id="errorBanner" class="error-banner"></div>
 
+      <!-- Verification Banner -->
+      <div id="verification-banner" class="verify-banner hidden">
+        <div class="verify-banner-text">
+          <strong>Verify your email to unlock focus reports.</strong>
+          <span>We need a verified address to send your weekly and daily summaries and keep your streak data safe.</span>
+        </div>
+        <button id="resend-verification-btn" class="verify-banner-button">
+          Resend verification email
+        </button>
+        <div id="verification-banner-status" class="verify-banner-status"></div>
+      </div>
+
       <div class="header">
         <div class="left-header">
           <h1>Your focus stats</h1>
@@ -2106,10 +2118,10 @@
             </label>
           </div>
 
-          <div class="toggle-row">
+          <div class="toggle-row" id="weeklyEmailToggleRow">
             <div class="toggle-text">
               <div class="toggle-title">Weekly focus report</div>
-              <div class="toggle-sub">A summary of your wins and where to improve.</div>
+              <div class="toggle-sub" id="weeklyEmailToggleSub">A summary of your wins and where to improve.</div>
             </div>
             <label class="switch">
               <input type="checkbox" id="weeklyEmailToggle">
@@ -2399,6 +2411,9 @@
         
         // Update nav with profile data
         updateNavWithProfile(user);
+        
+        // Update verification banner
+        updateVerificationBanner();
 
         const navLogoMark = document.getElementById("navLogoMark");
         if (user.is_pro) {
@@ -2419,17 +2434,27 @@
             manageBillingBtn.style.display = "block";
           }
           // Billing link in dropdown already handled by updateNavWithProfile
-          // Enable daily email toggle for Pro users
+          // Enable daily email toggle for Pro users (only if verified)
           const dailyEmailToggleRow = document.getElementById("dailyEmailToggleRow");
           const dailyEmailToggleSub = document.getElementById("dailyEmailToggleSub");
           if (dailyEmailToggleRow) {
-            dailyEmailToggleRow.style.display = "flex";
-          }
-          if (dailyEmailToggle) {
-            dailyEmailToggle.disabled = false;
-          }
-          if (dailyEmailToggleSub) {
-            dailyEmailToggleSub.textContent = "Short nudge to keep your streak alive.";
+            if (user.is_verified) {
+              dailyEmailToggleRow.style.display = "flex";
+              if (dailyEmailToggle) {
+                dailyEmailToggle.disabled = false;
+              }
+              if (dailyEmailToggleSub) {
+                dailyEmailToggleSub.textContent = "Short nudge to keep your streak alive.";
+              }
+            } else {
+              dailyEmailToggleRow.style.display = "flex";
+              if (dailyEmailToggle) {
+                dailyEmailToggle.disabled = true;
+              }
+              if (dailyEmailToggleSub) {
+                dailyEmailToggleSub.textContent = "Verify your email to enable daily deepwork reports.";
+              }
+            }
           }
           // Enable All-Time and Discipline cards for Pro users
           const allTimeCard = document.getElementById('allTimeCard');
@@ -2470,15 +2495,28 @@
           const dailyEmailToggleRow = document.getElementById("dailyEmailToggleRow");
           const dailyEmailToggleSub = document.getElementById("dailyEmailToggleSub");
           if (dailyEmailToggleRow) {
-            dailyEmailToggleRow.style.display = "flex";
+            dailyEmailToggleRow.style.display = "none";
           }
-          if (dailyEmailToggle) {
-            dailyEmailToggle.disabled = true;
-            dailyEmailToggle.checked = false;
+          
+          // Gate weekly email toggle by verification status
+          const weeklyEmailToggleRow = document.getElementById("weeklyEmailToggleRow");
+          const weeklyEmailToggleSub = document.getElementById("weeklyEmailToggleSub");
+          if (weeklyEmailToggleRow && !user.is_verified) {
+            if (weeklyEmailToggle) {
+              weeklyEmailToggle.disabled = true;
+            }
+            if (weeklyEmailToggleSub) {
+              weeklyEmailToggleSub.textContent = "Verify your email to enable weekly reports.";
+            }
+          } else if (weeklyEmailToggleRow && user.is_verified) {
+            if (weeklyEmailToggle) {
+              weeklyEmailToggle.disabled = false;
+            }
+            if (weeklyEmailToggleSub) {
+              weeklyEmailToggleSub.textContent = "A summary of your wins and where to improve.";
+            }
           }
-          if (dailyEmailToggleSub) {
-            dailyEmailToggleSub.textContent = "Daily reports are available with Deepmode Pro.";
-          }
+          
           // Keep All-Time and Discipline cards locked for Free users
           const allTimeCard = document.getElementById('allTimeCard');
           const disciplineCard = document.getElementById('disciplineCard');
@@ -4498,6 +4536,55 @@
     loadEmailPreferences();
     // Start visibility-aware background polling for sessions
     startSessionsPolling();
+
+    // Bind resend verification button
+    const resendVerificationBtn = document.getElementById("resend-verification-btn");
+    const verificationBannerStatus = document.getElementById("verification-banner-status");
+    
+    if (resendVerificationBtn) {
+      resendVerificationBtn.addEventListener("click", async () => {
+        if (!currentUser) return;
+        
+        const accessToken = localStorage.getItem("access_token") || localStorage.getItem("deepmode_token");
+        if (!accessToken) {
+          window.location.href = "/login";
+          return;
+        }
+
+        resendVerificationBtn.disabled = true;
+        if (verificationBannerStatus) {
+          verificationBannerStatus.textContent = "Sending verification email...";
+        }
+
+        try {
+          const resp = await fetch("/auth/resend-verification", {
+            method: "POST",
+            headers: {
+              "Content-Type": "application/json",
+              "Authorization": `Bearer ${accessToken}`,
+            },
+          });
+
+          const data = await resp.json();
+          if (resp.ok && data.ok) {
+            if (verificationBannerStatus) {
+              verificationBannerStatus.textContent = "Verification email sent. Check your inbox.";
+            }
+          } else {
+            if (verificationBannerStatus) {
+              verificationBannerStatus.textContent = data.message || "There was an issue sending the email. Try again later.";
+            }
+          }
+        } catch (e) {
+          console.error(e);
+          if (verificationBannerStatus) {
+            verificationBannerStatus.textContent = "There was an issue sending the email. Try again later.";
+          }
+        } finally {
+          resendVerificationBtn.disabled = false;
+        }
+      });
+    }
   </script>
 </body>
 </html>

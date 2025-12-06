@@ -19,6 +19,7 @@ from app.auth_utils import (
 
 from app.email_utils import (
     send_verification_email,
+    send_welcome_email,
     send_reset_email,
     send_email_html
 )
@@ -29,8 +30,8 @@ from app.email_utils import (
 
 # Controls whether login is blocked until the user verifies their email.
 # Staging: EMAIL_VERIFICATION_REQUIRED=false
-# Prod:    EMAIL_VERIFICATION_REQUIRED=true
-EMAIL_VERIFICATION_REQUIRED = os.getenv("EMAIL_VERIFICATION_REQUIRED", "true").lower() == "true"
+# Prod:    EMAIL_VERIFICATION_REQUIRED=false (soft-gated by default, can be enabled in future)
+EMAIL_VERIFICATION_REQUIRED = os.getenv("EMAIL_VERIFICATION_REQUIRED", "false").lower() == "true"
 
 # Base URL for login links in emails (staging vs prod)
 # Staging: https://deepmode.onrender.com
@@ -118,7 +119,7 @@ def register(payload: RegisterRequest):
 
     pw_hash = hash_password(payload.password)
 
-    verification_token = str(uuid.uuid4())
+    verification_token = secrets.token_urlsafe(32)
     verification_expires_at = datetime.now(timezone.utc) + timedelta(hours=24)
 
     cur.execute(
@@ -139,17 +140,22 @@ def register(payload: RegisterRequest):
     conn.commit()
     conn.close()
 
-    # In staging we don't want signup to hang on SMTP.
+    # Send welcome and verification emails (don't block signup on errors)
     if EMAIL_SENDING_ENABLED:
+        try:
+            send_welcome_email(email)
+        except Exception as e:
+            print("[Deepmode] Welcome email error:", e)
+
         try:
             send_verification_email(email, verification_token)
         except Exception as e:
-            print("Error sending verification email:", e)
+            print("[Deepmode] Verification email error:", e)
 
     return {
         "message":
             "Account created. Check your inbox to verify your email before logging in. "
-            "If you don’t see it, check Spam/Junk and mark it as ‘Not junk’."
+            "If you don't see it, check Spam/Junk and mark it as 'Not junk'."
     }
 
 
@@ -158,13 +164,18 @@ def register(payload: RegisterRequest):
 # ======================================================
 
 @router.get("/verify")
-def verify_email(token: str):
+async def verify_email(token: str, request: Request):
+    """
+    Verify a user's email via token.
+    """
     conn = get_conn()
     cur = conn.cursor()
+    now = datetime.now(timezone.utc)
 
+    # Look up user by token
     cur.execute(
         """
-        SELECT id, email, verification_expires_at, is_verified
+        SELECT id, verification_expires_at
         FROM users
         WHERE verification_token = %s
         """,
@@ -173,84 +184,83 @@ def verify_email(token: str):
     row = cur.fetchone()
 
     if not row:
+        # Invalid token
         conn.close()
-        raise HTTPException(status_code=400, detail="Invalid or expired verification link.")
-
-    user_id = row["id"]
-    email = row["email"]
-    expires_at = row["verification_expires_at"]
-    already_verified = row["is_verified"]
-
-    # Expired token
-    if expires_at is None or expires_at.replace(tzinfo=None) < datetime.utcnow():
-        conn.close()
-        raise HTTPException(status_code=400, detail="Verification link has expired.")
-
-    # Not yet verified → mark verified
-    if not already_verified:
-        cur.execute(
-            """
-            UPDATE users
-            SET
-              is_verified = TRUE,
-              verification_token = NULL,
-              verification_expires_at = NULL
-            WHERE id = %s
+        # Return minimal HTML page with message + link to /login
+        return HTMLResponse(
+            content="""
+            <html><body style="font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;background:#050509;color:#f9fafb;padding:24px;">
+              <div style="max-width:520px;margin:0 auto;background:#111118;border-radius:12px;padding:24px;border:1px solid #27272f;">
+                <h1 style="font-size:20px;margin:0 0 12px;">Link invalid or expired</h1>
+                <p style="font-size:14px;line-height:1.6;margin:0 0 16px;color:#e5e7eb;">
+                  This verification link is not valid anymore. You can request a new one from your dashboard.
+                </p>
+                <a href="/login" style="display:inline-block;padding:8px 14px;border-radius:999px;background:#e50914;color:#ffffff;text-decoration:none;font-size:13px;font-weight:500;">
+                  Go to login
+                </a>
+              </div>
+            </body></html>
             """,
-            (user_id,),
+            status_code=400,
         )
-        conn.commit()
 
-        # Send Welcome email
-        welcome_subject = "You’re in — Welcome to Deepmode"
-        welcome_body = f"""
-        <div style="font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;
-                    padding:24px;background:#020617;color:#f9fafb;">
-            <h1 style="margin:0 0 12px;font-size:22px;">Welcome to Deepmode 🎉</h1>
-            <p style="font-size:14px;line-height:1.6;">
-                Your account is confirmed — your focus HQ is officially open.
-            </p>
-            <a href="{FRONTEND_URL}/login"
-                style="display:inline-block;margin-top:14px;padding:10px 18px;
-                background:#e50914;color:#ffffff;text-decoration:none;border-radius:999px;
-                font-size:14px;">
-                Log in to Deepmode
-            </a>
-        </div>
+    user_id, expires_at = row["id"], row["verification_expires_at"]
+    
+    if expires_at is not None:
+        # Convert to timezone-aware if needed
+        if expires_at.tzinfo is None:
+            expires_at = expires_at.replace(tzinfo=timezone.utc)
+        if expires_at < now:
+            conn.close()
+            # Same invalid/expired page
+            return HTMLResponse(
+                content="""
+                <html><body style="font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;background:#050509;color:#f9fafb;padding:24px;">
+                  <div style="max-width:520px;margin:0 auto;background:#111118;border-radius:12px;padding:24px;border:1px solid #27272f;">
+                    <h1 style="font-size:20px;margin:0 0 12px;">Link invalid or expired</h1>
+                    <p style="font-size:14px;line-height:1.6;margin:0 0 16px;color:#e5e7eb;">
+                      This verification link is not valid anymore. You can request a new one from your dashboard.
+                    </p>
+                    <a href="/login" style="display:inline-block;padding:8px 14px;border-radius:999px;background:#e50914;color:#ffffff;text-decoration:none;font-size:13px;font-weight:500;">
+                      Go to login
+                    </a>
+                  </div>
+                </body></html>
+                """,
+                status_code=400,
+            )
+
+    # Mark verified
+    cur.execute(
         """
-
-        if EMAIL_SENDING_ENABLED:
-            try:
-                send_email_html(email, welcome_subject, welcome_body)
-            except Exception as e:
-                print("Error sending welcome email:", e)
-
+        UPDATE users
+        SET is_verified = TRUE,
+            verification_token = NULL,
+            verification_expires_at = NULL
+        WHERE id = %s
+        """,
+        (user_id,),
+    )
+    conn.commit()
     conn.close()
 
-    # Success page
-    html_success = f"""
-    <html>
-      <body style="background:#050509;font-family:-apple-system,sans-serif;
-                   display:flex;align-items:center;justify-content:center;min-height:100vh;padding:32px;">
-        <div style="background:#111118;border-radius:16px;padding:32px;max-width:420px;
-                    border:1px solid #27272f;text-align:center;color:#f5f5f5;">
-
-          <h1 style="font-size:22px;margin-bottom:10px;">Email verified 🎉</h1>
-          <p style="color:#e5e7eb;font-size:14px;margin-bottom:18px;">
-            Your account is ready. Sign in and start your first deepwork block.
-          </p>
-
-          <a href="/login"
-             style="display:inline-block;padding:10px 18px;background:#e50914;
-                    color:#ffffff;border-radius:999px;text-decoration:none;font-size:14px;">
-             Go to Login
-          </a>
-        </div>
-      </body>
-    </html>
-    """
-
-    return HTMLResponse(content=html_success, status_code=200)
+    # Minimal success page redirecting to login
+    return HTMLResponse(
+        content="""
+        <html><body style="font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;background:#050509;color:#f9fafb;padding:24px;">
+          <div style="max-width:520px;margin:0 auto;background:#111118;border-radius:12px;padding:24px;border:1px solid #27272f;">
+            <h1 style="font-size:20px;margin:0 0 12px;">Email verified</h1>
+            <p style="font-size:14px;line-height:1.6;margin:0 0 16px;color:#e5e7eb;">
+              Your email is now verified. You can close this tab and continue in Deepmode.
+            </p>
+            <a href="/login" style="display:inline-block;padding:8px 14px;border-radius:999px;background:#e50914;color:#ffffff;text-decoration:none;font-size:13px;font-weight:500;">
+              Go to login
+            </a>
+          </div>
+        </body></html>
+        """,
+        status_code=200,
+    )
 
 
 # ======================================================
@@ -278,12 +288,13 @@ def login(payload: LoginRequest):
         "| is_verified =", row["is_verified"]
     )
 
+    # Future hard gate: Currently commented out for soft-gating
     # Only block unverified users if the environment requires it.
-    if EMAIL_VERIFICATION_REQUIRED and not row["is_verified"]:
-        raise HTTPException(
-            status_code=403,
-            detail="Please verify your email first. Check your inbox.",
-        )
+    # if EMAIL_VERIFICATION_REQUIRED and not row["is_verified"]:
+    #     raise HTTPException(
+    #         status_code=403,
+    #         detail="Email verification required. Please check your inbox or resend a verification email from your dashboard.",
+    #     )
 
     token = create_access_token({
         "sub": row["email"],
@@ -782,7 +793,8 @@ def get_me(current_user: dict = Depends(get_current_user)):
             linkedin_url,
             avatar_url,
             weekly_email_enabled,
-            daily_email_enabled
+            daily_email_enabled,
+            is_verified
         FROM users
         WHERE id = %s
         """,
@@ -799,6 +811,7 @@ def get_me(current_user: dict = Depends(get_current_user)):
     response = {
         **current_user,
         "current_streak": current_streak,
+        "is_verified": bool(row.get("is_verified", False)),
         "first_name": row.get("first_name"),
         "last_name": row.get("last_name"),
         "organization": row.get("organization"),
