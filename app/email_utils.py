@@ -3,23 +3,34 @@
 import smtplib
 from email.message import EmailMessage
 import os
-SMTP_HOST = "smtp.zoho.eu"  
-SMTP_PORT = 587
-SMTP_USER = "hi@deepmode.app"
-SMTP_PASSWORD = os.getenv("ZOHO_SMTP_PASSWORD")
 
+# SMTP configuration from environment
+SMTP_HOST = os.getenv("SMTP_HOST", "smtp.zoho.eu")
+SMTP_PORT = int(os.getenv("SMTP_PORT", "587"))
+SMTP_USER = os.getenv("SMTP_USER", "hi@deepmode.app")
+SMTP_PASSWORD = os.getenv("ZOHO_SMTP_PASSWORD", "")
 
+# Email sending control
+EMAIL_SENDING_ENABLED = os.getenv("EMAIL_SENDING_ENABLED", "true").lower() == "true"
 
-
+# Base URL for email links
 BASE_URL = os.getenv("APP_BASE_URL", "http://127.0.0.1:8000")
 
 
 def _send_email_message(msg: EmailMessage) -> None:
+    if not EMAIL_SENDING_ENABLED:
+        print(f"[Deepmode SMTP] Email sending disabled. Skipping send to {msg['To']}.")
+        return
+
+    if not SMTP_PASSWORD:
+        print(f"[Deepmode SMTP] Missing SMTP password. Skipping send to {msg['To']}.")
+        return
+
     try:
         with smtplib.SMTP(SMTP_HOST, SMTP_PORT) as server:
             server.starttls()
             print("[Deepmode SMTP] Host:", SMTP_HOST, "User:", SMTP_USER)
-            print("[Deepmode SMTP] Password length:", len(SMTP_PASSWORD))
+            print("[Deepmode SMTP] Password length:", len(SMTP_PASSWORD or ""))
             server.login(SMTP_USER, SMTP_PASSWORD)
             server.send_message(msg)
         print(f"[Deepmode] Email sent to {msg['To']} with subject: {msg['Subject']}")

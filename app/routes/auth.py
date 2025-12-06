@@ -1,6 +1,6 @@
 from datetime import datetime, timedelta, timezone
 from fastapi.responses import HTMLResponse
-from fastapi import APIRouter, Depends, HTTPException, status, UploadFile, File
+from fastapi import APIRouter, Depends, HTTPException, Request, status, UploadFile, File
 from fastapi.security import HTTPBearer, HTTPAuthorizationCredentials
 from pydantic import BaseModel, EmailStr
 from typing import Optional
@@ -8,6 +8,7 @@ from pathlib import Path
 import uuid
 import os
 import shutil
+import secrets
 
 from app.database import get_conn
 from app.auth_utils import (
@@ -141,16 +142,12 @@ def register(payload: RegisterRequest):
     conn.close()
 
     # Send welcome and verification emails (don't block signup on errors)
-    if EMAIL_SENDING_ENABLED:
-        try:
+    try:
+        if EMAIL_SENDING_ENABLED:
             send_welcome_email(email)
-        except Exception as e:
-            print("[Deepmode] Welcome email error:", e)
-
-        try:
             send_verification_email(email, verification_token)
-        except Exception as e:
-            print("[Deepmode] Verification email error:", e)
+    except Exception as e:
+        print(f"[Deepmode] Error sending welcome/verification email to {email}: {e}")
 
     return {
         "message":
@@ -261,6 +258,44 @@ async def verify_email(token: str):
         """,
         status_code=200,
     )
+
+
+@router.post("/resend-verification")
+async def resend_verification_email_route(current_user: dict = Depends(get_current_user)):
+    """
+    Allow an authenticated, unverified user to request a new verification email.
+    """
+    if current_user.get("is_verified"):
+        return {"ok": True, "message": "Your email is already verified."}
+
+    user_id = current_user["id"]
+    email = current_user["email"]
+
+    conn = get_conn()
+    cur = conn.cursor()
+    token = secrets.token_urlsafe(32)
+    expires_at = datetime.now(timezone.utc) + timedelta(hours=24)
+
+    cur.execute(
+        """
+        UPDATE users
+        SET verification_token = %s,
+            verification_expires_at = %s
+        WHERE id = %s
+        """,
+        (token, expires_at, user_id),
+    )
+    conn.commit()
+    conn.close()
+
+    try:
+        send_verification_email(email, token)
+    except Exception as e:
+        print("[Deepmode] Resend verification email error:", e)
+        # Still return ok to avoid leaking details
+        return {"ok": False, "message": "There was an issue sending the email. Try again later."}
+
+    return {"ok": True, "message": "Verification email sent. Check your inbox."}
 
 
 # ======================================================
