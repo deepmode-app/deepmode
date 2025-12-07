@@ -121,12 +121,24 @@ def compute_work_tracker_stats(user_id: int, days: int = 7, timezone_name: Optio
     weekday_names = ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun']
     
     for row in rows:
+        # Extract status and discipline first (before any continue statements)
+        status = row.get("status", "")
+        discipline = row.get("discipline_score", 0)
+        
         # Calculate minutes (prefer actual_duration_minutes, fall back to duration_seconds/60)
         mins = row.get("actual_duration_minutes") or 0
         if mins == 0 and row.get("duration_seconds"):
             mins = row.get("duration_seconds", 0) / 60
         
         total_minutes += mins
+        
+        # Status tracking (do this before timezone conversion)
+        if discipline == 1 or status == "completed":
+            sessions_completed += 1
+        elif status == "abandoned":
+            sessions_abandoned += 1
+        elif status == "completed_early":
+            sessions_stopped_early += 1
         
         # Track day
         end_time = row.get("end_time")
@@ -183,17 +195,6 @@ def compute_work_tracker_stats(user_id: int, days: int = 7, timezone_name: Optio
             # Weekday (Python date.weekday() returns Monday=0)
             weekday_num = work_date.weekday()
             weekday_minutes[weekday_names[weekday_num]] += mins
-        
-        # Status tracking
-        status = row.get("status", "")
-        discipline = row.get("discipline_score", 0)
-        
-        if discipline == 1 or status == "completed":
-            sessions_completed += 1
-        elif status == "abandoned":
-            sessions_abandoned += 1
-        elif status == "completed_early":
-            sessions_stopped_early += 1
         
         # Project tracking
         project = row.get("project_name")
