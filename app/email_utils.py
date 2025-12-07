@@ -1,14 +1,12 @@
 # app/email_utils.py
 
-import smtplib
-from email.message import EmailMessage
 import os
+import requests
 
-# SMTP configuration from environment
-SMTP_HOST = os.getenv("SMTP_HOST", "smtp.zoho.eu")
-SMTP_PORT = int(os.getenv("SMTP_PORT", "587"))
-SMTP_USER = os.getenv("SMTP_USER", "hi@deepmode.app")
-SMTP_PASSWORD = os.getenv("ZOHO_SMTP_PASSWORD", "")
+# MailerSend configuration from environment
+MAILERSEND_API_KEY = os.getenv("MAILERSEND_API_KEY", "")
+MAILERSEND_FROM_EMAIL = os.getenv("MAILERSEND_FROM_EMAIL", "hi@deepmode.app")
+MAILERSEND_FROM_NAME = os.getenv("MAILERSEND_FROM_NAME", "Deepmode")
 
 # Email sending control
 EMAIL_SENDING_ENABLED = os.getenv("EMAIL_SENDING_ENABLED", "true").lower() == "true"
@@ -17,25 +15,46 @@ EMAIL_SENDING_ENABLED = os.getenv("EMAIL_SENDING_ENABLED", "true").lower() == "t
 BASE_URL = os.getenv("APP_BASE_URL", "http://127.0.0.1:8000")
 
 
-def _send_email_message(msg: EmailMessage) -> None:
-    if not EMAIL_SENDING_ENABLED:
-        print(f"[Deepmode SMTP] Email sending disabled. Skipping send to {msg['To']}.")
+def _send_via_mailersend(to_email: str, subject: str, html_body: str, text_fallback: str | None = None) -> None:
+    """
+    Send email via MailerSend HTTP API.
+    Non-blocking, never raises exceptions.
+    """
+    if not EMAIL_SENDING_ENABLED or not MAILERSEND_API_KEY:
+        print(f"[Deepmode] Email sending disabled or MailerSend not configured. Skipping send to {to_email} ({subject})")
         return
 
-    if not SMTP_PASSWORD:
-        print(f"[Deepmode SMTP] Missing SMTP password. Skipping send to {msg['To']}.")
-        return
+    if not text_fallback:
+        text_fallback = "Open this email in an HTML-capable client to view the content."
+
+    url = "https://api.mailersend.com/v1/email"
+    headers = {
+        "Authorization": f"Bearer {MAILERSEND_API_KEY}",
+        "Content-Type": "application/json",
+    }
+    payload = {
+        "from": {
+            "email": MAILERSEND_FROM_EMAIL,
+            "name": MAILERSEND_FROM_NAME,
+        },
+        "to": [
+            {
+                "email": to_email,
+            }
+        ],
+        "subject": subject,
+        "text": text_fallback,
+        "html": html_body,
+    }
 
     try:
-        with smtplib.SMTP(SMTP_HOST, SMTP_PORT) as server:
-            server.starttls()
-            print("[Deepmode SMTP] Host:", SMTP_HOST, "User:", SMTP_USER)
-            print("[Deepmode SMTP] Password length:", len(SMTP_PASSWORD or ""))
-            server.login(SMTP_USER, SMTP_PASSWORD)
-            server.send_message(msg)
-        print(f"[Deepmode] Email sent to {msg['To']} with subject: {msg['Subject']}")
+        response = requests.post(url, json=payload, headers=headers, timeout=10)
+        if response.status_code >= 200 and response.status_code < 300:
+            print(f"[Deepmode] Email sent to {to_email} with subject: {subject}")
+        else:
+            print(f"[Deepmode] Error sending email to {to_email}: HTTP {response.status_code} - {response.text}")
     except Exception as e:
-        print(f"[Deepmode] Error sending email to {msg['To']}: {e}")
+        print(f"[Deepmode] Error sending email to {to_email}: {e}")
 
 
 def send_email_html(
@@ -47,27 +66,17 @@ def send_email_html(
     """
     Generic HTML email helper used by welcome + password-changed emails.
     """
-    msg = EmailMessage()
-    msg["Subject"] = subject
-    msg["From"] = SMTP_USER
-    msg["To"] = to_email
-
-    if not text_fallback:
-        text_fallback = "Open this email in an HTML-capable client to view the content."
-
-    msg.set_content(text_fallback)
-    msg.add_alternative(html_body, subtype="html")
-
-    _send_email_message(msg)
+    _send_via_mailersend(to_email, subject, html_body, text_fallback)
 
 
-def _build_verification_email(to_email: str, token: str) -> EmailMessage:
+def _build_verification_email(to_email: str, token: str) -> tuple[str, str, str]:
+    """
+    Build verification email content.
+    Returns (subject, text_body, html_body).
+    """
     verify_link = f"{BASE_URL}/auth/verify?token={token}"
 
-    msg = EmailMessage()
-    msg["Subject"] = "Verify your Deepmode account"
-    msg["From"] = SMTP_USER
-    msg["To"] = to_email
+    subject = "Verify your Deepmode account"
 
     text_body = f"""Welcome to Deepmode.
 
@@ -115,14 +124,12 @@ If you didn't request this, you can ignore this email.
 </html>
 """
 
-    msg.set_content(text_body)
-    msg.add_alternative(html_body, subtype="html")
-    return msg
+    return (subject, text_body, html_body)
 
 
 def send_verification_email(to_email: str, token: str) -> None:
-    msg = _build_verification_email(to_email, token)
-    _send_email_message(msg)
+    subject, text_body, html_body = _build_verification_email(to_email, token)
+    send_email_html(to_email, subject, html_body, text_body)
 
 
 def send_welcome_email(to_email: str) -> None:
@@ -211,7 +218,7 @@ def send_reset_email(to_email: str, token: str) -> None:
         </a>
       </p>
       <p style="font-size:12px;color:#9ca3af;margin:0 0 6px;">
-        This link will expire in about an hour. If you didn’t request this,
+        This link will expire in about an hour. If you didn't request this,
         you can ignore this email.
       </p>
     </div>
@@ -392,7 +399,7 @@ def send_pro_welcome_email(to_email: str) -> None:
 
     text_body = (
         "Deepmode Pro activated — time to build your advantage.\n\n"
-        "You’ve unlocked:\n"
+        "You've unlocked:\n"
         "- Deep focus blocks (Deepmode, Pomodoro, custom)\n"
         "- Project-based tracking\n"
         "- Smart categories (Design, Research, Study, Fitness, etc.)\n"
@@ -406,7 +413,6 @@ def send_pro_welcome_email(to_email: str) -> None:
     send_email_html(to_email, subject, html_body, text_body)
 
 
-
 def send_pro_cancellation_email(to_email: str) -> None:
     """
     Supportive downgrade email when a user loses Pro
@@ -416,13 +422,13 @@ def send_pro_cancellation_email(to_email: str) -> None:
     if not to_email:
         return
 
-    subject = "Deepmode Pro cancelled — your discipline doesn’t have to be"
+    subject = "Deepmode Pro cancelled — your discipline doesn't have to be"
 
     html_body = """
     <div style="font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',system-ui,sans-serif;
                 background-color:#050509;padding:24px;color:#f5f5f5;">
       <h1 style="margin:0 0 12px;font-size:22px;">
-        Deepmode Pro is off — your focus work doesn’t have to be.
+        Deepmode Pro is off — your focus work doesn't have to be.
       </h1>
 
       <p style="margin:0 0 12px;font-size:14px;line-height:1.6;">
@@ -430,13 +436,13 @@ def send_pro_cancellation_email(to_email: str) -> None:
       </p>
 
       <p style="margin:0 0 12px;font-size:14px;line-height:1.6;">
-        The blocks you’ve already finished still count. You proved you can sit down,
+        The blocks you've already finished still count. You proved you can sit down,
         shut the noise off and move real work forward.
       </p>
 
       <p style="margin:0 0 12px;font-size:14px;line-height:1.6;">
         Whether you stay on the free plan or come back to Pro later, the rule is the same:
-        <strong>small, finished focus blocks compound more than “trying to be productive all day”.</strong>
+        <strong>small, finished focus blocks compound more than "trying to be productive all day".</strong>
       </p>
 
       <p style="margin:0;font-size:14px;line-height:1.6;">
@@ -450,7 +456,7 @@ def send_pro_cancellation_email(to_email: str) -> None:
         "Your Deepmode Pro subscription has ended.\n\n"
         "No guilt — the focus blocks you already finished still count.\n"
         "Whether you stay on the free plan or come back to Pro later, the rule is the same:\n"
-        "small, finished focus blocks compound faster than endless “productive” scrolling.\n\n"
+        "small, finished focus blocks compound faster than endless \"productive\" scrolling.\n\n"
         "Keep going in whatever setup works for you.\n"
         "— Deepmode\n"
     )
