@@ -15,17 +15,73 @@ EMAIL_SENDING_ENABLED = os.getenv("EMAIL_SENDING_ENABLED", "true").lower() == "t
 BASE_URL = os.getenv("APP_BASE_URL", "http://127.0.0.1:8000")
 
 
-def _send_via_mailersend(to_email: str, subject: str, html_body: str, text_fallback: str | None = None) -> None:
+def _build_email_footer(is_pro: bool = False) -> str:
+    """
+    Build consistent email footer with dashboard CTA and unsubscribe link.
+    
+    Args:
+        is_pro: Whether the user is a Pro user (affects CTA text)
+    
+    Returns:
+        HTML footer string
+    """
+    if is_pro:
+        insights_text = "View your full insights, streaks, graphs and AI analysis anytime on your dashboard."
+    else:
+        insights_text = "See more insights and unlock AI-powered reports on your dashboard."
+    
+    return f"""
+<hr style="border:none;border-top:1px solid #27272f;margin:24px 0;" />
+<p style="font-size:12px;color:#9ca3af;line-height:1.6;margin:0 0 6px;">
+  {insights_text}
+</p>
+<p style="font-size:11px;color:#6b7280;margin:0;">
+  To manage what we send you, visit your <a href="{BASE_URL}/auth/email-preferences" style="color:#9ca3af;text-decoration:underline;">email preferences</a>.
+</p>
+"""
+
+
+def _build_email_footer_text(is_pro: bool = False) -> str:
+    """
+    Build plain text footer for email fallbacks.
+    
+    Args:
+        is_pro: Whether the user is a Pro user (affects CTA text)
+    
+    Returns:
+        Plain text footer string
+    """
+    if is_pro:
+        insights_text = "View your full insights, streaks, graphs and AI analysis anytime on your dashboard."
+    else:
+        insights_text = "See more insights and unlock AI-powered reports on your dashboard."
+    
+    return f"\n\n{insights_text}\n\nManage email preferences: {BASE_URL}/auth/email-preferences\nView insights & streaks: {BASE_URL}/streak"
+
+
+def _send_via_mailersend(to_email: str, subject: str, html_body: str, text_fallback: str | None = None, is_pro: bool = False) -> None:
     """
     Send email via MailerSend HTTP API.
     Non-blocking, never raises exceptions.
+    
+    Args:
+        to_email: Recipient email address
+        subject: Email subject
+        html_body: HTML email body (footer will be appended)
+        text_fallback: Plain text fallback (footer will be appended)
+        is_pro: Whether user is Pro (for footer CTA)
     """
     if not EMAIL_SENDING_ENABLED or not MAILERSEND_API_KEY:
         print(f"[Deepmode] Email sending disabled or MailerSend not configured. Skipping send to {to_email} ({subject})")
         return
 
+    # Append footer to HTML
+    html_body = html_body.rstrip() + _build_email_footer(is_pro=is_pro)
+    
+    # Append footer to text fallback
     if not text_fallback:
         text_fallback = "Open this email in an HTML-capable client to view the content."
+    text_fallback = text_fallback.rstrip() + _build_email_footer_text(is_pro=is_pro)
 
     url = "https://api.mailersend.com/v1/email"
     headers = {
@@ -45,6 +101,7 @@ def _send_via_mailersend(to_email: str, subject: str, html_body: str, text_fallb
         "subject": subject,
         "text": text_fallback,
         "html": html_body,
+        "unsubscribe_url": f"{BASE_URL}/auth/email-preferences",
     }
 
     try:
@@ -62,11 +119,19 @@ def send_email_html(
     subject: str,
     html_body: str,
     text_fallback: str | None = None,
+    is_pro: bool = False,
 ) -> None:
     """
     Generic HTML email helper used by welcome + password-changed emails.
+    
+    Args:
+        to_email: Recipient email address
+        subject: Email subject
+        html_body: HTML email body (footer will be appended automatically)
+        text_fallback: Plain text fallback (footer will be appended automatically)
+        is_pro: Whether user is Pro (for footer CTA, defaults to False)
     """
-    _send_via_mailersend(to_email, subject, html_body, text_fallback)
+    _send_via_mailersend(to_email, subject, html_body, text_fallback, is_pro=is_pro)
 
 
 def _build_verification_email(to_email: str, token: str) -> tuple[str, str, str]:
@@ -129,7 +194,7 @@ If you didn't request this, you can ignore this email.
 
 def send_verification_email(to_email: str, token: str) -> None:
     subject, text_body, html_body = _build_verification_email(to_email, token)
-    send_email_html(to_email, subject, html_body, text_body)
+    send_email_html(to_email, subject, html_body, text_body, is_pro=False)
 
 
 def send_welcome_email(to_email: str) -> None:
@@ -177,9 +242,6 @@ def send_welcome_email(to_email: str) -> None:
           </a>
         </p>
 
-        <p style="font-size:11px;color:#6b7280;margin:0;">
-          You can change what we send you anytime in Settings → Email preferences.
-        </p>
       </div>
     </div>
     """
@@ -192,11 +254,10 @@ def send_welcome_email(to_email: str) -> None:
         "2) Start a 25-minute session and stay in Deepmode until the timer ends.\n"
         "3) Add a short project name (e.g. 'Thesis', 'Client A', 'Interview prep') so future reports actually mean something.\n\n"
         "Deepmode is built for people who can't afford to waste their attention — professionals and serious students. One finished block beats a whole day of fake multitasking.\n\n"
-        "Go to your dashboard: " + login_link + "\n\n"
-        "You can change what we send you anytime in Settings → Email preferences.\n"
+        "Go to your dashboard: " + login_link
     )
 
-    send_email_html(to_email, subject, html_body, text_body)
+    send_email_html(to_email, subject, html_body, text_body, is_pro=False)
 
 
 def send_reset_email(to_email: str, token: str) -> None:
@@ -239,10 +300,10 @@ def send_reset_email(to_email: str, token: str) -> None:
         "You asked to reset the password for your Deepmode account.\n\n"
         "Set a new password: " + reset_link + "\n\n"
         "This link will expire in about an hour. If you didn't request this, you can ignore this email — your account stays unchanged.\n\n"
-        "For security, never share this link with anyone.\n"
+        "For security, never share this link with anyone."
     )
 
-    send_email_html(to_email, subject, html_body, text_body)
+    send_email_html(to_email, subject, html_body, text_body, is_pro=False)
 
 
 def send_daily_streak_email(
@@ -273,13 +334,11 @@ def send_daily_streak_email(
                   color:#ffffff;text-decoration:none;font-size:14px;font-weight:500;">
           Start today's first block
         </a>
-        <p style="font-size:11px;color:#6b7280;margin-top:20px;">
-          You can turn off daily emails or switch to weekly only in Settings → Email preferences.
-        </p>
       </div>
     </div>
     """
-    send_email_html(to_email, subject, body)
+    # Daily emails are only sent to Pro users
+    send_email_html(to_email, subject, body, is_pro=True)
 
 
 def send_weekly_summary_email(
@@ -329,13 +388,11 @@ def send_weekly_summary_email(
           Open dashboard
         </a>
 
-        <p style="font-size:11px;color:#6b7280;margin-top:20px;">
-          You can change or turn off weekly reports in Settings → Email preferences.
-        </p>
       </div>
     </div>
     """
-    send_email_html(to_email, subject, body)
+    # Weekly summary emails are only sent to Pro users
+    send_email_html(to_email, subject, body, is_pro=True)
 
 
 def send_minimal_weekly_summary_email(
@@ -411,13 +468,11 @@ def send_minimal_weekly_summary_email(
           Unlock AI focus reports
         </a>
 
-        <p style="font-size:11px;color:#6b7280;margin-top:20px;">
-          You can turn off weekly summaries anytime in Settings → Email preferences.
-        </p>
       </div>
     </div>
     """
-    send_email_html(to_email, subject, body)
+    # Minimal weekly emails are for Free users
+    send_email_html(to_email, subject, body, is_pro=False)
 
 
 def escape_html(text: str) -> str:
@@ -476,9 +531,6 @@ def send_pro_welcome_email(to_email: str) -> None:
           </a>
         </p>
 
-        <p style="font-size:11px;color:#6b7280;margin:0;">
-          You can adjust daily and weekly reports in Settings → Email preferences.
-        </p>
       </div>
     </div>
     """
@@ -492,12 +544,10 @@ def send_pro_welcome_email(to_email: str) -> None:
         "- AI-powered weekly and daily reports that highlight patterns and next actions\n"
         "- Streak insights that show how consistently you protect focus\n\n"
         "Treat Deepmode like a gym for your attention. Show up, finish the block, let the data compound.\n\n"
-        "Start a Pro session: https://deepmode.app/login\n\n"
-        "You can adjust daily and weekly reports in Settings → Email preferences.\n"
+        "Start a Pro session: https://deepmode.app/login"
     )
 
-    # Correct call – matches send_email_html signature
-    send_email_html(to_email, subject, html_body, text_body)
+    send_email_html(to_email, subject, html_body, text_body, is_pro=True)
 
 
 def send_ai_weekly_summary_email(
@@ -553,14 +603,11 @@ def send_ai_weekly_summary_email(
                   color:#ffffff;text-decoration:none;font-size:14px;font-weight:500;">
           Open Deepmode and start a 25-minute block
         </a>
-
-        <p style="font-size:11px;color:#6b7280;margin-top:20px;">
-          You can manage what we send you in Settings → Email preferences.
-        </p>
       </div>
     </div>
     """
-    send_email_html(to_email, subject, body)
+    # AI weekly emails are only sent to Pro users
+    send_email_html(to_email, subject, body, is_pro=True)
 
 
 def send_ai_daily_email(
@@ -598,13 +645,11 @@ def send_ai_daily_email(
           Start today's first block
         </a>
 
-        <p style="font-size:11px;color:#6b7280;margin-top:20px;">
-          Current streak: <strong>{current_streak} day{'s' if current_streak != 1 else ''}</strong>. You can manage what we send you in Settings → Email preferences.
-        </p>
       </div>
     </div>
     """
-    send_email_html(to_email, subject, body)
+    # AI daily emails are only sent to Pro users
+    send_email_html(to_email, subject, body, is_pro=True)
 
 
 def send_pro_cancellation_email(to_email: str) -> None:
@@ -652,7 +697,8 @@ def send_pro_cancellation_email(to_email: str) -> None:
         "Your Deepmode Pro subscription has ended. The sessions you've already finished still count, and your free account is still active.\n\n"
         "You can keep using Deepmode to run focused blocks and maintain your streak. The rule is the same either way: small, finished sessions beat 'trying to be productive all day.'\n\n"
         "If you ever want Pro back — AI reports, advanced insights, and unlimited history — you can upgrade in a few clicks from your dashboard.\n\n"
-        "Thanks for using Deepmode and for taking your focus seriously.\n"
+        "Thanks for using Deepmode and for taking your focus seriously."
     )
 
-    send_email_html(to_email, subject, html_body, text_body)
+    # Cancellation email - user was Pro, but now they're not, so use is_pro=False
+    send_email_html(to_email, subject, html_body, text_body, is_pro=False)
