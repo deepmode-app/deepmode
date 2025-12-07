@@ -620,8 +620,11 @@ def get_streak_insights(
     if not user_row:
         raise HTTPException(status_code=404, detail="User not found")
     
-    # Compute stats
-    stats = compute_work_tracker_stats(user_id, days=days)
+    # Get user timezone
+    user_timezone = user_row.get("timezone")
+    
+    # Compute stats with timezone
+    stats = compute_work_tracker_stats(user_id, days=days, timezone_name=user_timezone)
     
     # Calculate window dates
     today = date.today()

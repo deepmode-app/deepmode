@@ -243,6 +243,112 @@
       padding: 40px;
       color: var(--dw-muted);
     }
+    .chart-container {
+      background: var(--dw-card);
+      border: 1px solid var(--dw-border);
+      border-radius: 18px;
+      padding: 32px 28px;
+      margin-bottom: 24px;
+    }
+    .chart-title {
+      font-size: 18px;
+      font-weight: 600;
+      margin-bottom: 24px;
+    }
+    .chart-bars {
+      display: flex;
+      align-items: flex-end;
+      justify-content: space-between;
+      gap: 8px;
+      height: 200px;
+      padding-bottom: 40px;
+      border-bottom: 1px solid var(--dw-border);
+    }
+    .chart-bar-wrapper {
+      flex: 1;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      height: 100%;
+      position: relative;
+    }
+    .chart-bar {
+      width: 100%;
+      background: linear-gradient(to top, var(--dw-accent), rgba(229, 9, 20, 0.6));
+      border-radius: 4px 4px 0 0;
+      min-height: 2px;
+      transition: opacity 0.2s;
+      cursor: pointer;
+      position: relative;
+    }
+    .chart-bar:hover {
+      opacity: 0.8;
+    }
+    .chart-bar-empty {
+      background: var(--dw-border);
+      opacity: 0.3;
+    }
+    .chart-label {
+      margin-top: 8px;
+      font-size: 11px;
+      color: var(--dw-muted);
+      text-align: center;
+    }
+    .chart-tooltip {
+      position: absolute;
+      bottom: 100%;
+      left: 50%;
+      transform: translateX(-50%);
+      background: var(--dw-card);
+      border: 1px solid var(--dw-border);
+      border-radius: 6px;
+      padding: 6px 10px;
+      font-size: 11px;
+      color: var(--dw-text);
+      white-space: nowrap;
+      margin-bottom: 4px;
+      display: none;
+      z-index: 10;
+    }
+    .chart-bar-wrapper:hover .chart-tooltip {
+      display: block;
+    }
+    .chart-caption {
+      font-size: 12px;
+      color: var(--dw-muted);
+      margin-top: 12px;
+      text-align: center;
+      font-style: italic;
+    }
+    .project-bar-item {
+      margin-bottom: 16px;
+    }
+    .project-bar-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 6px;
+    }
+    .project-bar-name {
+      font-weight: 500;
+      font-size: 14px;
+    }
+    .project-bar-meta {
+      font-size: 12px;
+      color: var(--dw-muted);
+    }
+    .project-bar-visual {
+      height: 8px;
+      background: var(--dw-border);
+      border-radius: 4px;
+      overflow: hidden;
+    }
+    .project-bar-fill {
+      height: 100%;
+      background: linear-gradient(to right, var(--dw-accent), rgba(229, 9, 20, 0.6));
+      border-radius: 4px;
+      transition: width 0.3s ease;
+    }
   </style>
 </head>
 <body>
@@ -301,6 +407,15 @@
         </div>
       </div>
 
+      <!-- 7-Day Focus Chart -->
+      <div class="chart-container">
+        <h2 class="chart-title">Focus over the last 7 days</h2>
+        <div id="weeklyChart" class="chart-bars">
+          <!-- Bars will be rendered here -->
+        </div>
+        <div id="chartCaption" class="chart-caption"></div>
+      </div>
+
       <!-- Projects & Categories -->
       <div class="two-column">
         <div class="card">
@@ -315,6 +430,12 @@
             <li class="empty-state">Loading…</li>
           </ul>
         </div>
+      </div>
+
+      <!-- Focus by Project (Visual) -->
+      <div class="card" id="projectVisualCard" style="display: none;">
+        <h2>Focus by project (this week)</h2>
+        <div id="projectVisualList"></div>
       </div>
 
       <!-- AI Insights Panel -->
@@ -388,6 +509,9 @@
         document.getElementById('longestStreak').textContent = longestStreak;
         document.getElementById('longestStreakUnit').textContent = longestStreak === 1 ? 'day' : 'days';
 
+        // Render 7-day chart
+        renderWeeklyChart(data.stats.days || []);
+
         // Update projects
         const projectsList = document.getElementById('projectsList');
         if (data.stats.projects && data.stats.projects.length > 0) {
@@ -400,6 +524,9 @@
         } else {
           projectsList.innerHTML = '<li class="empty-state">You haven\'t named any projects yet. Add a project name to your next session to unlock deeper insights.</li>';
         }
+
+        // Render visual project bars
+        renderProjectVisuals(data.stats.projects || []);
 
         // Update categories
         const categoriesList = document.getElementById('categoriesList');
@@ -442,6 +569,73 @@
       const div = document.createElement('div');
       div.textContent = text;
       return div.innerHTML;
+    }
+
+    function renderWeeklyChart(days) {
+      const chartContainer = document.getElementById('weeklyChart');
+      const captionEl = document.getElementById('chartCaption');
+      
+      if (!chartContainer) return;
+
+      // Calculate max minutes for scaling
+      const maxMinutes = Math.max(...days.map(d => d.minutes), 1);
+      const daysWithData = days.filter(d => d.minutes > 0).length;
+
+      // Render bars
+      chartContainer.innerHTML = days.map(day => {
+        const heightPercent = maxMinutes > 0 ? (day.minutes / maxMinutes) * 100 : 0;
+        const isEmpty = day.minutes === 0;
+        const tooltipText = isEmpty 
+          ? `${day.label} — No sessions`
+          : `${day.label} — ${day.minutes} min, ${day.sessions_completed} session${day.sessions_completed !== 1 ? 's' : ''} (${day.sessions_abandoned} abandoned)`;
+        
+        return `
+          <div class="chart-bar-wrapper">
+            <div class="chart-tooltip">${escapeHtml(tooltipText)}</div>
+            <div class="chart-bar ${isEmpty ? 'chart-bar-empty' : ''}" style="height: ${heightPercent}%;"></div>
+            <div class="chart-label">${day.label}</div>
+          </div>
+        `;
+      }).join('');
+
+      // Update caption
+      if (daysWithData === 0) {
+        captionEl.textContent = 'Your first finished sessions this week will appear here.';
+      } else if (daysWithData > 0 && daysWithData < 3) {
+        captionEl.textContent = 'These charts get more useful as you complete more sessions this week.';
+      } else {
+        captionEl.textContent = '';
+      }
+    }
+
+    function renderProjectVisuals(projects) {
+      const visualCard = document.getElementById('projectVisualCard');
+      const visualList = document.getElementById('projectVisualList');
+      
+      if (!visualCard || !visualList) return;
+
+      if (projects.length === 0) {
+        visualCard.style.display = 'none';
+        return;
+      }
+
+      visualCard.style.display = 'block';
+      const maxMinutes = projects[0]?.minutes || 1;
+
+      visualList.innerHTML = projects.map(proj => {
+        const widthPercent = (proj.minutes / maxMinutes) * 100;
+        return `
+          <div class="project-bar-item">
+            <div class="project-bar-header">
+              <div class="project-bar-name">${escapeHtml(proj.project_name)}</div>
+              <div class="project-bar-meta">${proj.minutes} minutes • ${proj.sessions} ${proj.sessions === 1 ? 'session' : 'sessions'}</div>
+            </div>
+            <div class="project-bar-visual">
+              <div class="project-bar-fill" style="width: ${widthPercent}%;"></div>
+            </div>
+          </div>
+        `;
+      }).join('');
     }
 
     // Check auth and load

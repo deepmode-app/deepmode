@@ -340,14 +340,50 @@ def send_weekly_summary_email(
 
 def send_minimal_weekly_summary_email(
     to_email: str,
+    minutes_this_week: int,
+    total_sessions: int,
+    completed_sessions: int,
     days_worked: int,
     current_streak: int,
+    top_project_name: str | None = None,
+    top_project_minutes: int | None = None,
+    top_category_name: str | None = None,
 ) -> None:
     """
-    Minimal weekly summary for Free users.
-    Includes only basic stats and upgrade CTA.
+    Enhanced weekly summary for Free users (no AI).
+    Includes real stats and clear Pro upsell.
     """
     subject = "Deepmode • Your week at a glance"
+    
+    # Build stats section
+    stats_html = f"""
+        <p style="font-size:14px;line-height:1.6;margin:0 0 12px;color:#e5e7eb;">
+          This week: <strong>{minutes_this_week} minutes</strong> of deep work.
+        </p>
+        <p style="font-size:14px;line-height:1.6;margin:0 0 12px;color:#e5e7eb;">
+          Sessions: <strong>{completed_sessions} completed</strong> out of <strong>{total_sessions} started</strong>.
+        </p>
+        <p style="font-size:14px;line-height:1.6;margin:0 0 12px;color:#e5e7eb;">
+          Days worked: <strong>{days_worked} out of 7</strong>.
+        </p>
+    """
+    
+    if top_project_name and top_project_minutes:
+        stats_html += f"""
+        <p style="font-size:14px;line-height:1.6;margin:0 0 12px;color:#e5e7eb;">
+          Top project: <strong>{escape_html(top_project_name)}</strong> — {top_project_minutes} minutes.
+        </p>
+        """
+    
+    if top_category_name:
+        stats_html += f"""
+        <p style="font-size:14px;line-height:1.6;margin:0 0 20px;color:#e5e7eb;">
+          Main focus: <strong>{escape_html(top_category_name)}</strong>.
+        </p>
+        """
+    else:
+        stats_html += '<p style="font-size:14px;line-height:1.6;margin:0 0 20px;color:#e5e7eb;"></p>'
+    
     body = f"""
     <div style="font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;background:#050509;color:#f9fafb;padding:16px;">
       <div style="max-width:520px;margin:0 auto;background:#111118;border-radius:12px;padding:24px;border:1px solid #27272f;">
@@ -356,21 +392,23 @@ def send_minimal_weekly_summary_email(
         </div>
         <h1 style="margin:0 0 12px;font-size:20px;font-weight:600;">Your week at a glance</h1>
 
-        <p style="font-size:14px;line-height:1.6;margin:0 0 12px;color:#e5e7eb;">
-          You worked <strong>{days_worked} day{'s' if days_worked != 1 else ''}</strong> this week in Deepmode.
-        </p>
-        <p style="font-size:13px;line-height:1.6;margin:0 0 20px;color:#9ca3af;">
-          Current streak: <strong>{current_streak} day{'s' if current_streak != 1 else ''}</strong>.
+        {stats_html}
+
+        <p style="font-size:13px;line-height:1.6;margin:0 0 20px;color:#9ca3af;font-style:italic;">
+          Use this as a simple scoreboard, not a judgment. The only move that matters is your next finished block.
         </p>
 
-        <p style="font-size:12px;line-height:1.6;margin:0 0 20px;color:#9ca3af;">
-          Even a few finished blocks a week put you ahead of most people. If you want more detail — project breakdowns, category insights and AI-written weekly reports — Deepmode Pro is built for that.
+        <hr style="border:none;border-top:1px solid #27272f;margin:24px 0;" />
+
+        <h2 style="font-size:16px;font-weight:600;margin:0 0 12px;color:#e5e7eb;">Upgrade to Deepmode Pro</h2>
+        <p style="font-size:13px;line-height:1.6;margin:0 0 20px;color:#9ca3af;">
+          Pro unlocks AI-written weekly reports based on your actual sessions, deeper project and category breakdowns, and a momentum score with next-week recommendations.
         </p>
 
         <a href="https://deepmode.app/#pricing"
            style="display:inline-block;padding:10px 18px;border-radius:999px;background:#e50914;
                   color:#ffffff;text-decoration:none;font-size:14px;font-weight:500;">
-          See what's in Pro
+          Unlock AI focus reports
         </a>
 
         <p style="font-size:11px;color:#6b7280;margin-top:20px;">
@@ -380,6 +418,17 @@ def send_minimal_weekly_summary_email(
     </div>
     """
     send_email_html(to_email, subject, body)
+
+
+def escape_html(text: str) -> str:
+    """Escape HTML special characters."""
+    return (
+        text.replace("&", "&amp;")
+        .replace("<", "&lt;")
+        .replace(">", "&gt;")
+        .replace('"', "&quot;")
+        .replace("'", "&#x27;")
+    )
 
 
 def send_pro_welcome_email(to_email: str) -> None:

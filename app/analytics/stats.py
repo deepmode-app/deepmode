@@ -1,13 +1,40 @@
 # app/analytics/stats.py
 
-from datetime import date, timedelta
+from datetime import date, timedelta, datetime, timezone as dt_timezone
 from collections import defaultdict
 from typing import Dict, List, Optional
+
+try:
+    import pytz
+    HAS_PYTZ = True
+except ImportError:
+    HAS_PYTZ = False
 
 from app.database import get_conn
 
 
-def compute_work_tracker_stats(user_id: int, days: int = 7) -> Dict:
+def get_user_timezone(user_id: int) -> Optional[str]:
+    """Get user's timezone from database, return None if not set."""
+    conn = get_conn()
+    cur = conn.cursor()
+    cur.execute("SELECT timezone FROM users WHERE id = %s", (user_id,))
+    row = cur.fetchone()
+    conn.close()
+    return row.get("timezone") if row else None
+
+
+def get_today_in_timezone(tz_name: Optional[str] = None) -> date:
+    """Get today's date in the user's timezone, or UTC if not set."""
+    if tz_name and HAS_PYTZ:
+        try:
+            tz = pytz.timezone(tz_name)
+            return datetime.now(tz).date()
+        except:
+            pass
+    return date.today()
+
+
+def compute_work_tracker_stats(user_id: int, days: int = 7, timezone_name: Optional[str] = None) -> Dict:
     """
     Compute comprehensive work tracker stats for a user over a time window.
     
@@ -23,14 +50,34 @@ def compute_work_tracker_stats(user_id: int, days: int = 7) -> Dict:
     - projects (list of dicts)
     - categories (list of dicts)
     - context_switch_index
+    - days (list of dicts with daily breakdown for last 7 days)
     """
-    today = date.today()
+    today = get_today_in_timezone(timezone_name)
     start_date = today - timedelta(days=days - 1)
+    
+    # Build list of all 7 days
+    all_days = []
+    weekday_names = ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun']
+    for i in range(days):
+        day_date = start_date + timedelta(days=i)
+        day_label = weekday_names[day_date.weekday()]
+        all_days.append({
+            "date": day_date.isoformat(),
+            "label": day_label,
+            "minutes": 0,
+            "sessions_completed": 0,
+            "sessions_abandoned": 0,
+        })
     
     conn = get_conn()
     cur = conn.cursor()
     
     # Get all sessions in the window
+    # Note: We query with a wider range to account for timezone differences
+    # Then filter by date in the user's timezone in Python
+    query_start = start_date - timedelta(days=1)  # Buffer for timezone
+    query_end = today + timedelta(days=1)
+    
     cur.execute(
         """
         SELECT 
@@ -45,13 +92,21 @@ def compute_work_tracker_stats(user_id: int, days: int = 7) -> Dict:
         FROM sessions
         WHERE user_id = %s
           AND end_time IS NOT NULL
-          AND end_time::date >= %s::date
-          AND end_time::date <= %s::date
+          AND end_time >= %s
+          AND end_time <= %s
         ORDER BY end_time
         """,
-        (user_id, start_date, today),
+        (user_id, query_start, query_end),
     )
     rows = cur.fetchall()
+    
+    # Convert timestamps to user timezone if needed
+    tz = None
+    if timezone_name and HAS_PYTZ:
+        try:
+            tz = pytz.timezone(timezone_name)
+        except:
+            pass
     
     # Initialize aggregators
     total_minutes = 0
@@ -74,24 +129,56 @@ def compute_work_tracker_stats(user_id: int, days: int = 7) -> Dict:
         total_minutes += mins
         
         # Track day
-        end_date = row.get("end_time")
-        if end_date:
-            # Handle datetime objects
-            if hasattr(end_date, 'date'):
-                work_date = end_date.date()
-            elif isinstance(end_date, str):
-                from datetime import datetime
+        end_time = row.get("end_time")
+        if end_time:
+            # Convert to user timezone if needed
+            if tz and hasattr(end_time, 'astimezone'):
+                # Already timezone-aware
+                if end_time.tzinfo is None:
+                    # Assume UTC if naive
+                    if HAS_PYTZ:
+                        end_time = pytz.utc.localize(end_time)
+                    else:
+                        end_time = end_time.replace(tzinfo=dt_timezone.utc)
+                work_datetime = end_time.astimezone(tz)
+                work_date = work_datetime.date()
+            elif isinstance(end_time, str):
                 try:
-                    end_date = datetime.fromisoformat(end_date.replace('Z', '+00:00'))
-                    work_date = end_date.date()
+                    dt = datetime.fromisoformat(end_time.replace('Z', '+00:00'))
+                    if tz:
+                        if dt.tzinfo is None:
+                            if HAS_PYTZ:
+                                dt = pytz.utc.localize(dt)
+                            else:
+                                dt = dt.replace(tzinfo=dt_timezone.utc)
+                        work_datetime = dt.astimezone(tz)
+                        work_date = work_datetime.date()
+                    else:
+                        work_date = dt.date()
                 except:
-                    # Fallback: try parsing as date string
-                    work_date = date.fromisoformat(end_date.split('T')[0])
+                    work_date = date.fromisoformat(end_time.split('T')[0])
+            elif hasattr(end_time, 'date'):
+                work_date = end_time.date()
             else:
-                work_date = end_date
+                continue
+            
+            # Only count if within our window
+            if work_date < start_date or work_date > today:
+                continue
             
             days_with_work.add(work_date)
             day_minutes[work_date] += mins
+            
+            # Update daily breakdown
+            day_key = work_date.isoformat()
+            for day_entry in all_days:
+                if day_entry["date"] == day_key:
+                    day_entry["minutes"] += int(mins)
+                    if discipline == 1 or status == "completed":
+                        day_entry["sessions_completed"] += 1
+                    elif status == "abandoned":
+                        day_entry["sessions_abandoned"] += 1
+                    break
             
             # Weekday (Python date.weekday() returns Monday=0)
             weekday_num = work_date.weekday()
@@ -171,6 +258,10 @@ def compute_work_tracker_stats(user_id: int, days: int = 7) -> Dict:
     
     conn.close()
     
+    # Limit projects and categories to top 3
+    top_projects = projects[:3]
+    top_categories = categories[:3]
+    
     return {
         "total_minutes": int(total_minutes),
         "sessions_completed": sessions_completed,
@@ -180,8 +271,9 @@ def compute_work_tracker_stats(user_id: int, days: int = 7) -> Dict:
         "best_day": best_day,
         "weakest_day": weakest_day,
         "by_weekday": by_weekday,
-        "projects": projects,
-        "categories": categories,
+        "projects": top_projects,
+        "categories": top_categories,
         "context_switch_index": context_switch_index,
+        "days": all_days,
     }
 

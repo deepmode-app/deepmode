@@ -456,11 +456,15 @@ def run_weekly_summary_digest():
                 except Exception as e2:
                     print(f"[Jobs] Error sending fallback weekly email to {email}: {e2}")
         else:
-            # Free users get minimal weekly summary
-            # Count days worked this week
+            # Free users get enhanced weekly summary (no AI)
+            # Get comprehensive stats for last 7 days
             cur.execute(
                 """
-                SELECT COUNT(DISTINCT end_time::date)::INT AS days_worked
+                SELECT 
+                    COALESCE(SUM(COALESCE(actual_duration_minutes, duration_seconds / 60, 0)), 0)::INT AS total_mins,
+                    COUNT(*)::INT AS session_count,
+                    COUNT(CASE WHEN end_time IS NOT NULL AND (discipline_score = 1 OR status = 'completed') THEN 1 END)::INT AS completed,
+                    COUNT(DISTINCT end_time::date)::INT AS days_worked
                 FROM sessions
                 WHERE user_id = %s
                   AND end_time::date >= %s::date
@@ -469,14 +473,68 @@ def run_weekly_summary_digest():
                 """,
                 (user_id, start_of_this_week, today),
             )
-            r_days = cur.fetchone()
-            days_worked = r_days["days_worked"] if r_days else 0
+            row_agg = cur.fetchone()
+            minutes_this_week = row_agg.get("total_mins", 0) if row_agg else 0
+            total_sessions = row_agg.get("session_count", 0) if row_agg else 0
+            completed_sessions = row_agg.get("completed", 0) if row_agg else 0
+            days_worked = row_agg.get("days_worked", 0) if row_agg else 0
+
+            # Get top project
+            cur.execute(
+                """
+                SELECT 
+                    project_name,
+                    COALESCE(SUM(COALESCE(actual_duration_minutes, duration_seconds / 60, 0)), 0)::INT AS mins
+                FROM sessions
+                WHERE user_id = %s
+                  AND end_time::date >= %s::date
+                  AND end_time::date <= %s::date
+                  AND end_time IS NOT NULL
+                  AND project_name IS NOT NULL
+                  AND project_name != ''
+                GROUP BY project_name
+                ORDER BY mins DESC
+                LIMIT 1
+                """,
+                (user_id, start_of_this_week, today),
+            )
+            top_project_row = cur.fetchone()
+            top_project_name = top_project_row.get("project_name") if top_project_row else None
+            top_project_minutes = top_project_row.get("mins", 0) if top_project_row else None
+
+            # Get top category
+            cur.execute(
+                """
+                SELECT 
+                    category,
+                    COALESCE(SUM(COALESCE(actual_duration_minutes, duration_seconds / 60, 0)), 0)::INT AS mins
+                FROM sessions
+                WHERE user_id = %s
+                  AND end_time::date >= %s::date
+                  AND end_time::date <= %s::date
+                  AND end_time IS NOT NULL
+                  AND category IS NOT NULL
+                  AND category != ''
+                GROUP BY category
+                ORDER BY mins DESC
+                LIMIT 1
+                """,
+                (user_id, start_of_this_week, today),
+            )
+            top_category_row = cur.fetchone()
+            top_category_name = top_category_row.get("category") if top_category_row else None
 
             try:
                 send_minimal_weekly_summary_email(
                     email,
+                    minutes_this_week=minutes_this_week,
+                    total_sessions=total_sessions,
+                    completed_sessions=completed_sessions,
                     days_worked=days_worked,
                     current_streak=current_streak,
+                    top_project_name=top_project_name,
+                    top_project_minutes=top_project_minutes,
+                    top_category_name=top_category_name,
                 )
                 sent_count += 1
             except Exception as e:
