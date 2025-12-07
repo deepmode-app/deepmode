@@ -31,7 +31,7 @@ def _build_email_footer(is_pro: bool = False) -> str:
     """
     if is_pro:
         insights_text = "View your full insights, streaks, graphs and AI analysis anytime on your dashboard."
-        cta_link = STREAK_URL
+        cta_link = DASHBOARD_URL
         cta_text = "View dashboard"
     else:
         insights_text = "See more insights and unlock AI-powered reports on your dashboard."
@@ -61,7 +61,7 @@ def _build_email_footer_text(is_pro: bool = False) -> str:
     """
     if is_pro:
         insights_text = "View your full insights, streaks, graphs and AI analysis anytime on your dashboard."
-        cta_link = STREAK_URL
+        cta_link = DASHBOARD_URL
         cta_text = "View dashboard"
     else:
         insights_text = "See more insights and unlock AI-powered reports on your dashboard."
