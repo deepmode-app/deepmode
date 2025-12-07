@@ -7,9 +7,11 @@ from pydantic import BaseModel
 
 from app.config import (
     STRIPE_SECRET_KEY,
-    STRIPE_PUBLIC_KEY,
+    STRIPE_PUBLISHABLE_KEY,
     STRIPE_PRICE_IDS,
     STRIPE_WEBHOOK_SECRET,
+    APP_BASE_URL,
+    STRIPE_LIVE_MODE,
 )
 from app.database import get_conn
 from app.email_utils import (
@@ -23,6 +25,9 @@ if not STRIPE_SECRET_KEY:
     print("[Stripe] WARNING: STRIPE_SECRET_KEY not set in environment. Stripe features will not work.")
 else:
     stripe.api_key = STRIPE_SECRET_KEY
+    # Log mode for DEV clarity (test mode only)
+    if not STRIPE_LIVE_MODE:
+        print("[Stripe] TEST MODE (no real charges) - Using test keys from environment")
 
 router = APIRouter()
 
@@ -258,7 +263,10 @@ def _update_user_billing(
 @router.post("/billing/create-checkout-session")
 async def create_checkout_session(request: Request, payload: CheckoutRequest):
     """
-    Creates a Stripe Checkout Session and returns its URL.
+    Creates a Stripe Checkout Session for subscription and returns its URL.
+    
+    Note: This is wired for DEV/test mode using STRIPE_PRICE_ID_MONTHLY and STRIPE_PRICE_ID_YEARLY
+    from environment variables. For PROD, use LIVE keys in environment.
     """
     if not STRIPE_SECRET_KEY:
         raise HTTPException(
@@ -274,9 +282,10 @@ async def create_checkout_session(request: Request, payload: CheckoutRequest):
         )
 
     price_id = STRIPE_PRICE_IDS[plan]
-    base_url = str(request.base_url).rstrip("/")
+    base_url = APP_BASE_URL.rstrip("/")
 
     try:
+        # Create subscription checkout session
         session = stripe.checkout.Session.create(
             mode="subscription",
             customer_email=payload.email,
@@ -287,9 +296,13 @@ async def create_checkout_session(request: Request, payload: CheckoutRequest):
             success_url=f"{base_url}/dashboard?session=success",
             cancel_url=f"{base_url}/dashboard?session=cancel",
         )
+        
+        # Store customer_id in DB if we can get it (may not be available until checkout completes)
+        # The webhook will handle the full customer/subscription association
+        
         return {"checkout_url": session.url}
     except Exception as e:
-        print("Stripe error in create_checkout_session:", repr(e))
+        print("[Stripe] Error in create_checkout_session:", repr(e))
         raise HTTPException(status_code=500, detail="Could not create checkout session.")
 
 
@@ -440,7 +453,53 @@ async def stripe_webhook(request: Request):
                 except Exception as e:
                     print(f"[Stripe] Failed to send cancellation email to {email}: {e!r}")
 
-        # ---- 3) Subscription deleted -> definitely not Pro ----
+        # ---- 3) Subscription created -> upgrade to Pro ----
+        elif event_type == "customer.subscription.created":
+            sub = data_object
+            subscription_id = sub.get("id")
+            customer_id = sub.get("customer")
+            status = sub.get("status")
+            price_id = _extract_price_id_from_subscription(sub)
+
+            make_pro = _subscription_status_to_pro_flag(status)
+
+            user_row = _find_user_by_stripe_ids(conn, customer_id, subscription_id)
+
+            if not user_row:
+                email = _get_email_from_subscription(sub)
+                if not email:
+                    print("[Stripe] subscription.created but no user matched (no email, no stripe IDs)")
+                    return {"received": True}
+                user_row = _find_user_by_email(conn, email)
+                if not user_row:
+                    print(f"[Stripe] subscription.created but no user found for email {email}")
+                    return {"received": True}
+            else:
+                email = user_row["email"]
+
+            was_pro, is_pro_now = _update_user_billing(
+                conn,
+                user_row,
+                make_pro=make_pro,
+                customer_id=customer_id,
+                subscription_id=subscription_id,
+                subscription_status=status,
+                price_id=price_id,
+            )
+
+            print(
+                f"[Stripe] subscription.created: {email}, status={status}, "
+                f"was_pro={was_pro}, is_pro_now={is_pro_now}"
+            )
+
+            if not was_pro and is_pro_now:
+                try:
+                    send_pro_welcome_email(email)
+                    print(f"[Stripe] Sent Pro welcome email (via subscription.created) to {email}")
+                except Exception as e:
+                    print(f"[Stripe] Failed to send Pro welcome email to {email}: {e!r}")
+
+        # ---- 4) Subscription deleted -> definitely not Pro ----
         elif event_type == "customer.subscription.deleted":
             sub = data_object
             subscription_id = sub.get("id")
@@ -486,6 +545,71 @@ async def stripe_webhook(request: Request):
                 except Exception as e:
                     print(f"[Stripe] Failed to send cancellation email to {email}: {e!r}")
 
+        # ---- 5) Invoice payment succeeded -> ensure Pro status is active ----
+        elif event_type == "invoice.payment_succeeded":
+            invoice = data_object
+            subscription_id = invoice.get("subscription")
+            customer_id = invoice.get("customer")
+            
+            if not subscription_id:
+                # Not a subscription invoice, ignore
+                print("[Stripe] invoice.payment_succeeded but no subscription_id, ignoring")
+                return {"received": True}
+            
+            try:
+                sub = stripe.Subscription.retrieve(subscription_id)
+                status = sub.get("status")
+                price_id = _extract_price_id_from_subscription(sub)
+                
+                make_pro = _subscription_status_to_pro_flag(status)
+                
+                user_row = _find_user_by_stripe_ids(conn, customer_id, subscription_id)
+                
+                if not user_row:
+                    email = _get_email_from_subscription(sub)
+                    if not email:
+                        print("[Stripe] invoice.payment_succeeded but no user matched")
+                        return {"received": True}
+                    user_row = _find_user_by_email(conn, email)
+                    if not user_row:
+                        print(f"[Stripe] invoice.payment_succeeded but no user found for email {email}")
+                        return {"received": True}
+                else:
+                    email = user_row["email"]
+                
+                was_pro, is_pro_now = _update_user_billing(
+                    conn,
+                    user_row,
+                    make_pro=make_pro,
+                    customer_id=customer_id,
+                    subscription_id=subscription_id,
+                    subscription_status=status,
+                    price_id=price_id,
+                )
+                
+                print(
+                    f"[Stripe] invoice.payment_succeeded: {email}, "
+                    f"was_pro={was_pro}, is_pro_now={is_pro_now}"
+                )
+            except Exception as e:
+                print(f"[Stripe] Error processing invoice.payment_succeeded: {e!r}")
+
+        # ---- 6) Invoice payment failed -> log but don't change Pro status yet ----
+        elif event_type == "invoice.payment_failed":
+            invoice = data_object
+            subscription_id = invoice.get("subscription")
+            customer_id = invoice.get("customer")
+            
+            if subscription_id:
+                try:
+                    sub = stripe.Subscription.retrieve(subscription_id)
+                    # Payment failed doesn't immediately cancel subscription
+                    # Stripe will retry and eventually cancel if all retries fail
+                    # We'll handle cancellation via subscription.deleted or subscription.updated
+                    print(f"[Stripe] invoice.payment_failed for subscription {subscription_id} (customer {customer_id})")
+                except Exception as e:
+                    print(f"[Stripe] Error processing invoice.payment_failed: {e!r}")
+
         else:
             print(f"[Stripe] Ignoring event type: {event_type}")
 
@@ -518,15 +642,16 @@ async def create_customer_portal(request: Request, payload: CustomerPortalReques
     if not raw_email:
         raise HTTPException(status_code=400, detail="Email is required for billing portal.")
 
-    base_url = str(request.base_url).rstrip("/")
+        base_url = APP_BASE_URL.rstrip("/")
 
     try:
         # 1) Find Stripe customer by email
         customers = stripe.Customer.list(email=raw_email, limit=1)
         if not customers.data:
+            # No customer found - return error (POST endpoint, frontend can redirect)
             raise HTTPException(
                 status_code=400,
-                detail="No billing profile found for this account yet.",
+                detail="No billing profile found for this account yet. Please upgrade first.",
             )
 
         customer = customers.data[0]
@@ -624,95 +749,14 @@ async def billing_portal_redirect(request: Request):
             detail="Stripe is not configured. Please contact support."
         )
     
-    base_url = str(request.base_url).rstrip("/")
+    base_url = APP_BASE_URL.rstrip("/")
     
     try:
         # 1) Find Stripe customer by email
         customers = stripe.Customer.list(email=user_email, limit=1)
         if not customers.data:
-            raise HTTPException(
-                status_code=400,
-                detail="No billing profile found for this account yet.",
-            )
-        
-        customer = customers.data[0]
-        customer_id = customer.id
-        
-        # 2) Upsert stripe_customer_id in DB (if user row exists)
-        conn = get_conn()
-        try:
-            cur = conn.cursor()
-            cur.execute(
-                """
-                UPDATE users
-                   SET stripe_customer_id = %s
-                 WHERE email = %s
-                """,
-                (customer_id, user_email),
-            )
-            conn.commit()
-            cur.close()
-        finally:
-            conn.close()
-        
-        # 3) Create Stripe billing portal session
-        portal_session = stripe.billing_portal.Session.create(
-            customer=customer_id,
-            return_url=f"{base_url}/dashboard",
-        )
-        
-        # Redirect to portal URL
-        return RedirectResponse(url=portal_session.url)
-        
-    except HTTPException:
-        raise
-    except Exception as e:
-        print("[Stripe] Error creating customer portal:", repr(e))
-        raise HTTPException(
-            status_code=500,
-            detail="Could not open billing portal. Please try again later.",
-        )
-
-
-# ---------- Billing Portal Route (GET) ----------
-
-@router.get("/billing/portal")
-async def billing_portal_redirect(request: Request):
-    """
-    GET route for billing portal - redirects to Stripe Customer Portal.
-    This is used by the dropdown link.
-    """
-    from fastapi import Depends
-    from app.routes.auth import get_current_user
-    
-    # Get current user from token
-    try:
-        current_user = get_current_user(request)
-    except Exception:
-        # If not authenticated, redirect to login
-        return RedirectResponse("/login")
-    
-    # Use the existing POST endpoint logic but redirect directly
-    if not STRIPE_SECRET_KEY:
-        raise HTTPException(
-            status_code=500,
-            detail="Stripe is not configured. Please contact support."
-        )
-    
-    user_email = current_user.get("email")
-    if not user_email:
-        raise HTTPException(status_code=400, detail="Email is required for billing portal.")
-    
-    base_url = str(request.base_url).rstrip("/")
-    
-    try:
-        # 1) Find Stripe customer by email
-        customers = stripe.Customer.list(email=user_email, limit=1)
-        if not customers.data:
-            raise HTTPException(
-                status_code=400,
-                detail="No billing profile found for this account yet.",
-            )
+            # No customer found - redirect to checkout instead of erroring
+            return RedirectResponse(url=f"{base_url}/billing/checkout")
         
         customer = customers.data[0]
         customer_id = customer.id

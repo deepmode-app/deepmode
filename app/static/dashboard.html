@@ -2,7 +2,7 @@
 <html lang="en">
 <head>
   <meta charset="UTF-8" />
-  <title>Deepmode Pro – Your focus stats</title>
+  <title>Deepmode AI Pro – Your focus stats</title>
   <meta name="viewport" content="width=device-width, initial-scale=1" />
   <link rel="icon" type="image/png" href="/static/logos/Logo - Red BG.png">
   <link rel="preconnect" href="https://fonts.googleapis.com">
@@ -1738,8 +1738,8 @@
           </a>
         </div>
         <nav class="nav-links">
-          <a href="/billing/checkout" class="upgrade-btn" id="upgradeBtn">Upgrade to Pro</a>
-          <span class="pro-pill" id="proPill" style="display:none;">Pro active</span>
+          <button class="upgrade-btn" id="upgradeBtn">Upgrade to Deepmode AI Pro</button>
+          <span class="pro-pill" id="proPill" style="display:none;">Deepmode AI Pro active</span>
           <div class="nav-account" id="navAccount">
             <button class="nav-account-trigger" id="accountTrigger" aria-expanded="false" aria-haspopup="true">
               <div class="account-avatar-container">
@@ -1875,7 +1875,7 @@
         </div>
         <div class="card-value" id="totalMinutes">0 min</div>
         <div class="card-sub">Your deepwork history</div>
-        <div class="card-locked-hint" id="allTimeHint">Available with Deepmode Pro</div>
+        <div class="card-locked-hint" id="allTimeHint">Available with Deepmode AI Pro</div>
       </div>
 
       <div class="card card-locked" id="disciplineCard">
@@ -1886,7 +1886,7 @@
         </div>
         <div class="card-value" id="disciplineScore">0%</div>
         <div class="card-sub">Your deepwork efficiency</div>
-        <div class="card-locked-hint" id="disciplineHint">Available with Deepmode Pro</div>
+        <div class="card-locked-hint" id="disciplineHint">Available with Deepmode AI Pro</div>
       </div>
 
       <div class="card" id="streakCard">
@@ -1897,7 +1897,7 @@
           No streak yet. Start your first session today.
         </div>
         <div id="streakUpgradeCallout" style="display: none; font-size: 10px; color: var(--dw-muted); margin-top: 6px; line-height: 1.4;">
-          Upgrade to Deepmode Pro to see your full streak history and trends.
+          Upgrade to Deepmode AI Pro to see your full streak history and trends.
         </div>
         <div id="streakProLink" style="display: none; margin-top: 8px;">
           <a href="/streak" class="upgrade-btn" style="font-size: 10px; padding: 4px 10px; display: inline-block;">
@@ -2190,7 +2190,7 @@
     const params = new URLSearchParams(window.location.search);
     if (params.get("session") === "success") {
       const toast = document.getElementById("proToast");
-      toast.textContent = "Deepmode Pro activated — Time to build your advantage. Welcome to the Discipline Lane!";
+      toast.textContent = "Deepmode AI Pro activated — Time to build your advantage. Welcome to the Discipline Lane!";
       toast.style.display = "block";
 
       if (window.history && window.history.replaceState) {
@@ -2389,7 +2389,51 @@
 
       if (!user || !user.is_pro) {
         // Free user
-        if (upgradeBtn) upgradeBtn.style.display = "inline-block";
+        if (upgradeBtn) {
+          upgradeBtn.style.display = "inline-block";
+          // Attach click handler to create Stripe checkout session
+          upgradeBtn.onclick = async function(e) {
+            e.preventDefault();
+            if (!currentUser || !currentUser.email) {
+              alert("Please log in to upgrade.");
+              return;
+            }
+            
+            try {
+              upgradeBtn.disabled = true;
+              upgradeBtn.textContent = "Loading...";
+              
+              const response = await fetch("/billing/create-checkout-session", {
+                method: "POST",
+                headers: {
+                  "Content-Type": "application/json",
+                  "Authorization": "Bearer " + token,
+                },
+                body: JSON.stringify({
+                  email: currentUser.email,
+                  plan: "monthly", // Default to monthly, can add plan selector later
+                }),
+              });
+              
+              if (!response.ok) {
+                const error = await response.json();
+                throw new Error(error.detail || "Failed to create checkout session");
+              }
+              
+              const data = await response.json();
+              if (data.checkout_url) {
+                window.location.href = data.checkout_url;
+              } else {
+                throw new Error("No checkout URL received");
+              }
+            } catch (error) {
+              console.error("Error creating checkout session:", error);
+              alert("Failed to start checkout. Please try again.");
+              upgradeBtn.disabled = false;
+              upgradeBtn.textContent = "Upgrade to Deepmode AI Pro";
+            }
+          };
+        }
         if (proPill) proPill.style.display = "none";
       } else {
         // Pro user
@@ -2437,7 +2481,7 @@
           dailyEmailToggle.disabled = true;
         }
         if (dailyEmailToggleSub) {
-          dailyEmailToggleSub.textContent = "Available with Deepmode Pro. A short daily email with your minutes, streak and wins.";
+          dailyEmailToggleSub.textContent = "Available with Deepmode AI Pro. A short daily email with your minutes, streak and wins.";
         }
       }
 
@@ -2491,11 +2535,11 @@
         const navLogoMark = document.getElementById("navLogoMark");
         if (user.is_pro) {
           if (badgeEl) {
-            badgeEl.textContent = "Deepmode Pro";
+            badgeEl.textContent = "Deepmode AI Pro";
           }
           if (navLogoMark) {
             navLogoMark.src = "/static/logos/Deepmode Pro.png";
-            navLogoMark.alt = "Deepmode Pro";
+            navLogoMark.alt = "Deepmode AI Pro";
           }
           // upgradeBtn and proPill visibility handled by updateProStatusUI()
           if (manageBillingBtn) {

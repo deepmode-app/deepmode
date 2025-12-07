@@ -469,7 +469,7 @@ def send_minimal_weekly_summary_email(
 
         <hr style="border:none;border-top:1px solid #27272f;margin:24px 0;" />
 
-        <h2 style="font-size:16px;font-weight:600;margin:0 0 12px;color:#e5e7eb;">Upgrade to Deepmode Pro</h2>
+        <h2 style="font-size:16px;font-weight:600;margin:0 0 12px;color:#e5e7eb;">Upgrade to Deepmode AI Pro</h2>
         <p style="font-size:13px;line-height:1.6;margin:0 0 20px;color:#9ca3af;">
           Pro unlocks AI-written weekly reports based on your actual sessions, deeper project and category breakdowns, and a momentum score with next-week recommendations.
         </p>
@@ -500,13 +500,13 @@ def escape_html(text: str) -> str:
 
 def send_pro_welcome_email(to_email: str) -> None:
     """
-    Fire-and-forget helper to send the Deepmode Pro welcome email.
+    Fire-and-forget helper to send the Deepmode AI Pro welcome email.
     Call this ONLY when a user is upgraded from free -> Pro.
     """
     if not to_email:
         return
 
-    subject = "Welcome to Deepmode Pro"
+    subject = "Welcome to Deepmode AI Pro"
 
     html_body = """
     <div style="font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',system-ui,sans-serif;background:#050509;color:#f9fafb;padding:16px;">
@@ -515,7 +515,7 @@ def send_pro_welcome_email(to_email: str) -> None:
           Deepmode
         </div>
         <h1 style="color:#e50914;margin:0 0 12px;font-size:24px;font-weight:600;">
-          Welcome to Deepmode Pro
+          Welcome to Deepmode AI Pro
         </h1>
 
         <p style="margin:0 0 20px;font-size:14px;line-height:1.6;color:#e5e7eb;">
@@ -548,7 +548,7 @@ def send_pro_welcome_email(to_email: str) -> None:
     """
 
     text_body = (
-        "Welcome to Deepmode Pro\n\n"
+        "Welcome to Deepmode AI Pro\n\n"
         "You've just turned Deepmode into a full focus system — not just a timer.\n\n"
         "What you've unlocked:\n"
         "- Unlimited deepwork sessions and custom blocks\n"
@@ -673,7 +673,7 @@ def send_pro_cancellation_email(to_email: str) -> None:
     if not to_email:
         return
 
-    subject = "Deepmode Pro cancelled — your focus work doesn't have to be"
+    subject = "Deepmode AI Pro cancelled — your focus work doesn't have to be"
 
     html_body = """
     <div style="font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',system-ui,sans-serif;background:#050509;color:#f9fafb;padding:16px;">
@@ -682,11 +682,11 @@ def send_pro_cancellation_email(to_email: str) -> None:
           Deepmode
         </div>
         <h1 style="margin:0 0 12px;font-size:22px;font-weight:600;color:#e5e7eb;">
-          Deepmode Pro is off — your focus work doesn't have to be.
+          Deepmode AI Pro is off — your focus work doesn't have to be.
         </h1>
 
         <p style="margin:0 0 12px;font-size:14px;line-height:1.6;color:#e5e7eb;">
-          Your Deepmode Pro subscription has ended. The sessions you've already finished still count, and your free account is still active.
+          Your Deepmode AI Pro subscription has ended. The sessions you've already finished still count, and your free account is still active.
         </p>
 
         <p style="margin:0 0 12px;font-size:14px;line-height:1.6;color:#9ca3af;">
@@ -705,8 +705,8 @@ def send_pro_cancellation_email(to_email: str) -> None:
     """
 
     text_body = (
-        "Deepmode Pro cancelled — your focus work doesn't have to be\n\n"
-        "Your Deepmode Pro subscription has ended. The sessions you've already finished still count, and your free account is still active.\n\n"
+        "Deepmode AI Pro cancelled — your focus work doesn't have to be\n\n"
+        "Your Deepmode AI Pro subscription has ended. The sessions you've already finished still count, and your free account is still active.\n\n"
         "You can keep using Deepmode to run focused blocks and maintain your streak. The rule is the same either way: small, finished sessions beat 'trying to be productive all day.'\n\n"
         "If you ever want Pro back — AI reports, advanced insights, and unlimited history — you can upgrade in a few clicks from your dashboard.\n\n"
         "Thanks for using Deepmode and for taking your focus seriously."
