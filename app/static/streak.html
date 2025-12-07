@@ -336,7 +336,9 @@
   </div>
 
   <script>
-    let authToken = localStorage.getItem('auth_token');
+    // Get token using same logic as dashboard
+    let authToken = localStorage.getItem("access_token") ||
+                    localStorage.getItem("deepmode_token");
 
     async function loadStreakInsights() {
       const loadingEl = document.getElementById('loading');
