@@ -24,30 +24,45 @@ router = APIRouter(prefix="/jobs", tags=["jobs"])
 @router.post("/daily-streak-digest")
 def run_daily_streak_digest():
     """
-    Send daily 'don't break the chain' emails.
+    Send daily 'yesterday report' emails for Pro users.
 
     Logic:
-    - Only users with daily_email_enabled = TRUE
-    - Only if they have a running streak (current_streak > 0)
-    - Only if they have NOT logged any minutes TODAY (nudge to start)
+    - Only Pro users with daily_email_enabled = TRUE
+    - Only if they had at least one completed session yesterday
+    - Independent of whether they worked today (this is a yesterday report)
     - Uses yesterday's minutes for context
     """
+    from datetime import datetime, timezone
+    
     today = date.today()
     yesterday = today - timedelta(days=1)
+    # Calculate yesterday_start and yesterday_end for precise filtering
+    yesterday_start = datetime.combine(yesterday, datetime.min.time()).replace(tzinfo=timezone.utc)
+    yesterday_end = datetime.combine(today, datetime.min.time()).replace(tzinfo=timezone.utc)
 
     conn = get_conn()
     cur = conn.cursor()
 
-    # 1) Load candidates - PRO USERS ONLY (verification gating removed)
+    # Select distinct users who had at least one completed session yesterday
+    # Use discipline_score = 1 OR status = 'completed' to match existing logic
     cur.execute(
         """
-        SELECT id, email, current_streak, longest_streak, last_active_date
-        FROM users
-        WHERE daily_email_enabled = TRUE
-          AND is_pro = TRUE
-          AND current_streak IS NOT NULL
-          AND current_streak > 0
-        """
+        SELECT DISTINCT
+            u.id,
+            u.email,
+            u.current_streak,
+            u.longest_streak,
+            u.timezone
+        FROM users u
+        INNER JOIN sessions s ON s.user_id = u.id
+        WHERE u.is_pro = TRUE
+          AND u.daily_email_enabled = TRUE
+          AND s.end_time >= %s
+          AND s.end_time < %s
+          AND s.end_time IS NOT NULL
+          AND (s.discipline_score = 1 OR s.status = 'completed')
+        """,
+        (yesterday_start, yesterday_end),
     )
     users = cur.fetchall()
 
@@ -58,11 +73,6 @@ def run_daily_streak_digest():
         email = u["email"]
         current_streak = u["current_streak"] or 0
         longest_streak = u["longest_streak"] or 0
-        last_active = u["last_active_date"]
-
-        # If they already worked today, don't nag.
-        if last_active == today:
-            continue
 
         # Get yesterday's stats for AI daily email
         # First get aggregate counts

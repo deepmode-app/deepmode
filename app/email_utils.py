@@ -13,6 +13,9 @@ EMAIL_SENDING_ENABLED = os.getenv("EMAIL_SENDING_ENABLED", "true").lower() == "t
 
 # Base URL for email links
 BASE_URL = os.getenv("APP_BASE_URL", "http://127.0.0.1:8000")
+DASHBOARD_URL = f"{BASE_URL}/dashboard"
+STREAK_URL = f"{BASE_URL}/streak"
+EMAIL_PREFS_URL = DASHBOARD_URL  # Email preferences accessed via dashboard
 
 
 def _build_email_footer(is_pro: bool = False) -> str:
@@ -33,10 +36,10 @@ def _build_email_footer(is_pro: bool = False) -> str:
     return f"""
 <hr style="border:none;border-top:1px solid #27272f;margin:24px 0;" />
 <p style="font-size:12px;color:#9ca3af;line-height:1.6;margin:0 0 6px;">
-  {insights_text}
+  {insights_text} <a href="{STREAK_URL}" style="color:#e50914;text-decoration:underline;">View dashboard</a>.
 </p>
 <p style="font-size:11px;color:#6b7280;margin:0;">
-  To manage what we send you, visit your <a href="{BASE_URL}/auth/email-preferences" style="color:#9ca3af;text-decoration:underline;">email preferences</a>.
+  To manage what we send you, visit your <a href="{EMAIL_PREFS_URL}" style="color:#9ca3af;text-decoration:underline;">email preferences</a>.
 </p>
 """
 
@@ -56,7 +59,7 @@ def _build_email_footer_text(is_pro: bool = False) -> str:
     else:
         insights_text = "See more insights and unlock AI-powered reports on your dashboard."
     
-    return f"\n\n{insights_text}\n\nManage email preferences: {BASE_URL}/auth/email-preferences\nView insights & streaks: {BASE_URL}/streak"
+    return f"\n\n{insights_text}\n\nView dashboard: {STREAK_URL}\n\nTo manage what we send you, visit your email preferences in your profile settings: {EMAIL_PREFS_URL}"
 
 
 def _send_via_mailersend(to_email: str, subject: str, html_body: str, text_fallback: str | None = None, is_pro: bool = False) -> None:
@@ -101,7 +104,7 @@ def _send_via_mailersend(to_email: str, subject: str, html_body: str, text_fallb
         "subject": subject,
         "text": text_fallback,
         "html": html_body,
-        "unsubscribe_url": f"{BASE_URL}/auth/email-preferences",
+        "unsubscribe_url": EMAIL_PREFS_URL,
     }
 
     try:
