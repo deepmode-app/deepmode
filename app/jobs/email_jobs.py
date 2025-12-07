@@ -28,14 +28,13 @@ def run_daily_streak_digest():
     conn = get_conn()
     cur = conn.cursor()
 
-    # 1) Load candidates - PRO USERS ONLY, VERIFIED ONLY
+    # 1) Load candidates - PRO USERS ONLY (verification gating removed)
     cur.execute(
         """
         SELECT id, email, current_streak, longest_streak, last_active_date
         FROM users
         WHERE daily_email_enabled = TRUE
           AND is_pro = TRUE
-          AND is_verified = TRUE
           AND current_streak IS NOT NULL
           AND current_streak > 0
         """
@@ -101,13 +100,12 @@ def run_weekly_summary_digest():
     conn = get_conn()
     cur = conn.cursor()
 
-    # 1) Load candidates - VERIFIED USERS ONLY
+    # 1) Load candidates (verification gating removed)
     cur.execute(
         """
         SELECT id, email, current_streak, longest_streak, is_pro
         FROM users
         WHERE weekly_email_enabled = TRUE
-          AND is_verified = TRUE
         """
     )
     users = cur.fetchall()

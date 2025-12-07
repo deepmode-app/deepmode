@@ -141,13 +141,15 @@ def register(payload: RegisterRequest):
     conn.commit()
     conn.close()
 
-    # Send welcome and verification emails (don't block signup on errors)
+    # Send welcome email only (verification email disabled for launch to reduce friction)
+    # Email verification is currently disabled for launch to reduce friction.
+    # Future: re-enable verification emails when scaling volume.
     try:
         if EMAIL_SENDING_ENABLED:
             send_welcome_email(email)
-            send_verification_email(email, verification_token)
+            # send_verification_email(email, verification_token)  # Disabled for launch
     except Exception as e:
-        print(f"[Deepmode] Error sending welcome/verification email to {email}: {e}")
+        print(f"[Deepmode] Error sending welcome email to {email}: {e}")
 
     return {
         "message":
@@ -285,7 +287,8 @@ def login(payload: LoginRequest):
         "| is_verified =", row["is_verified"]
     )
 
-    # Future hard gate: Currently commented out for soft-gating
+    # Email verification is currently disabled for launch to reduce friction.
+    # Future: re-enable gating when scaling volume.
     # Only block unverified users if the environment requires it.
     # if EMAIL_VERIFICATION_REQUIRED and not row["is_verified"]:
     #     raise HTTPException(
