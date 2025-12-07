@@ -479,6 +479,11 @@
             window.location.href = '/login';
             return;
           }
+          if (response.status === 403) {
+            // Pro-only feature - redirect to pricing
+            window.location.href = '/#pricing';
+            return;
+          }
           throw new Error('Failed to load insights');
         }
 

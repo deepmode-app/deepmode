@@ -592,12 +592,17 @@ def get_streak_insights(
 ):
     """
     Get comprehensive work tracker insights for the authenticated user.
-    Returns stats, AI insights (Pro only), and user context.
+    Pro users only - returns 403 for Free users.
+    Returns stats, AI insights, and user context.
     """
     from datetime import date, timedelta
     
     user_id = current_user["id"]
     is_pro = current_user.get("is_pro", False)
+    
+    # Pro-only feature
+    if not is_pro:
+        raise HTTPException(status_code=403, detail="Work tracker is available for Deepmode Pro users only. Upgrade to Pro to access insights, graphs and AI analysis.")
     
     # Get user profile data
     conn = get_conn()

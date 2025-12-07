@@ -15,6 +15,7 @@ EMAIL_SENDING_ENABLED = os.getenv("EMAIL_SENDING_ENABLED", "true").lower() == "t
 BASE_URL = os.getenv("APP_BASE_URL", "http://127.0.0.1:8000")
 DASHBOARD_URL = f"{BASE_URL}/dashboard"
 STREAK_URL = f"{BASE_URL}/streak"
+PRICING_URL = f"{BASE_URL}/#pricing"
 EMAIL_PREFS_URL = DASHBOARD_URL  # Email preferences accessed via dashboard
 
 
@@ -23,20 +24,24 @@ def _build_email_footer(is_pro: bool = False) -> str:
     Build consistent email footer with dashboard CTA and unsubscribe link.
     
     Args:
-        is_pro: Whether the user is a Pro user (affects CTA text)
+        is_pro: Whether the user is a Pro user (affects CTA text and link)
     
     Returns:
         HTML footer string
     """
     if is_pro:
         insights_text = "View your full insights, streaks, graphs and AI analysis anytime on your dashboard."
+        cta_link = STREAK_URL
+        cta_text = "View dashboard"
     else:
         insights_text = "See more insights and unlock AI-powered reports on your dashboard."
+        cta_link = PRICING_URL
+        cta_text = "Upgrade to Pro"
     
     return f"""
 <hr style="border:none;border-top:1px solid #27272f;margin:24px 0;" />
 <p style="font-size:12px;color:#9ca3af;line-height:1.6;margin:0 0 6px;">
-  {insights_text} <a href="{STREAK_URL}" style="color:#e50914;text-decoration:underline;">View dashboard</a>.
+  {insights_text} <a href="{cta_link}" style="color:#e50914;text-decoration:underline;">{cta_text}</a>.
 </p>
 <p style="font-size:11px;color:#6b7280;margin:0;">
   To manage what we send you, visit your <a href="{EMAIL_PREFS_URL}" style="color:#9ca3af;text-decoration:underline;">email preferences</a>.
@@ -49,17 +54,21 @@ def _build_email_footer_text(is_pro: bool = False) -> str:
     Build plain text footer for email fallbacks.
     
     Args:
-        is_pro: Whether the user is a Pro user (affects CTA text)
+        is_pro: Whether the user is a Pro user (affects CTA text and link)
     
     Returns:
         Plain text footer string
     """
     if is_pro:
         insights_text = "View your full insights, streaks, graphs and AI analysis anytime on your dashboard."
+        cta_link = STREAK_URL
+        cta_text = "View dashboard"
     else:
         insights_text = "See more insights and unlock AI-powered reports on your dashboard."
+        cta_link = PRICING_URL
+        cta_text = "Upgrade to Pro"
     
-    return f"\n\n{insights_text}\n\nView dashboard: {STREAK_URL}\n\nTo manage what we send you, visit your email preferences in your profile settings: {EMAIL_PREFS_URL}"
+    return f"\n\n{insights_text}\n\n{cta_text}: {cta_link}\n\nTo manage what we send you, visit your email preferences in your profile settings: {EMAIL_PREFS_URL}"
 
 
 def _send_via_mailersend(to_email: str, subject: str, html_body: str, text_fallback: str | None = None, is_pro: bool = False) -> None:
