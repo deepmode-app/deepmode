@@ -22,50 +22,150 @@ def generate_ai_daily_summary(user, daily_stats: dict) -> str:
 
     try:
         # Build system prompt
-        system_prompt = """You are Deepmode, a brutally honest but supportive focus coach.
-You analyze a user's deep work stats for yesterday and write a short daily recap.
-Tone: calm, confident, professional, no fluff, no emojis.
-You speak directly to "you", not "the user".
-Keep it concise: max 200-300 words total."""
+        system_prompt = """You are Deepmode Performance Coach, an elite behavioural productivity system for professionals and serious students. 
 
-        # Build user content with daily stats
-        user_content = f"""Yesterday's deep work stats:
+Your job is to generate concise, high-leverage, psychology-driven insights based strictly on the user's past week or past day of work.
 
-- Minutes: {daily_stats.get('minutes_yesterday', 0)}
-- Sessions: {daily_stats.get('sessions_yesterday', 0)}
-- Completed: {daily_stats.get('completed_yesterday', 0)}
-- Abandoned: {daily_stats.get('abandoned_yesterday', 0)}
-- Stopped early: {daily_stats.get('stopped_early_yesterday', 0)}
-- Current streak: {daily_stats.get('current_streak', 0)}
-- Longest streak: {daily_stats.get('longest_streak', 0)}
-"""
+CORE PRINCIPLES
 
-        # Add top categories
-        top_categories = daily_stats.get('top_categories', [])
-        if top_categories:
-            user_content += "\nTop categories (minutes):\n"
-            for cat, mins in top_categories[:3]:  # Top 3
-                user_content += f"- {cat}: {mins}\n"
+1. No fluff — only signal.
+2. Data → Insight → Action.
+3. Identity-based coaching — help users behave like the highest version of themselves.
+4. Small wins compound — highlight momentum.
+5. Direct, rational, supportive tone — no guilt, no shame.
+6. Every insight must be actionable.
+7. Minimal words, maximum impact.
 
-        # Add top projects
+OUTPUT FORMAT (STRICT)
+
+You must always produce these exact sections:
+
+1. Today's Snapshot
+   Short factual overview summarising totals, completion rate, and streak pattern.
+
+2. Pattern You Should Know
+   Identify the single highest-leverage behavioural pattern in the data.
+
+3. What's Working (Compound Wins)
+   List 2 specific strengths demonstrated this period.
+
+4. Opportunities (High-Leverage Fixes)
+   List 2 specific improvements that would create the biggest behavioural ROI.
+
+5. Project & Category Insights
+   Mention only meaningful insights. 
+   If no project/category data exists:
+   "Start naming sessions by project to unlock deeper weekly insights."
+
+6. Momentum Score (1–10)
+   Score based on streak, consistency, total minutes, stability.
+   Always explain the score in one sentence.
+
+7. Tomorrow's Plan
+   Give exactly 2 tiny tactical actions for the user to implement next.
+
+STYLE RULES
+
+- No emojis.
+- No filler.
+- Short, sharp sentences.
+- Sound like a high-performance advisor.
+- Never apologise.
+- Never fabricate data.
+- Never exceed the section structure.
+
+INSUFFICIENT DATA CASE
+
+If user has <1 meaningful session:
+- Give a small snapshot
+- 1 opportunity
+- Momentum score low but encouraging
+- 1 simple next step
+
+NEW USERS
+
+Focus on consistency, naming projects, building routine.
+
+Never mention verification. Never output JSON.
+
+OUTPUT HTML FORMAT
+
+Return your report as an HTML fragment using these tags:
+- <h2> for section headings (e.g., <h2>Today's Snapshot</h2>)
+- <p> for paragraphs
+- <ul> and <li> for lists
+- <strong> for emphasis (sparingly)
+
+Do NOT include <html>, <body>, or <head> tags. Return only the content that will be embedded in the email."""
+
+        # Extract stats
+        total_minutes = daily_stats.get('minutes_yesterday', 0)
+        completed = daily_stats.get('completed_yesterday', 0)
+        abandoned = daily_stats.get('abandoned_yesterday', 0)
+        stopped_early = daily_stats.get('stopped_early_yesterday', 0)
+        sessions_total = daily_stats.get('sessions_yesterday', 0)
+        current_streak = daily_stats.get('current_streak', 0)
+        longest_streak = daily_stats.get('longest_streak', 0)
+        
+        # Format project breakdown
         top_projects = daily_stats.get('top_projects', [])
+        project_breakdown = "None"
         if top_projects:
-            user_content += "\nTop projects (minutes):\n"
-            for proj, mins in top_projects[:3]:  # Top 3
-                user_content += f"- {proj}: {mins}\n"
+            project_lines = []
+            for proj, mins in top_projects[:5]:  # Top 5 for daily
+                project_lines.append(f"- {proj}: {mins} minutes")
+            project_breakdown = "\n".join(project_lines)
+        
+        # Format category breakdown
+        top_categories = daily_stats.get('top_categories', [])
+        category_breakdown = "None"
+        if top_categories:
+            category_lines = []
+            for cat, mins in top_categories[:5]:  # Top 5 for daily
+                category_lines.append(f"- {cat}: {mins} minutes")
+            category_breakdown = "\n".join(category_lines)
+        
+        # For daily, days_worked is 1 (yesterday) or 0
+        days_worked = 1 if total_minutes > 0 or sessions_total > 0 else 0
+        
+        # Best/worst day doesn't apply for daily, but we can note if it was a work day
+        best_day = "Yesterday" if total_minutes > 0 else "No sessions"
+        worst_day = "N/A (single day report)"
+        
+        # Time-of-day and context switching simplified for daily
+        tod_distribution = "Not available (session start times not tracked)"
+        context_switching = f"{sessions_total} sessions" if sessions_total > 0 else "0 sessions"
 
-        user_content += f"\nTimezone: {daily_stats.get('timezone', 'UTC')}\n"
+        # Build user content with template
+        user_content = f"""You are generating a Deepmode performance report.
 
-        user_content += """
-Please return a short HTML fragment using <p> and <ul>/<li> only, with:
+Report type: daily.
 
-1) 1-2 sentences summarizing the day.
-2) 2-3 bullet points:
-   - What they did well.
-   - One thing to tighten for today.
-   - One concrete suggestion ("Today, protect a single 25-minute block for X.").
+Here is the user's data for the period:
 
-Don't include <html> or <body> tags. Don't mention that you are an AI. Keep it brief and actionable."""
+Total minutes: {total_minutes}
+Sessions completed: {completed}
+Sessions abandoned: {abandoned}
+Streak: {current_streak} days
+Longest streak: {longest_streak} days
+Days worked: {days_worked} of 1
+Best day: {best_day}
+Weakest day: {worst_day}
+
+Projects summary:
+{project_breakdown}
+
+Categories summary:
+{category_breakdown}
+
+Time-of-day distribution:
+{tod_distribution}
+
+Context switching index:
+{context_switching}
+
+Generate the full report using the Deepmode system instructions. 
+Follow the required section format strictly."""
 
         # Make API request
         headers = {

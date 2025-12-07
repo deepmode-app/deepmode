@@ -1,7 +1,6 @@
 # app/ai/weekly_reports.py
 
 import requests
-import json
 
 from app.ai_config import (
     OPENAI_API_KEY,
@@ -23,66 +22,163 @@ def generate_ai_weekly_summary(user, stats: dict) -> str:
 
     try:
         # Build system prompt
-        system_prompt = """You are Deepmode, a brutally honest but supportive focus coach.
-You analyze a user's deep work stats for the last 7 days and write a concise, structured weekly report.
-Tone: calm, confident, professional, no fluff, no emojis.
-You speak directly to "you", not "the user"."""
+        system_prompt = """You are Deepmode Performance Coach, an elite behavioural productivity system for professionals and serious students. 
 
-        # Build user content with stats
-        user_content = f"""Here are this user's weekly focus stats:
+Your job is to generate concise, high-leverage, psychology-driven insights based strictly on the user's past week or past day of work.
 
-- Minutes this week: {stats.get('minutes_this_week', 0)}
-- Minutes last week: {stats.get('minutes_last_week', 0)}
-- Total sessions this week: {stats.get('total_sessions', 0)}
-- Completed sessions: {stats.get('completed_sessions', 0)}
-- Stopped early sessions: {stats.get('stopped_early_sessions', 0)}
-- Abandoned sessions: {stats.get('abandoned_sessions', 0)}
-- Current streak: {stats.get('current_streak', 0)}
-- Longest streak: {stats.get('longest_streak', 0)}
+CORE PRINCIPLES
 
-Category breakdown (minutes):
-"""
+1. No fluff — only signal.
+2. Data → Insight → Action.
+3. Identity-based coaching — help users behave like the highest version of themselves.
+4. Small wins compound — highlight momentum.
+5. Direct, rational, supportive tone — no guilt, no shame.
+6. Every insight must be actionable.
+7. Minimal words, maximum impact.
 
-        # Add category breakdown
-        by_category = stats.get('by_category', {})
-        if by_category:
-            for cat, mins in sorted(by_category.items(), key=lambda x: x[1], reverse=True):
-                user_content += f"- {cat}: {mins}\n"
-        else:
-            user_content += "- (no categories recorded)\n"
+OUTPUT FORMAT (STRICT)
 
-        user_content += "\nProject breakdown (minutes):\n"
-        by_project = stats.get('by_project', {})
-        if by_project:
-            for proj, mins in sorted(by_project.items(), key=lambda x: x[1], reverse=True):
-                user_content += f"- {proj}: {mins}\n"
-        else:
-            user_content += "- (no projects recorded)\n"
+You must always produce these exact sections:
 
-        user_content += "\nWeekday breakdown (minutes):\n"
+1. This Week's Snapshot (or Today's Snapshot)
+   Short factual overview summarising totals, completion rate, and streak pattern.
+
+2. Pattern You Should Know
+   Identify the single highest-leverage behavioural pattern in the data.
+
+3. What's Working (Compound Wins)
+   List 2 specific strengths demonstrated this period.
+
+4. Opportunities (High-Leverage Fixes)
+   List 2 specific improvements that would create the biggest behavioural ROI.
+
+5. Project & Category Insights
+   Mention only meaningful insights. 
+   If no project/category data exists:
+   "Start naming sessions by project to unlock deeper weekly insights."
+
+6. Momentum Score (1–10)
+   Score based on streak, consistency, total minutes, stability.
+   Always explain the score in one sentence.
+
+7. Next Week's Plan (or Tomorrow's Plan)
+   Give exactly 2 tiny tactical actions for the user to implement next.
+
+STYLE RULES
+
+- No emojis.
+- No filler.
+- Short, sharp sentences.
+- Sound like a high-performance advisor.
+- Never apologise.
+- Never fabricate data.
+- Never exceed the section structure.
+
+INSUFFICIENT DATA CASE
+
+If user has <1 meaningful session:
+- Give a small snapshot
+- 1 opportunity
+- Momentum score low but encouraging
+- 1 simple next step
+
+NEW USERS
+
+Focus on consistency, naming projects, building routine.
+
+Never mention verification. Never output JSON.
+
+OUTPUT HTML FORMAT
+
+Return your report as an HTML fragment using these tags:
+- <h2> for section headings (e.g., <h2>This Week's Snapshot</h2>)
+- <p> for paragraphs
+- <ul> and <li> for lists
+- <strong> for emphasis (sparingly)
+
+Do NOT include <html>, <body>, or <head> tags. Return only the content that will be embedded in the email."""
+
+        # Compute additional stats for the template
+        total_minutes = stats.get('minutes_this_week', 0)
+        completed = stats.get('completed_sessions', 0)
+        abandoned = stats.get('abandoned_sessions', 0)
+        stopped_early = stats.get('stopped_early_sessions', 0)
+        total_sessions = stats.get('total_sessions', 0)
+        current_streak = stats.get('current_streak', 0)
+        longest_streak = stats.get('longest_streak', 0)
+        
+        # Compute days worked from weekday breakdown
         by_weekday = stats.get('by_weekday', {})
-        weekday_names = ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun']
-        for day_name in weekday_names:
-            mins = by_weekday.get(day_name, 0)
-            user_content += f"- {day_name}: {mins}\n"
+        days_worked = sum(1 for day, mins in by_weekday.items() if mins > 0)
+        
+        # Find best and worst days
+        best_day = "N/A"
+        worst_day = "N/A"
+        if by_weekday:
+            sorted_days = sorted(by_weekday.items(), key=lambda x: x[1], reverse=True)
+            if sorted_days and sorted_days[0][1] > 0:
+                best_day = f"{sorted_days[0][0]}: {sorted_days[0][1]} min"
+            if len(sorted_days) > 1:
+                worst_day = f"{sorted_days[-1][0]}: {sorted_days[-1][1]} min"
+        
+        # Format project breakdown
+        by_project = stats.get('by_project', {})
+        project_breakdown = "None"
+        if by_project:
+            project_lines = []
+            for proj, mins in sorted(by_project.items(), key=lambda x: x[1], reverse=True):
+                session_count = 0  # We don't have session count per project in current stats
+                project_lines.append(f"- {proj}: {mins} minutes")
+            project_breakdown = "\n".join(project_lines)
+        
+        # Format category breakdown
+        by_category = stats.get('by_category', {})
+        category_breakdown = "None"
+        if by_category:
+            category_lines = []
+            for cat, mins in sorted(by_category.items(), key=lambda x: x[1], reverse=True):
+                category_lines.append(f"- {cat}: {mins} minutes")
+            category_breakdown = "\n".join(category_lines)
+        
+        # Format time-of-day distribution (simplified - we don't have hour-level data)
+        tod_distribution = "Not available (session start times not tracked)"
+        
+        # Compute context switching index (simplified: sessions per day)
+        context_switching = "N/A"
+        if days_worked > 0 and total_sessions > 0:
+            avg_sessions_per_day = total_sessions / days_worked
+            context_switching = f"{avg_sessions_per_day:.1f} sessions per active day"
 
-        user_content += "\nUser profile (if available):\n"
-        if user.get('first_name'):
-            user_content += f"- First name: {user.get('first_name')}\n"
-        if user.get('organization'):
-            user_content += f"- Organization: {user.get('organization')}\n"
-        user_content += f"- Timezone: {stats.get('timezone', 'UTC')}\n"
+        # Build user content with template
+        user_content = f"""You are generating a Deepmode performance report.
 
-        user_content += """
-Please return a short HTML fragment using <h2>, <p>, and <ul>/<li> only, with:
+Report type: weekly.
 
-1) A quick overview of the week.
-2) One paragraph on focus patterns (categories, days).
-3) One paragraph on discipline (completed vs abandoned, honest but not shaming).
-4) If there are named projects, a short note on where most of their time went.
-5) 3 concrete recommendations for next week in a bullet list.
+Here is the user's data for the period:
 
-Don't include <html> or <body> tags. Don't mention that you are an AI."""
+Total minutes: {total_minutes}
+Sessions completed: {completed}
+Sessions abandoned: {abandoned}
+Streak: {current_streak} days
+Longest streak: {longest_streak} days
+Days worked: {days_worked} of 7
+Best day: {best_day}
+Weakest day: {worst_day}
+
+Projects summary:
+{project_breakdown}
+
+Categories summary:
+{category_breakdown}
+
+Time-of-day distribution:
+{tod_distribution}
+
+Context switching index:
+{context_switching}
+
+Generate the full report using the Deepmode system instructions. 
+Follow the required section format strictly."""
 
         # Make API request
         headers = {
