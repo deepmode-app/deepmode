@@ -2097,7 +2097,7 @@
         <div style="margin-top: 12px;">
           <div class="toggle-row" id="dailyEmailToggleRow">
             <div class="toggle-text">
-              <div class="toggle-title">Daily streak reminder</div>
+              <div class="toggle-title">Daily deepwork report</div>
               <div class="toggle-sub" id="dailyEmailToggleSub">Short nudge to keep your streak alive.</div>
             </div>
             <label class="switch">
@@ -2108,8 +2108,8 @@
 
           <div class="toggle-row" id="weeklyEmailToggleRow">
             <div class="toggle-text">
-              <div class="toggle-title">Weekly focus report</div>
-              <div class="toggle-sub" id="weeklyEmailToggleSub">A summary of your wins and where to improve.</div>
+              <div class="toggle-title">Weekly focus summary</div>
+              <div class="toggle-sub" id="weeklyEmailToggleSub">A short summary email every week to keep your deep work on track.</div>
             </div>
             <label class="switch">
               <input type="checkbox" id="weeklyEmailToggle">
@@ -2334,23 +2334,34 @@
           emailPrefsStatus.textContent = "Couldn't load email preferences.";
           emailPrefsStatus.style.color = "#fecaca";
           // Apply defaults if we can't load preferences
-          if (dailyEmailToggle) dailyEmailToggle.checked = false; // Default OFF
-          if (weeklyEmailToggle) weeklyEmailToggle.checked = true; // Default ON
+          if (currentUser) {
+            updateEmailPreferencesUI(currentUser, {
+              daily_email_enabled: false,
+              weekly_email_enabled: true,
+            });
+          } else {
+            if (dailyEmailToggle) dailyEmailToggle.checked = false;
+            if (weeklyEmailToggle) weeklyEmailToggle.checked = true;
+          }
           return;
         }
 
         const data = await res.json();
         
-        // Apply defaults if preferences are null/undefined (new users)
-        if (dailyEmailToggle) {
-          dailyEmailToggle.checked = data.daily_email_enabled !== undefined 
-            ? !!data.daily_email_enabled 
-            : false; // Default OFF for new users
-        }
-        if (weeklyEmailToggle) {
-          weeklyEmailToggle.checked = data.weekly_email_enabled !== undefined 
-            ? !!data.weekly_email_enabled 
-            : true; // Default ON for new users
+        // Update UI with loaded preferences and current user status
+        if (currentUser) {
+          updateEmailPreferencesUI(currentUser, {
+            daily_email_enabled: data.daily_email_enabled !== undefined ? !!data.daily_email_enabled : false,
+            weekly_email_enabled: data.weekly_email_enabled !== undefined ? !!data.weekly_email_enabled : true,
+          });
+        } else {
+          // Fallback if currentUser not loaded yet
+          if (dailyEmailToggle) {
+            dailyEmailToggle.checked = data.daily_email_enabled !== undefined ? !!data.daily_email_enabled : false;
+          }
+          if (weeklyEmailToggle) {
+            weeklyEmailToggle.checked = data.weekly_email_enabled !== undefined ? !!data.weekly_email_enabled : true;
+          }
         }
         
         emailPrefsStatus.textContent = "";
@@ -2360,8 +2371,15 @@
         emailPrefsStatus.textContent = "Network error while loading preferences.";
         emailPrefsStatus.style.color = "#fecaca";
         // Apply defaults on error
-        if (dailyEmailToggle) dailyEmailToggle.checked = false;
-        if (weeklyEmailToggle) weeklyEmailToggle.checked = true;
+        if (currentUser) {
+          updateEmailPreferencesUI(currentUser, {
+            daily_email_enabled: false,
+            weekly_email_enabled: true,
+          });
+        } else {
+          if (dailyEmailToggle) dailyEmailToggle.checked = false;
+          if (weeklyEmailToggle) weeklyEmailToggle.checked = true;
+        }
       }
     }
 
@@ -2377,6 +2395,58 @@
         // Pro user
         if (upgradeBtn) upgradeBtn.style.display = "none";
         if (proPill) proPill.style.display = "inline-flex";
+      }
+    }
+
+    function updateEmailPreferencesUI(currentUser, prefs) {
+      if (!currentUser || !prefs) return;
+
+      const dailyEmailToggleRow = document.getElementById("dailyEmailToggleRow");
+      const dailyEmailToggleSub = document.getElementById("dailyEmailToggleSub");
+      const weeklyEmailToggleRow = document.getElementById("weeklyEmailToggleRow");
+      const weeklyEmailToggleSub = document.getElementById("weeklyEmailToggleSub");
+
+      // Always show both toggles
+      if (dailyEmailToggleRow) {
+        dailyEmailToggleRow.style.display = "flex";
+      }
+      if (weeklyEmailToggleRow) {
+        weeklyEmailToggleRow.style.display = "flex";
+      }
+
+      // Set checked states from preferences
+      if (dailyEmailToggle) {
+        dailyEmailToggle.checked = prefs.daily_email_enabled !== undefined ? !!prefs.daily_email_enabled : false;
+      }
+      if (weeklyEmailToggle) {
+        weeklyEmailToggle.checked = prefs.weekly_email_enabled !== undefined ? !!prefs.weekly_email_enabled : true;
+      }
+
+      // Configure daily toggle based on Pro status
+      if (currentUser.is_pro) {
+        // Pro user: enable toggle and show benefit-focused text
+        if (dailyEmailToggle) {
+          dailyEmailToggle.disabled = false;
+        }
+        if (dailyEmailToggleSub) {
+          dailyEmailToggleSub.textContent = "A short daily recap of your minutes, streak and completed sessions.";
+        }
+      } else {
+        // Free user: disable toggle and show Pro upsell text
+        if (dailyEmailToggle) {
+          dailyEmailToggle.disabled = true;
+        }
+        if (dailyEmailToggleSub) {
+          dailyEmailToggleSub.textContent = "Available with Deepmode Pro. A short daily email with your minutes, streak and wins.";
+        }
+      }
+
+      // Weekly toggle is always enabled for all users
+      if (weeklyEmailToggle) {
+        weeklyEmailToggle.disabled = false;
+      }
+      if (weeklyEmailToggleSub) {
+        weeklyEmailToggleSub.textContent = "A short summary email every week to keep your deep work on track.";
       }
     }
 
@@ -2432,18 +2502,6 @@
             manageBillingBtn.style.display = "block";
           }
           // Billing link in dropdown already handled by updateNavWithProfile
-          // Enable daily email toggle for Pro users (verification gating removed)
-          const dailyEmailToggleRow = document.getElementById("dailyEmailToggleRow");
-          const dailyEmailToggleSub = document.getElementById("dailyEmailToggleSub");
-          if (dailyEmailToggleRow) {
-            dailyEmailToggleRow.style.display = "flex";
-            if (dailyEmailToggle) {
-              dailyEmailToggle.disabled = false;
-            }
-            if (dailyEmailToggleSub) {
-              dailyEmailToggleSub.textContent = "Short nudge to keep your streak alive.";
-            }
-          }
           // Enable All-Time and Discipline cards for Pro users
           const allTimeCard = document.getElementById('allTimeCard');
           const disciplineCard = document.getElementById('disciplineCard');
@@ -2473,24 +2531,6 @@
           if (manageBillingBtn) {
             manageBillingBtn.style.display = "none";
           }
-          // Disable daily email toggle for Free users (Pro only feature)
-          const dailyEmailToggleRow = document.getElementById("dailyEmailToggleRow");
-          const dailyEmailToggleSub = document.getElementById("dailyEmailToggleSub");
-          if (dailyEmailToggleRow) {
-            dailyEmailToggleRow.style.display = "none";
-          }
-          
-          // Weekly email toggle available for all users (verification gating removed)
-          const weeklyEmailToggleRow = document.getElementById("weeklyEmailToggleRow");
-          const weeklyEmailToggleSub = document.getElementById("weeklyEmailToggleSub");
-          if (weeklyEmailToggleRow) {
-            if (weeklyEmailToggle) {
-              weeklyEmailToggle.disabled = false;
-            }
-            if (weeklyEmailToggleSub) {
-              weeklyEmailToggleSub.textContent = "A summary of your wins and where to improve.";
-            }
-          }
           
           // Keep All-Time and Discipline cards locked for Free users
           const allTimeCard = document.getElementById('allTimeCard');
@@ -2501,6 +2541,16 @@
           if (disciplineCard && !disciplineCard.classList.contains('card-locked')) {
             disciplineCard.classList.add('card-locked');
           }
+        }
+
+        // Update email preferences UI after user info is loaded
+        // This ensures the daily toggle is properly enabled/disabled based on is_pro
+        if (dailyEmailToggle && weeklyEmailToggle) {
+          const currentPrefs = {
+            daily_email_enabled: dailyEmailToggle.checked,
+            weekly_email_enabled: weeklyEmailToggle.checked,
+          };
+          updateEmailPreferencesUI(user, currentPrefs);
         }
       } catch (err) {
         console.error("Error loading /auth/me:", err);
