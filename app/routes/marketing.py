@@ -2,8 +2,10 @@
 
 from pathlib import Path
 
-from fastapi import APIRouter, HTTPException
+from fastapi import APIRouter, HTTPException, Depends
 from fastapi.responses import FileResponse
+
+from app.routes.auth import get_current_user
 
 # Router for all public / marketing pages
 router = APIRouter(tags=["marketing"])
@@ -66,9 +68,9 @@ def faq_page():
 
 
 @router.get("/streak", include_in_schema=False)
-def streak_page():
+def streak_page(current_user: dict = Depends(get_current_user)):
     """
-    Streak insights page.
+    Work tracker page - requires authentication.
     """
     return _static_file("streak.html")
 

@@ -11,6 +11,9 @@ from app.models.schemas import (
 )
 from app.database import get_conn
 from app.routes.auth import get_current_user  # uses the JWT to load user from DB
+from app.analytics.stats import compute_work_tracker_stats
+from app.ai.weekly_reports import generate_ai_weekly_summary
+from app.ai_config import AI_EMAIL_ENABLED, OPENAI_API_KEY
 
 router = APIRouter(tags=["sessions"])
 
@@ -580,3 +583,111 @@ def delete_session(
     conn.close()
 
     return
+
+
+@router.get("/api/streak-insights", include_in_schema=False)
+def get_streak_insights(
+    days: int = 7,
+    current_user: dict = Depends(get_current_user),
+):
+    """
+    Get comprehensive work tracker insights for the authenticated user.
+    Returns stats, AI insights (Pro only), and user context.
+    """
+    from datetime import date, timedelta
+    
+    user_id = current_user["id"]
+    is_pro = current_user.get("is_pro", False)
+    
+    # Get user profile data
+    conn = get_conn()
+    cur = conn.cursor()
+    cur.execute(
+        """
+        SELECT 
+            first_name,
+            current_streak,
+            longest_streak,
+            timezone
+        FROM users
+        WHERE id = %s
+        """,
+        (user_id,),
+    )
+    user_row = cur.fetchone()
+    conn.close()
+    
+    if not user_row:
+        raise HTTPException(status_code=404, detail="User not found")
+    
+    # Compute stats
+    stats = compute_work_tracker_stats(user_id, days=days)
+    
+    # Calculate window dates
+    today = date.today()
+    start_date = today - timedelta(days=days - 1)
+    
+    # Build user object for AI
+    user_profile = {
+        "id": user_id,
+        "email": current_user.get("email", ""),
+        "first_name": user_row.get("first_name"),
+        "is_pro": is_pro,
+    }
+    
+    # AI insights (Pro only)
+    ai_data = {
+        "enabled": False,
+        "html": "",
+        "source": None,
+        "error": None,
+    }
+    
+    if is_pro and AI_EMAIL_ENABLED and OPENAI_API_KEY:
+        try:
+            # Prepare stats dict in format expected by AI function
+            ai_stats = {
+                "minutes_this_week": stats["total_minutes"],
+                "minutes_last_week": 0,  # Not computed for custom window
+                "total_sessions": stats["sessions_completed"] + stats["sessions_abandoned"] + stats["sessions_stopped_early"],
+                "completed_sessions": stats["sessions_completed"],
+                "abandoned_sessions": stats["sessions_abandoned"],
+                "stopped_early_sessions": stats["sessions_stopped_early"],
+                "current_streak": user_row.get("current_streak") or 0,
+                "longest_streak": user_row.get("longest_streak") or 0,
+                "by_category": {cat["category"]: cat["minutes"] for cat in stats["categories"]},
+                "by_project": {proj["project_name"]: proj["minutes"] for proj in stats["projects"]},
+                "by_weekday": {day["weekday"]: day["minutes"] for day in stats["by_weekday"]},
+                "timezone": user_row.get("timezone") or "UTC",
+            }
+            
+            ai_html = generate_ai_weekly_summary(user_profile, ai_stats)
+            if ai_html:
+                ai_data["enabled"] = True
+                ai_data["html"] = ai_html
+                ai_data["source"] = "weekly"
+            else:
+                ai_data["source"] = "fallback"
+                ai_data["error"] = "AI generation returned empty"
+        except Exception as e:
+            ai_data["source"] = "fallback"
+            ai_data["error"] = str(e)
+    elif not is_pro:
+        ai_data["error"] = "pro_only"
+    
+    return {
+        "user": {
+            "first_name": user_row.get("first_name"),
+            "is_pro": is_pro,
+            "current_streak": user_row.get("current_streak") or 0,
+            "longest_streak": user_row.get("longest_streak") or 0,
+            "timezone": user_row.get("timezone") or "UTC",
+        },
+        "window": {
+            "days": days,
+            "start_date": start_date.isoformat(),
+            "end_date": today.isoformat(),
+        },
+        "stats": stats,
+        "ai": ai_data,
+    }

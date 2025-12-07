@@ -263,7 +263,7 @@ def send_daily_streak_email(
           Yesterday you logged <strong>{minutes_yesterday} minutes</strong> of deep work.
         </p>
         <p style="font-size:13px;line-height:1.6;margin:0 0 20px;color:#9ca3af;">
-          Longest streak so far: <strong>{longest_streak} days</strong>.
+          Longest streak so far: <strong>{longest_streak} day{'s' if longest_streak != 1 else ''}</strong>.
         </p>
         <p style="font-size:12px;color:#9ca3af;margin:0 0 20px;font-style:italic;line-height:1.6;">
           Your streak measures one thing: how often you sit down and finish a focused block — not how "motivated" you felt.
@@ -316,7 +316,7 @@ def send_weekly_summary_email(
         </p>
 
         <p style="font-size:13px;line-height:1.6;margin:0 0 20px;color:#9ca3af;">
-          Current streak: <strong>{current_streak} days</strong> • Longest streak: <strong>{longest_streak} days</strong>
+          Current streak: <strong>{current_streak} day{'s' if current_streak != 1 else ''}</strong> • Longest streak: <strong>{longest_streak} day{'s' if longest_streak != 1 else ''}</strong>
         </p>
 
         <p style="font-size:12px;color:#9ca3af;margin:0 0 20px;font-style:italic;line-height:1.6;">
@@ -491,7 +491,7 @@ def send_ai_weekly_summary_email(
             <strong>{completed_sessions} completed</strong> out of {total_sessions} started.
           </p>
           <p style="font-size:13px;line-height:1.6;margin:0;color:#9ca3af;">
-            Current streak: <strong>{current_streak} days</strong> • Longest: <strong>{longest_streak} days</strong>
+            Current streak: <strong>{current_streak} day{'s' if current_streak != 1 else ''}</strong> • Longest: <strong>{longest_streak} day{'s' if longest_streak != 1 else ''}</strong>
           </p>
         </div>
 
