@@ -44,7 +44,7 @@ def _build_email_footer(is_pro: bool = False) -> str:
   {insights_text} <a href="{cta_link}" style="color:#e50914;text-decoration:underline;">{cta_text}</a>.
 </p>
 <p style="font-size:11px;color:#6b7280;margin:0;">
-  To manage what we send you, visit your <a href="{EMAIL_PREFS_URL}" style="color:#9ca3af;text-decoration:underline;">email preferences</a>.
+  To manage what we send you, visit your <a href="{EMAIL_PREFS_URL}" style="color:#9ca3af;text-decoration:underline;">email preferences in your profile settings.</a>.
 </p>
 """
 
