@@ -94,17 +94,18 @@ def auto_close_expired_sessions_for_user(user_id: int) -> None:
     Auto-close any 'running' sessions that are clearly stale.
     Currently: if a session has been 'running' for more than 6 hours,
     we mark it as 'auto_closed' and compute duration.
+    
+    ENFORCEMENT: Sessions are capped at planned_duration_minutes to ensure
+    they never exceed planned duration, even if client-side mechanisms fail.
     """
     conn = get_conn()
     cur = conn.cursor()
 
+    # First, fetch sessions that need to be closed
     cur.execute(
         """
-        UPDATE sessions
-        SET
-            end_time = NOW(),
-            duration_seconds = EXTRACT(EPOCH FROM (NOW() - start_time))::INT,
-            status = 'auto_closed'
+        SELECT id, planned_duration_minutes, start_time
+        FROM sessions
         WHERE user_id = %s
           AND status = 'running'
           AND end_time IS NULL
@@ -112,6 +113,36 @@ def auto_close_expired_sessions_for_user(user_id: int) -> None:
         """,
         (user_id,),
     )
+    rows = cur.fetchall()
+
+    # Close each session, capping duration at planned
+    for row in rows:
+        planned_minutes = row["planned_duration_minutes"] or 0
+        planned_seconds = planned_minutes * 60
+        
+        # Calculate elapsed time
+        elapsed_seconds = int((datetime.now(timezone.utc) - row["start_time"]).total_seconds())
+        
+        # ENFORCEMENT: Cap at planned duration
+        if elapsed_seconds > planned_seconds:
+            duration_seconds = planned_seconds
+            actual_duration_minutes = planned_minutes
+        else:
+            duration_seconds = elapsed_seconds
+            actual_duration_minutes = max(1, int(elapsed_seconds // 60))
+        
+        cur.execute(
+            """
+            UPDATE sessions
+            SET
+                end_time = NOW(),
+                duration_seconds = %s,
+                actual_duration_minutes = %s,
+                status = 'auto_closed'
+            WHERE id = %s
+            """,
+            (duration_seconds, actual_duration_minutes, row["id"]),
+        )
 
     conn.commit()
     conn.close()

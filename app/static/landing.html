@@ -264,6 +264,17 @@
       margin: 6px 0;
     }
 
+    .nav-pro-pill {
+      font-size: 11px;
+      padding: 3px 8px;
+      border-radius: 999px;
+      background: rgba(229, 9, 20, 0.15);
+      color: #fca5a5;
+      border: 1px solid rgba(229, 9, 20, 0.6);
+      display: inline-flex;
+      align-items: center;
+    }
+
     /* HERO */
 
     .hero {
@@ -296,10 +307,22 @@
       flex-wrap: wrap;
       gap: 10px;
       margin-bottom: 8px;
+      margin-top: 16px;
     }
 
-    .hero-cta-row.guest-only {
-      margin-top: 24px;
+    @keyframes fadeUp {
+      from {
+        opacity: 0;
+        transform: translateY(8px);
+      }
+      to {
+        opacity: 1;
+        transform: translateY(0);
+      }
+    }
+
+    .hero, .pricing-card {
+      animation: fadeUp 0.45s ease-out;
     }
 
     .btn {
@@ -365,6 +388,10 @@
       font-size: 15px;
       font-weight: 600;
       margin-bottom: 16px;
+    }
+
+    #how .section-title {
+      margin-bottom: 28px;
     }
 
     .steps-strip {
@@ -607,6 +634,7 @@
           Start free
         </button>
         <!-- Logged-in user avatar dropdown -->
+        <span id="navProBadge" class="nav-pro-pill auth-only" style="display: none;">AI Pro</span>
         <div class="nav-account auth-only" id="navAccount" style="display: none;" data-open="false">
           <button class="nav-account-trigger" id="accountTrigger" aria-expanded="false" aria-haspopup="true">
             <div class="account-avatar" id="navAvatar">
@@ -642,10 +670,7 @@
     <section class="hero">
       <h1 class="hero-title">Switch on Deepmode.</h1>
       <p class="hero-sub">
-        The world's fastest way to enter deep work — the only platform that turns your real work sessions into actionable AI insights so you can improve every week.
-      </p>
-      <p class="hero-footnote" style="margin-top: 8px; font-size: 13px; color: var(--dw-muted);">
-        A gym for your focus. Take back your day, one deep session at a time.
+        The world's fastest way to enter deep work — the only platform that turns your real work sessions into actionable AI insights so you get more done with the rarest thing you have: your time.
       </p>
 
       <div class="hero-cta-row" id="heroCtaRow">
@@ -696,22 +721,19 @@
           onclick="window.location.href='/streak'"
           style="display: none;"
         >
-          View work tracker
+          Open AI focus insights
         </button>
       </div>
 
-      <p class="hero-footnote" style="margin-top: 12px;">
+      <p class="hero-footnote guest-only" style="margin-top: 12px;">
         No signup needed — you can try Guest Mode from the extension first.
-      </p>
-      <p class="hero-footnote guest-only" style="margin-top: 8px; display: none;">
-        Built for professionals and students who want one thing: distraction-free focus, one deep session at a time.
       </p>
     </section>
 
     <!-- 3-STEP ONBOARDING -->
     <section id="how" class="section">
       <h2 class="section-title">How Deepmode works</h2>
-      <!-- TODO: later we will insert 3 screenshots here showing: extension timer, dashboard stats, AI work tracker -->
+      <!-- TODO: Add three product screenshots here (extension, dashboard, AI report) before launch -->
       <div class="steps-strip">
         <div class="step-item">
           <span class="step-number">1</span> Install the Chrome extension<br/>
@@ -762,7 +784,7 @@
             <option value="yearly">Yearly (£79.99/year)</option>
             <option value="monthly">Monthly (£9.99/month)</option>
           </select>
-          <button id="pricingCta" class="btn btn-primary" style="flex: 0 1 auto; min-width: 200px;">
+          <button id="pricingCta" class="btn btn-primary" style="flex: 0 1 auto; min-width: 200px; text-align: center; line-height: 1.5;">
             Start free
           </button>
         </div>
@@ -792,7 +814,7 @@
             </tr>
             <tr>
               <td>Progress tracking</td>
-              <td class="center">Today's overview</td>
+              <td class="center">Today + current streak</td>
               <td class="center pro">Full history + discipline score</td>
             </tr>
             <tr>
@@ -1025,7 +1047,7 @@
         document.querySelectorAll('.guest-only').forEach(el => {
           if (el.tagName === 'BUTTON') {
             el.style.display = 'inline-block';
-          } else if (el.tagName === 'A') {
+          } else if (el.tagName === 'A' || el.tagName === 'P') {
             el.style.display = '';
           } else {
             el.style.display = '';
@@ -1034,6 +1056,11 @@
         document.querySelectorAll('.auth-only').forEach(el => {
           el.style.display = 'none';
         });
+        // Add gap for guest mode
+        const heroCtaRow = document.getElementById('heroCtaRow');
+        if (heroCtaRow) {
+          heroCtaRow.style.marginTop = '16px';
+        }
       }
 
       function updateUIForAuth(user) {
@@ -1046,7 +1073,7 @@
         document.querySelectorAll('.auth-only').forEach(el => {
           if (el.tagName === 'BUTTON') {
             el.style.display = 'inline-block';
-          } else if (el.tagName === 'A' || el.tagName === 'SPAN' || el.tagName === 'DIV') {
+          } else if (el.tagName === 'A' || el.tagName === 'SPAN' || el.tagName === 'DIV' || el.tagName === 'P') {
             el.style.display = '';
           } else {
             el.style.display = '';
@@ -1067,9 +1094,15 @@
         // Update nav with profile
         updateNavWithProfile(user);
 
+        // Update Pro badge in navbar
+        const navProBadge = document.getElementById('navProBadge');
+        if (navProBadge) {
+          navProBadge.style.display = user.is_pro ? 'inline-flex' : 'none';
+        }
+
         // Update hero CTAs based on Pro status
         if (user.is_pro) {
-          // Pro users: Dashboard + View work tracker
+          // Pro users: Dashboard + Open AI focus insights
           const heroDashboardBtnPro = document.getElementById('heroDashboardBtnPro');
           const heroWorkTrackerBtn = document.getElementById('heroWorkTrackerBtn');
           if (heroDashboardBtnPro) heroDashboardBtnPro.style.display = 'inline-block';
@@ -1122,14 +1155,14 @@
                 if (data.url) {
                   window.location.href = data.url;
                 } else {
-                  window.location.href = '/dashboard';
+                  window.location.href = '/dashboard#pricing';
                 }
               } catch (e) {
                 console.error('Error starting upgrade checkout from pricing:', e);
                 // Re-enable button and selector on error
                 if (pricingCta) pricingCta.disabled = false;
                 if (pricingPlanSelector) pricingPlanSelector.disabled = false;
-                window.location.href = '/dashboard';
+                window.location.href = '/dashboard#pricing';
               }
             };
           } else {
