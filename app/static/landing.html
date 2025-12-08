@@ -96,10 +96,10 @@
     }
 
     .nav-cta {
-      padding: 6px 10px;
+      padding: 4px 10px;
       border-radius: 999px;
       background: transparent;
-      border: 1px solid rgba(156, 163, 175, 0.5);
+      border: 1px solid rgba(156, 163, 175, 0.3);
       font-size: 12px;
       cursor: pointer;
       color: var(--dw-muted);
@@ -283,7 +283,7 @@
       line-height: 1.6;
       color: var(--dw-muted);
       max-width: 460px;
-      margin: 0 auto 20px;
+      margin: 0 auto 28px;
     }
 
     .hero-sub span {
@@ -608,19 +608,20 @@
     <section class="hero">
       <h1 class="hero-title">Switch on Deepmode.</h1>
       <p class="hero-sub">
-        The world's fastest way to enter deep work — the only platform that transforms real work sessions into actionable AI insights for continuous improvement.
+        The world's fastest way to enter deep work — the only platform that turns your real work sessions into actionable AI insights so you can improve every week.
       </p>
       <p class="hero-footnote" style="margin-top: 8px; font-size: 13px; color: var(--dw-muted);">
-        A gym for your focus, one deep session at a time.
+        A gym for your focus. Take back your day, one deep session at a time.
       </p>
 
       <div class="hero-cta-row">
+        <!-- Guest users -->
         <button
           id="heroPrimaryBtn"
           class="btn btn-primary guest-only"
-          onclick="startGuestSession()"
+          onclick="window.location.href='/install'"
         >
-          Start a deep session
+          Install Chrome Extension
         </button>
         <button
           id="heroSecondaryBtn"
@@ -629,40 +630,54 @@
         >
           Start free
         </button>
+        <!-- Logged-in Free users -->
         <button
           id="heroDashboardBtn"
-          class="btn btn-primary auth-only"
+          class="btn btn-primary auth-only free-only"
           onclick="window.location.href='/dashboard'"
           style="display: none;"
         >
           Go to dashboard
         </button>
         <button
-          id="heroUpgradeBtn"
+          id="heroInstallBtnFree"
           class="btn btn-secondary auth-only free-only"
-          onclick="window.location.href='/#pricing'"
-          style="display: none;"
-        >
-          Upgrade to Pro
-        </button>
-        <button
-          id="heroInstallBtn"
-          class="btn btn-secondary auth-only pro-only"
           onclick="window.location.href='/install'"
           style="display: none;"
         >
           Install Chrome Extension
         </button>
+        <!-- Logged-in Pro users -->
+        <button
+          id="heroDashboardBtnPro"
+          class="btn btn-primary auth-only pro-only"
+          onclick="window.location.href='/dashboard'"
+          style="display: none;"
+        >
+          Go to dashboard
+        </button>
+        <button
+          id="heroWorkTrackerBtn"
+          class="btn btn-secondary auth-only pro-only"
+          onclick="window.location.href='/streak'"
+          style="display: none;"
+        >
+          View work tracker
+        </button>
       </div>
 
       <p class="hero-footnote" style="margin-top: 12px;">
-        No signup needed — try in Guest Mode first. Upgrade later if it sticks.
+        No signup needed — you can try Guest Mode from the extension first.
+      </p>
+      <p class="hero-footnote" style="margin-top: 8px;">
+        Built for professionals and students who want one thing: distraction-free focus, one deep session at a time.
       </p>
     </section>
 
     <!-- 3-STEP ONBOARDING -->
     <section id="how" class="section">
       <h2 class="section-title">How Deepmode works</h2>
+      <!-- TODO: later we will insert 3 screenshots here showing: extension timer, dashboard stats, AI work tracker -->
       <div class="steps-strip">
         <div class="step-item">
           <span class="step-number">1</span> Install the Chrome extension<br/>
@@ -702,7 +717,7 @@
         <div class="pricing-title-row">
           <h2 class="section-title" style="margin-bottom: 0;">Deepmode AI Pro</h2>
           <p style="font-size: 14px; color: var(--dw-muted); margin: 8px 0 16px;">
-            The only practical deep work system with AI-powered analysis of your real behavior.
+            The only practical deep work system with AI-powered analysis of your real behaviour.
           </p>
           <div class="pricing-price">£9.99 / month</div>
           <div class="pricing-price-sub">or £79.99 / year</div>
@@ -718,11 +733,8 @@
         </ul>
 
         <div class="pricing-cta-row">
-          <button class="btn btn-primary" onclick="window.location.href='/signup'" style="flex: 1;">
+          <button id="pricingCta" class="btn btn-primary" style="flex: 1;">
             Start free
-          </button>
-          <button class="btn btn-secondary" onclick="window.location.href='/install'" style="flex: 1;">
-            Install Chrome Extension
           </button>
         </div>
         <div style="font-size: 11px; color: #9ca3af; margin-top: 16px; text-align: center;">
@@ -746,7 +758,7 @@
             </tr>
             <tr>
               <td>Session lengths</td>
-              <td class="center">5 min, 25 min</td>
+              <td class="center">5, 25, 50, 90 min</td>
               <td class="center pro">5, 25, 50, 90 min</td>
             </tr>
             <tr>
@@ -756,22 +768,22 @@
             </tr>
             <tr>
               <td>Reports & insights</td>
-              <td class="center">Weekly summary</td>
-              <td class="center pro">AI daily & weekly reports</td>
+              <td class="center">Weekly summary (basic stats)</td>
+              <td class="center pro">AI daily & weekly reports with next-step coaching</td>
             </tr>
             <tr>
               <td>Streaks</td>
-              <td class="center">Today's streak only</td>
-              <td class="center pro">Full streak history & trends</td>
+              <td class="center">Current streak only</td>
+              <td class="center pro">Full streak history, trends & AI review</td>
             </tr>
             <tr>
               <td>Distraction blocking</td>
               <td class="center">Yes</td>
-              <td class="center pro">Yes + advanced controls</td>
+              <td class="center pro">Yes (project-aware reporting)</td>
             </tr>
             <tr>
               <td>Projects</td>
-              <td class="center">Basic naming</td>
+              <td class="center">Assign sessions to projects</td>
               <td class="center pro">Project & category analytics</td>
             </tr>
           </tbody>
@@ -812,13 +824,10 @@
   </div>
 
   <script>
-    // Guest session starter (reuse existing logic if available)
-    function startGuestSession() {
-      // Check if extension is installed, if not redirect to install
-      // Otherwise, could open extension popup or redirect to dashboard with guest mode
-      // For now, redirect to install page
-      window.location.href = '/install';
-    }
+    // Pricing CTA default behavior (guest)
+    document.getElementById('pricingCta')?.addEventListener('click', () => {
+      window.location.href = '/signup';
+    });
 
     // Billing portal opener (for logged-in users)
     function openBillingPortal() {
@@ -1035,24 +1044,52 @@
 
         // Update hero CTAs based on Pro status
         if (user.is_pro) {
-          const heroDashboardBtn = document.getElementById('heroDashboardBtn');
-          const heroInstallBtn = document.getElementById('heroInstallBtn');
-          const heroUpgradeBtn = document.getElementById('heroUpgradeBtn');
-          if (heroDashboardBtn) heroDashboardBtn.style.display = 'inline-block';
-          if (heroInstallBtn) heroInstallBtn.style.display = 'inline-block';
-          if (heroUpgradeBtn) heroUpgradeBtn.style.display = 'none';
+          // Pro users: Dashboard + View work tracker
+          const heroDashboardBtnPro = document.getElementById('heroDashboardBtnPro');
+          const heroWorkTrackerBtn = document.getElementById('heroWorkTrackerBtn');
+          if (heroDashboardBtnPro) heroDashboardBtnPro.style.display = 'inline-block';
+          if (heroWorkTrackerBtn) heroWorkTrackerBtn.style.display = 'inline-block';
           
+          // Hide pricing section for Pro users
           const pricingSection = document.getElementById('pricing');
           if (pricingSection) {
             pricingSection.style.display = 'none';
           }
         } else {
+          // Free users: Dashboard + Install Extension
           const heroDashboardBtn = document.getElementById('heroDashboardBtn');
-          const heroUpgradeBtn = document.getElementById('heroUpgradeBtn');
-          const heroInstallBtn = document.getElementById('heroInstallBtn');
+          const heroInstallBtnFree = document.getElementById('heroInstallBtnFree');
           if (heroDashboardBtn) heroDashboardBtn.style.display = 'inline-block';
-          if (heroUpgradeBtn) heroUpgradeBtn.style.display = 'inline-block';
-          if (heroInstallBtn) heroInstallBtn.style.display = 'none';
+          if (heroInstallBtnFree) heroInstallBtnFree.style.display = 'inline-block';
+          
+          // Update pricing CTA for Free users
+          const pricingCta = document.getElementById('pricingCta');
+          const pricingSection = document.getElementById('pricing');
+          if (pricingCta && pricingSection && pricingSection.style.display !== 'none') {
+            pricingCta.textContent = 'Upgrade to Deepmode AI Pro';
+            pricingCta.onclick = async () => {
+              try {
+                const token = localStorage.getItem('access_token') || localStorage.getItem('deepmode_token');
+                const res = await fetch('/billing/create-checkout-session', {
+                  method: 'POST',
+                  headers: {
+                    'Content-Type': 'application/json',
+                    ...(token ? { 'Authorization': 'Bearer ' + token } : {})
+                  },
+                  body: JSON.stringify({ plan: 'yearly' })
+                });
+                const data = await res.json();
+                if (data.url) {
+                  window.location.href = data.url;
+                } else {
+                  window.location.href = '/dashboard';
+                }
+              } catch (e) {
+                console.error('Error starting upgrade checkout from pricing:', e);
+                window.location.href = '/dashboard';
+              }
+            };
+          }
         }
       }
 
