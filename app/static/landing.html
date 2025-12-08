@@ -98,15 +98,16 @@
     .nav-cta {
       padding: 6px 10px;
       border-radius: 999px;
-      background: #18181f;
-      border: 1px solid var(--dw-border);
+      background: transparent;
+      border: 1px solid rgba(156, 163, 175, 0.5);
       font-size: 12px;
       cursor: pointer;
+      color: var(--dw-muted);
     }
 
     .nav-cta:hover {
       border-color: var(--dw-accent);
-      color: #fca5a5;
+      color: #e5e7eb;
     }
 
     .auth-hidden {
@@ -607,10 +608,10 @@
     <section class="hero">
       <h1 class="hero-title">Switch on Deepmode.</h1>
       <p class="hero-sub">
-         The world's fastest way to enter deep work — the only platform that transforms real work sessions into actionable AI insights for continuous improvement.
+        The world's fastest way to enter deep work — the only platform that transforms real work sessions into actionable AI insights for continuous improvement.
       </p>
-      <p class="hero-sub" style="margin-top: 12px; font-size: 13px;">
-        A gym for your focus. Take back your day, one deep session at a time.
+      <p class="hero-footnote" style="margin-top: 8px; font-size: 13px; color: var(--dw-muted);">
+        A gym for your focus, one deep session at a time.
       </p>
 
       <div class="hero-cta-row">
@@ -624,9 +625,9 @@
         <button
           id="heroSecondaryBtn"
           class="btn btn-secondary guest-only"
-          onclick="window.location.href='/install'"
+          onclick="window.location.href='/signup'"
         >
-          Install Chrome Extension
+          Start free
         </button>
         <button
           id="heroDashboardBtn"
@@ -657,9 +658,6 @@
       <p class="hero-footnote" style="margin-top: 12px;">
         No signup needed — try in Guest Mode first. Upgrade later if it sticks.
       </p>
-      <p class="hero-footnote" style="margin-top: 8px;">
-        Built for professionals and students who want one thing: distraction-free focus, one deep session at a time.
-      </p>
     </section>
 
     <!-- 3-STEP ONBOARDING -->
@@ -685,13 +683,13 @@
     <section class="section">
       <h2 class="section-title">Why Deepmode?</h2>
       <p class="why-text">
-        Deepmode is for people who do real work — engineers, founders, analysts, writers, students — and need long, uninterrupted focus to move the needle.
+        Deepmode is for people who do real work — engineers, founders, analysts, writers, and students who need long, uninterrupted focus to move the needle.
       </p>
       <ul class="why-bullets">
-        <li>Distraction blocking you actually control</li>
-        <li>Accurate session and streak tracking</li>
-        <li>Project-level view of where your time goes</li>
-        <li>AI-written daily and weekly focus reports (Pro)</li>
+        <li>Distraction blocking you actually control.</li>
+        <li>Accurate tracking of sessions, streaks, and time.</li>
+        <li>Project-level visibility into where your hours go.</li>
+        <li>AI-written daily and weekly focus reports (Pro).</li>
       </ul>
       <p class="why-text" style="margin-top: 20px; font-size: 13px; color: var(--dw-muted);">
         Deepmode exists to help high-performers protect their time and let focused work compound.
