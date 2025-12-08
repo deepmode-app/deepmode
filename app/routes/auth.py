@@ -345,8 +345,8 @@ def forgot_password(payload: ForgotPasswordRequest):
 
     return {
         "message":
-            "If an account exists for that email, we’ve sent a reset link. "
-            "Check your inbox (and Spam/Junk)."
+            "If an account exists for that email, we've sent a reset link. "
+            "Check your email — if you don't see it, check your promotions/spam folder."
     }
 
 
