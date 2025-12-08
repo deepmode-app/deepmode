@@ -357,6 +357,13 @@ def end_session(
     # Calculate actual minutes from seconds (integer division truncates)
     actual_minutes = max(1, int(actual_seconds // 60))
     
+    # ENFORCEMENT: Sessions should NEVER exceed planned duration.
+    # If client-side mechanisms (Chrome alarms, extension timers) fail
+    # (e.g., Chrome closed/idle, extension disabled), cap at planned duration.
+    if actual_minutes > planned:
+        actual_minutes = planned
+        actual_seconds = planned_seconds  # Also cap seconds for consistency
+    
     # CRITICAL FIX: When a session auto-ends (alarm fires at planned time),
     # timing precision or slight delays can cause actual_seconds to be slightly
     # less than planned_seconds. When converted to minutes, this truncates down
@@ -367,7 +374,7 @@ def end_session(
     # round up to at least the planned duration to ensure "completed" status.
     # This buffer (30 seconds) is small enough that manual early ends won't be affected,
     # but large enough to handle timing precision issues.
-    if actual_seconds >= planned_seconds - 30:
+    elif actual_seconds >= planned_seconds - 30:
         # Very close to planned time (within 30 seconds) - treat as auto-ended
         # Ensure we record at least the planned duration
         actual_minutes = max(actual_minutes, planned)
