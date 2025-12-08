@@ -53,16 +53,34 @@ def _get_email_from_checkout_session(session_obj) -> str | None:
     )
 
 
-def _subscription_status_to_pro_flag(status: str) -> bool:
+def _subscription_status_to_pro_flag(status: str, cancel_at_period_end: bool = False) -> bool:
     """
     Decide whether a given Stripe subscription status means the user
     should be treated as Pro.
+    
+    Args:
+        status: Stripe subscription status (e.g., "active", "canceled", "past_due")
+        cancel_at_period_end: Whether subscription is set to cancel at period end
+    
+    Returns:
+        True if user should have Pro access, False otherwise
     """
     if not status:
         return False
     s = status.lower()
-    # Keep it simple: active or trialing = Pro. Everything else = not Pro.
-    return s in ("active", "trialing")
+    
+    # If subscription is canceled, past_due, unpaid, or incomplete - not Pro
+    if s in ("canceled", "past_due", "unpaid", "incomplete", "incomplete_expired"):
+        return False
+    
+    # If subscription is active or trialing, check if it's set to cancel
+    # Note: Even if cancel_at_period_end is True, user still has access until period ends
+    # So we keep them as Pro until the period actually ends (status becomes "canceled")
+    if s in ("active", "trialing"):
+        return True
+    
+    # Default: not Pro for any other status
+    return False
 
 
 def _find_user_by_email(conn, email: str):
@@ -406,9 +424,15 @@ async def stripe_webhook(request: Request):
             subscription_id = sub.get("id")
             customer_id = sub.get("customer")
             status = sub.get("status")
+            cancel_at_period_end = sub.get("cancel_at_period_end", False)
             price_id = _extract_price_id_from_subscription(sub)
 
-            make_pro = _subscription_status_to_pro_flag(status)
+            # Check if subscription is actually canceled (period ended) or set to cancel
+            make_pro = _subscription_status_to_pro_flag(status, cancel_at_period_end)
+            
+            # Log cancellation status for debugging
+            if cancel_at_period_end and status == "active":
+                print(f"[Stripe] subscription.updated: Subscription {subscription_id} set to cancel at period end (still active until then)")
 
             user_row = _find_user_by_stripe_ids(conn, customer_id, subscription_id)
 
@@ -561,7 +585,8 @@ async def stripe_webhook(request: Request):
                 status = sub.get("status")
                 price_id = _extract_price_id_from_subscription(sub)
                 
-                make_pro = _subscription_status_to_pro_flag(status)
+                # For invoice.payment_succeeded, subscription should be active
+                make_pro = _subscription_status_to_pro_flag(status, cancel_at_period_end=False)
                 
                 user_row = _find_user_by_stripe_ids(conn, customer_id, subscription_id)
                 

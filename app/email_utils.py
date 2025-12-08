@@ -239,11 +239,11 @@ def send_welcome_email(to_email: str) -> None:
         <ul style="margin:0 0 20px 18px;font-size:14px;line-height:1.8;color:#9ca3af;padding-left:0;list-style-position:outside;">
           <li style="margin-bottom:8px;">Install the Chrome extension and pin it in your toolbar.</li>
           <li style="margin-bottom:8px;">Start a 25-minute session and stay in Deepmode until the timer ends.</li>
-          <li style="margin-bottom:8px;">Add a short project name (e.g. "Thesis", "Client A", "Interview prep") so future reports actually mean something.</li>
+          <li style="margin-bottom:8px;">Assign a project name (e.g. 'Thesis', 'Client A', 'Interview prep') to the completed sessions to track the Projects you are currenlty working on.</li>
         </ul>
 
         <p style="font-size:14px;line-height:1.6;margin:0 0 20px;color:#9ca3af;">
-          Deepmode is built for people who can't afford to waste their attention — professionals and serious students. One finished block beats a whole day of fake multitasking.
+          Deepmode is built for people who can't afford to waste their attention — professionals and serious students. One focused session of work beats a whole day of multitasking
         </p>
 
         <p style="margin:0 0 20px;">
