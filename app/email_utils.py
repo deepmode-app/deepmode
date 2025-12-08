@@ -2,6 +2,7 @@
 
 import os
 import requests
+from datetime import datetime
 
 # MailerSend configuration from environment
 MAILERSEND_API_KEY = os.getenv("MAILERSEND_API_KEY", "")
@@ -715,3 +716,74 @@ def send_pro_cancellation_email(to_email: str) -> None:
 
     # Cancellation email - user was Pro, but now they're not, so use is_pro=False
     send_email_html(to_email, subject, html_body, text_body, is_pro=False)
+
+
+def send_pro_cancellation_scheduled_email(to_email: str, period_end: datetime) -> None:
+    """
+    Email sent when user cancels subscription but still has access until period end.
+    
+    Args:
+        to_email: User's email address
+        period_end: datetime object (timezone-aware) representing when subscription ends
+    """
+    if not to_email:
+        return
+    
+    # Format date as "8 December 2026" (friendly format)
+    # Fallback for Windows (which doesn't support %-d)
+    try:
+        formatted_date = period_end.strftime("%-d %B %Y")
+    except ValueError:
+        formatted_date = period_end.strftime("%d %B %Y").lstrip("0")
+    
+    subject = f"Deepmode AI Pro will end on {formatted_date}"
+    
+    html_body = f"""
+    <div style="font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',system-ui,sans-serif;background:#050509;color:#f9fafb;padding:16px;">
+      <div style="max-width:520px;margin:0 auto;background:#111118;border-radius:12px;padding:24px;border:1px solid #27272f;">
+        <div style="font-size:11px;text-transform:uppercase;letter-spacing:0.16em;color:#9ca3af;margin-bottom:12px;font-weight:600;">
+          Deepmode
+        </div>
+        <h1 style="margin:0 0 12px;font-size:22px;font-weight:600;color:#e5e7eb;">
+          Deepmode AI Pro will end on {formatted_date}
+        </h1>
+
+        <p style="margin:0 0 12px;font-size:14px;line-height:1.6;color:#e5e7eb;">
+          Your Deepmode AI Pro subscription has been cancelled and will end on <strong>{formatted_date}</strong>.
+        </p>
+
+        <p style="margin:0 0 12px;font-size:14px;line-height:1.6;color:#e5e7eb;">
+          You keep full Deepmode AI Pro access until {formatted_date}. Your streaks, AI reports and insights will still work as usual until then.
+        </p>
+
+        <p style="margin:0 0 12px;font-size:14px;line-height:1.6;color:#9ca3af;">
+          Treat the remaining time like a sprint: finish a few important blocks, export any insights you care about, and notice what Deepmode changed in your work.
+        </p>
+
+        <p style="margin:0 0 20px;font-size:14px;line-height:1.6;color:#9ca3af;">
+          You can always restart Deepmode AI Pro later if you want — AI reports, advanced insights, and unlimited history will be waiting for you.
+        </p>
+
+        <p style="margin:0 0 20px;">
+          <a href="{DASHBOARD_URL}"
+             style="display:inline-block;padding:10px 18px;border-radius:999px;background:#e50914;
+                    color:#ffffff;text-decoration:none;font-size:14px;font-weight:500;">
+            Open dashboard
+          </a>
+        </p>
+
+      </div>
+    </div>
+    """
+    
+    text_body = (
+        f"Deepmode AI Pro will end on {formatted_date}\n\n"
+        f"Your Deepmode AI Pro subscription has been cancelled and will end on {formatted_date}.\n\n"
+        f"You keep full Deepmode AI Pro access until {formatted_date}. Your streaks, AI reports and insights will still work as usual until then.\n\n"
+        "Treat the remaining time like a sprint: finish a few important blocks, export any insights you care about, and notice what Deepmode changed in your work.\n\n"
+        "You can always restart Deepmode AI Pro later if you want — AI reports, advanced insights, and unlimited history will be waiting for you.\n\n"
+        f"Open dashboard: {DASHBOARD_URL}"
+    )
+    
+    # User is still Pro until period ends, so use is_pro=True for footer
+    send_email_html(to_email, subject, html_body, text_body, is_pro=True)

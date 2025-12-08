@@ -79,7 +79,8 @@ def init_db():
             stripe_customer_id TEXT,
             stripe_subscription_id TEXT,
             stripe_subscription_status TEXT,
-            stripe_price_id TEXT
+            stripe_price_id TEXT,
+            stripe_cancel_at_period_end BOOLEAN DEFAULT FALSE
         );
         """
     )
