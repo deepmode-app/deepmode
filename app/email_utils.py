@@ -238,12 +238,13 @@ def send_welcome_email(to_email: str) -> None:
         <h2 style="margin:0 0 12px;font-size:16px;font-weight:600;color:#e5e7eb;">Next steps (takes 2 minutes):</h2>
         <ul style="margin:0 0 20px 18px;font-size:14px;line-height:1.8;color:#9ca3af;padding-left:0;list-style-position:outside;">
           <li style="margin-bottom:8px;">Install the Chrome extension and pin it in your toolbar.</li>
-          <li style="margin-bottom:8px;">Start a 25-minute session and stay in Deepmode until the timer ends.</li>
-          <li style="margin-bottom:8px;">Assign a project name (e.g. 'Thesis', 'Client A', 'Interview prep') to the completed sessions to track the Projects you are currenlty working on.</li>
+          <li style="margin-bottom:8px;">Start a 25-minute session and stay in Deepmode on the selected task until the timer ends.</li>
+          <li style="margin-bottom:8px;">All the distractions will be blocked and you can control them anytime from the extension's popup menu. You will be able to focus on your task with complete authority.</li>
+          <li style="margin-bottom:8px;">Assign a project name (e.g. 'Thesis', 'Software', 'Interview prep') to the completed sessions to track the Projects you are currenlty working on.</li>
         </ul>
 
         <p style="font-size:14px;line-height:1.6;margin:0 0 20px;color:#9ca3af;">
-          Deepmode is built for people who can't afford to waste their attention — professionals and serious students. One focused session of work beats a whole day of multitasking
+          Deepmode is built for people who can't afford to waste their attention — professionals and serious students. One focused session of work beats a whole day of multitasking.
         </p>
 
         <p style="margin:0 0 20px;">
