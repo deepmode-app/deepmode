@@ -628,8 +628,8 @@ async def create_customer_portal(request: Request, payload: CustomerPortalReques
 
     Behaviour:
     - Look up Stripe Customer by email directly via Stripe API (source of truth).
-    - If found, create a Portal session and return portal_url.
-    - If not found, return 400 with a clear message.
+    - If found, create a Portal session and return url.
+    - If not found, return JSON with url="/billing/checkout" for frontend redirect.
     - Also upserts stripe_customer_id in DB.
     """
     if not STRIPE_SECRET_KEY:
@@ -642,17 +642,16 @@ async def create_customer_portal(request: Request, payload: CustomerPortalReques
     if not raw_email:
         raise HTTPException(status_code=400, detail="Email is required for billing portal.")
 
-        base_url = APP_BASE_URL.rstrip("/")
+    # Use APP_BASE_URL consistently for building return URLs
+    return_url = f"{APP_BASE_URL.rstrip('/')}/dashboard"
 
     try:
         # 1) Find Stripe customer by email
         customers = stripe.Customer.list(email=raw_email, limit=1)
         if not customers.data:
-            # No customer found - return error (POST endpoint, frontend can redirect)
-            raise HTTPException(
-                status_code=400,
-                detail="No billing profile found for this account yet. Please upgrade first.",
-            )
+            # No customer found - return redirect URL for frontend
+            print(f"[Stripe] No Stripe customer found for {raw_email}, redirecting to checkout")
+            return {"url": "/billing/checkout"}
 
         customer = customers.data[0]
         customer_id = customer.id
@@ -677,15 +676,16 @@ async def create_customer_portal(request: Request, payload: CustomerPortalReques
         # 3) Create Stripe billing portal session
         portal_session = stripe.billing_portal.Session.create(
             customer=customer_id,
-            return_url=f"{base_url}/dashboard",
+            return_url=return_url,
         )
 
-        return {"portal_url": portal_session.url}
+        print(f"[Stripe] Created customer portal for user {raw_email} -> {portal_session.url}")
+        return {"url": portal_session.url}
 
     except HTTPException:
         raise
     except Exception as e:
-        print("[Stripe] Error creating customer portal:", repr(e))
+        print(f"[Stripe] Error creating customer portal: {e}")
         raise HTTPException(
             status_code=500,
             detail="Could not open billing portal. Please try again later.",

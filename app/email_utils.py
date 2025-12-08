@@ -264,8 +264,8 @@ def send_welcome_email(to_email: str) -> None:
         "Next steps (takes 2 minutes):\n"
         "1) Install the Chrome extension and pin it in your toolbar.\n"
         "2) Start a 25-minute session and stay in Deepmode until the timer ends.\n"
-        "3) Add a short project name (e.g. 'Thesis', 'Client A', 'Interview prep') so future reports actually mean something.\n\n"
-        "Deepmode is built for people who can't afford to waste their attention — professionals and serious students. One finished block beats a whole day of fake multitasking.\n\n"
+        "3) Assign a project name (e.g. 'Thesis', 'Client A', 'Interview prep') to the completed sessions to track the Projects you are currenlty working on.\n\n"
+        "Deepmode is built for people who can't afford to waste their attention — professionals and serious students. One focused session of work beats a whole day of multitasking.\n\n"
         "Go to your dashboard: " + login_link
     )
 

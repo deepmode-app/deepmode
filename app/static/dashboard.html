@@ -3804,12 +3804,12 @@
         }
 
         const data = await resp.json();
-        if (!data.portal_url) {
+        if (!data.url) {
           alert("Billing portal URL missing from server response.");
           return;
         }
 
-        window.location.href = data.portal_url;
+        window.location.href = data.url;
       } catch (err) {
         console.error("Error calling /billing/customer-portal:", err);
         alert("Something went wrong while opening billing.");
@@ -3849,12 +3849,12 @@
           }
 
           const data = await resp.json();
-          if (!data.portal_url) {
+          if (!data.url) {
             alert("Billing portal URL missing from server response.");
             return;
           }
 
-          window.location.href = data.portal_url;
+          window.location.href = data.url;
         } catch (err) {
           console.error("Error calling /billing/customer-portal:", err);
           alert("Something went wrong while opening billing.");
