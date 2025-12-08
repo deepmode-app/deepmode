@@ -442,8 +442,14 @@ async def stripe_webhook(request: Request):
             status = sub.get("status")
             cancel_at_period_end = bool(sub.get("cancel_at_period_end", False))
             current_period_end_ts = sub.get("current_period_end")
-            price_id = _extract_price_id_from_subscription(sub)
-
+            
+            # Extract price_id from subscription items
+            price_id = None
+            items = sub.get("items", {}).get("data", [])
+            if items:
+                price = items[0].get("price", {})
+                price_id = price.get("id") if isinstance(price, dict) else None
+            
             # Convert current_period_end Unix timestamp to datetime (timezone-aware UTC)
             period_end_dt = None
             if current_period_end_ts:
@@ -464,6 +470,8 @@ async def stripe_webhook(request: Request):
             else:
                 email = user_row["email"]
             
+            user_id = user_row["id"]
+            
             # Get current flag state from DB
             db_cancel_flag = bool(user_row.get("stripe_cancel_at_period_end", False))
             db_status = user_row.get("stripe_subscription_status")
@@ -476,8 +484,71 @@ async def stripe_webhook(request: Request):
                 f"price_id={price_id}, db_status={db_status}, db_price_id={db_price_id}"
             )
             
+            # PRIORITY: Handle scheduled cancellation (cancel_at_period_end just turned TRUE)
+            # This must be checked BEFORE any "no changes" logic
+            if status in ("active", "trialing") and cancel_at_period_end and not db_cancel_flag:
+                # First time we see cancel_at_period_end = true
+                cur = conn.cursor()
+                cur.execute(
+                    """
+                    UPDATE users
+                    SET stripe_cancel_at_period_end = TRUE,
+                        stripe_subscription_status = %s,
+                        stripe_price_id = %s
+                    WHERE id = %s
+                    """,
+                    (status, price_id, user_id),
+                )
+                conn.commit()
+                cur.close()
+                
+                if email and period_end_dt:
+                    try:
+                        send_pro_cancellation_scheduled_email(email, period_end_dt)
+                        print(
+                            f"[Stripe] subscription.updated: {email}, cancel_at_period_end set, "
+                            f"Pro will end on {period_end_dt.isoformat()} (still active until then)."
+                        )
+                    except Exception as e:
+                        print(f"[Stripe] Failed to send scheduled cancellation email to {email}: {e!r}")
+                else:
+                    print(
+                        f"[Stripe] subscription.updated: {email}, cancel_at_period_end set but missing email or period_end_dt."
+                    )
+                
+                return {"received": True}
+            
+            # Secondary: cancel_at_period_end already set (idempotent - no new email, but sync status/price)
+            if status in ("active", "trialing") and cancel_at_period_end and db_cancel_flag:
+                # Update status/price if they changed, but don't send email
+                cur = conn.cursor()
+                cur.execute(
+                    """
+                    UPDATE users
+                    SET stripe_subscription_status = %s,
+                        stripe_price_id = %s
+                    WHERE id = %s
+                    """,
+                    (status, price_id, user_id),
+                )
+                conn.commit()
+                cur.close()
+                
+                print(
+                    f"[Stripe] subscription.updated: {email}, cancel_at_period_end already set (no new email)."
+                )
+                return {"received": True}
+            
+            # Check if truly no changes needed (including cancel_at_period_end)
+            if (
+                status == db_status
+                and price_id == db_price_id
+                and cancel_at_period_end == db_cancel_flag
+            ):
+                print(f"[Stripe] No billing changes needed for {email}")
+                return {"received": True}
+            
             # CASE A: Final cancellation (status is canceled or other terminal status)
-            # This is handled by customer.subscription.deleted OR status == "canceled" here
             if status == "canceled" or status in ("past_due", "unpaid", "incomplete", "incomplete_expired"):
                 # Final cancellation - period has ended
                 make_pro = False
@@ -505,91 +576,40 @@ async def stripe_webhook(request: Request):
                     except Exception as e:
                         print(f"[Stripe] Failed to send cancellation email to {email}: {e!r}")
             
-            # CASE B: Subscription is active/trialing - handle cancel_at_period_end flag transitions
+            # CASE B: Normal subscription update (active/trialing, no cancel_at_period_end)
             elif status in ("active", "trialing"):
-                # Scheduled cancellation just set (first time)
-                if cancel_at_period_end and not db_cancel_flag:
-                    # Flip DB flag to TRUE and keep is_pro = TRUE (user keeps access until period_end_dt)
-                    was_pro, is_pro_now = _update_user_billing(
-                        conn,
-                        user_row,
-                        make_pro=True,  # Keep Pro access
-                        customer_id=customer_id,
-                        subscription_id=subscription_id,
-                        subscription_status=status,
-                        price_id=price_id,
-                        cancel_at_period_end=True,
-                    )
-                    
-                    # Send the "will end on DATE" email if we have a date and an email
-                    if email and period_end_dt:
-                        try:
-                            send_pro_cancellation_scheduled_email(email, period_end_dt)
-                            print(
-                                f"[Stripe] subscription.updated: {email}, cancel_at_period_end set, "
-                                f"Pro will end on {period_end_dt.strftime('%Y-%m-%d')} (still active until then)."
-                            )
-                            print(f"[Stripe] Sent scheduled cancellation email to {email} (ends {period_end_dt.strftime('%Y-%m-%d')})")
-                        except Exception as e:
-                            print(f"[Stripe] Failed to send scheduled cancellation email to {email}: {e!r}")
-                    else:
-                        print(
-                            f"[Stripe] subscription.updated: {email}, cancel_at_period_end set, "
-                            f"but missing email or period_end_dt (email={email}, period_end_dt={period_end_dt})"
-                        )
+                # Reset cancel flag if it was previously set (subscription reactivated)
+                cancel_flag_update = False if db_cancel_flag else None
                 
-                # Scheduled cancellation already known (idempotent - no duplicate email)
-                elif cancel_at_period_end and db_cancel_flag:
-                    # Still update status/price if they changed, but don't send email
-                    was_pro, is_pro_now = _update_user_billing(
-                        conn,
-                        user_row,
-                        make_pro=True,  # Keep Pro access
-                        customer_id=customer_id,
-                        subscription_id=subscription_id,
-                        subscription_status=status,
-                        price_id=price_id,
-                        cancel_at_period_end=True,  # Keep it true
-                    )
-                    
+                was_pro, is_pro_now = _update_user_billing(
+                    conn,
+                    user_row,
+                    make_pro=True,  # Keep Pro access
+                    customer_id=customer_id,
+                    subscription_id=subscription_id,
+                    subscription_status=status,
+                    price_id=price_id,
+                    cancel_at_period_end=cancel_flag_update,  # Reset if was True
+                )
+                
+                if cancel_flag_update is not None:
                     print(
-                        f"[Stripe] subscription.updated: {email}, cancel_at_period_end already set (no new email)."
+                        f"[Stripe] subscription.updated: {email}, active/trialing with no cancel_at_period_end "
+                        f"(cancel flag reset, Pro remains active)."
+                    )
+                else:
+                    print(
+                        f"[Stripe] subscription.updated: {email}, status={status}, "
+                        f"was_pro={was_pro}, is_pro_now={is_pro_now}"
                     )
                 
-                # No cancel_at_period_end => normal active/trialing update (ensure flag is reset if needed)
-                elif not cancel_at_period_end:
-                    # Reset cancel flag if it was previously set (subscription reactivated)
-                    cancel_flag_update = False if db_cancel_flag else None
-                    
-                    was_pro, is_pro_now = _update_user_billing(
-                        conn,
-                        user_row,
-                        make_pro=True,  # Keep Pro access
-                        customer_id=customer_id,
-                        subscription_id=subscription_id,
-                        subscription_status=status,
-                        price_id=price_id,
-                        cancel_at_period_end=cancel_flag_update,  # Reset if was True
-                    )
-                    
-                    if cancel_flag_update is not None:
-                        print(
-                            f"[Stripe] subscription.updated: {email}, active/trialing with no cancel_at_period_end "
-                            f"(cancel flag reset, Pro remains active)."
-                        )
-                    else:
-                        print(
-                            f"[Stripe] subscription.updated: {email}, status={status}, "
-                            f"was_pro={was_pro}, is_pro_now={is_pro_now}"
-                        )
-                    
-                    # Only send welcome email if user just upgraded (was not Pro, now is Pro)
-                    if not was_pro and is_pro_now:
-                        try:
-                            send_pro_welcome_email(email)
-                            print(f"[Stripe] Sent Pro welcome email (via subscription.updated) to {email}")
-                        except Exception as e:
-                            print(f"[Stripe] Failed to send Pro welcome email to {email}: {e!r}")
+                # Only send welcome email if user just upgraded (was not Pro, now is Pro)
+                if not was_pro and is_pro_now:
+                    try:
+                        send_pro_welcome_email(email)
+                        print(f"[Stripe] Sent Pro welcome email (via subscription.updated) to {email}")
+                    except Exception as e:
+                        print(f"[Stripe] Failed to send Pro welcome email to {email}: {e!r}")
             
             # CASE C: Other statuses (shouldn't happen often, but handle gracefully)
             else:
