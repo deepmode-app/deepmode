@@ -95,26 +95,18 @@
       width: 100%;
     }
 
-    .nav-user-email {
-      font-size: 11px;
-      color: var(--dw-muted);
-    }
-
-    .nav-link-dashboard,
-    .nav-link-logout {
-      font-size: 13px;
-      color: var(--dw-muted);
-      text-decoration: none;
+    .nav-cta {
+      padding: 6px 10px;
+      border-radius: 999px;
+      background: #18181f;
+      border: 1px solid var(--dw-border);
+      font-size: 12px;
       cursor: pointer;
     }
 
-    .nav-link-dashboard:hover,
-    .nav-link-logout:hover {
-      color: var(--dw-text);
-    }
-
-    .nav-link-logout {
-      margin-left: 8px;
+    .nav-cta:hover {
+      border-color: var(--dw-accent);
+      color: #fca5a5;
     }
 
     .auth-hidden {
@@ -138,18 +130,137 @@
       display: none;
     }
 
-    .nav-cta {
-      padding: 6px 10px;
-      border-radius: 999px;
-      background: #18181f;
-      border: 1px solid var(--dw-border);
-      font-size: 12px;
-      cursor: pointer;
+    /* Account dropdown (for logged-in users) */
+    .nav-account {
+      position: relative;
     }
 
-    .nav-cta:hover {
-      border-color: var(--dw-accent);
-      color: #fca5a5;
+    .nav-account-trigger {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      background: none;
+      border: none;
+      color: var(--dw-text);
+      cursor: pointer;
+      padding: 4px 8px;
+      border-radius: 8px;
+      font-size: 13px;
+    }
+
+    .nav-account-trigger:hover {
+      background: rgba(255, 255, 255, 0.05);
+    }
+
+    .account-avatar {
+      width: 28px;
+      height: 28px;
+      border-radius: 50%;
+      background: var(--dw-accent);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      flex-shrink: 0;
+      overflow: hidden;
+    }
+
+    .account-avatar-initial {
+      font-size: 12px;
+      font-weight: 600;
+      color: #ffffff;
+      text-transform: uppercase;
+    }
+
+    .account-name {
+      font-weight: 500;
+      font-size: 13px;
+    }
+
+    .chevron {
+      font-size: 10px;
+      color: var(--dw-muted);
+      transition: transform 0.2s ease;
+    }
+
+    .nav-account-trigger[aria-expanded="true"] .chevron {
+      transform: rotate(180deg);
+    }
+
+    .nav-dropdown {
+      position: absolute;
+      top: calc(100% + 8px);
+      right: 0;
+      min-width: 200px;
+      background: var(--dw-card);
+      border: 1px solid var(--dw-border);
+      border-radius: 12px;
+      box-shadow: 0 12px 32px rgba(0, 0, 0, 0.75);
+      padding: 6px;
+      display: none;
+      z-index: 1000;
+    }
+
+    .nav-account[data-open="true"] .nav-dropdown {
+      display: block;
+    }
+
+    .nav-dropdown-header {
+      padding: 12px 16px;
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      border-bottom: 1px solid rgba(39, 39, 47, 0.6);
+    }
+
+    .nav-dropdown-avatar {
+      width: 40px;
+      height: 40px;
+      border-radius: 50%;
+      background: var(--dw-accent);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      flex-shrink: 0;
+      overflow: hidden;
+    }
+
+    .nav-dropdown-avatar-initial {
+      font-size: 16px;
+      font-weight: 600;
+      color: #ffffff;
+      text-transform: uppercase;
+    }
+
+    .nav-dropdown-name {
+      font-weight: 500;
+      font-size: 14px;
+      color: var(--dw-text);
+    }
+
+    .nav-dropdown-email {
+      font-size: 12px;
+      color: var(--dw-muted);
+      margin-top: 2px;
+    }
+
+    .nav-dropdown-item-link {
+      display: block;
+      padding: 10px 16px;
+      font-size: 13px;
+      color: var(--dw-text);
+      text-decoration: none;
+      border-radius: 6px;
+      transition: background 0.15s ease;
+    }
+
+    .nav-dropdown-item-link:hover {
+      background: rgba(255, 255, 255, 0.05);
+    }
+
+    .nav-dropdown-separator {
+      height: 1px;
+      background: rgba(39, 39, 47, 0.6);
+      margin: 6px 0;
     }
 
     /* HERO */
@@ -157,14 +268,6 @@
     .hero {
       text-align: center;
       margin-bottom: 32px;
-    }
-
-    .hero-eyebrow {
-      font-size: 11px;
-      letter-spacing: 0.18em;
-      text-transform: uppercase;
-      color: #f97373;
-      margin-bottom: 10px;
     }
 
     .hero-title {
@@ -234,15 +337,6 @@
       margin-top: 6px;
     }
 
-    .pill {
-      font-size: 10px;
-      padding: 2px 7px;
-      border-radius: 999px;
-      border: 1px solid #374151;
-      color: var(--dw-muted);
-      margin-right: 6px;
-    }
-
     /* HOW IT WORKS */
 
     .section {
@@ -255,7 +349,6 @@
       margin-bottom: 16px;
     }
 
-    /* Simple step strip */
     .steps-strip {
       display: flex;
       flex-wrap: wrap;
@@ -302,7 +395,7 @@
       }
     }
 
-    /* Why Deepmode - simple text */
+    /* Why Deepmode */
     .why-text {
       font-size: 14px;
       line-height: 1.6;
@@ -333,7 +426,7 @@
       color: var(--dw-accent);
     }
 
-    /* PRICING CARD - dominant visual element */
+    /* PRICING CARD */
     .pricing-card {
       background: var(--dw-card);
       border-radius: 16px;
@@ -354,6 +447,12 @@
       font-weight: 600;
       color: var(--dw-text);
       margin: 8px 0;
+    }
+
+    .pricing-price-sub {
+      font-size: 14px;
+      color: var(--dw-muted);
+      margin-top: 4px;
     }
 
     .comparison-table {
@@ -401,14 +500,29 @@
       margin-top: 24px;
     }
 
-    .mission-line {
+    /* Quote block */
+    .quote-block {
       text-align: center;
-      font-size: 14px;
+      font-size: 16px;
+      line-height: 1.6;
       color: var(--dw-text);
       padding: 32px 0;
       border-top: 1px solid rgba(39, 39, 47, 0.3);
       border-bottom: 1px solid rgba(39, 39, 47, 0.3);
       margin: 48px 0;
+      max-width: 600px;
+      margin-left: auto;
+      margin-right: auto;
+    }
+
+    .quote-block p {
+      margin-bottom: 8px;
+    }
+
+    .quote-block p:last-child {
+      margin-bottom: 0;
+      color: var(--dw-muted);
+      font-size: 14px;
     }
 
     /* FOOTER */
@@ -452,32 +566,60 @@
       </div>
       <nav class="nav-links">
         <a href="#how" class="nav-link">How it works</a>
-        <a href="/pricing" class="nav-link guest-only">Pricing</a>
+        <a href="#pricing" class="nav-link">Pricing</a>
         <a href="/login" class="nav-link guest-only">Log in</a>
         <button class="nav-cta guest-only" onclick="window.location.href='/signup'">
-          Sign up free
+          Start free
         </button>
-        <span id="navUserEmail" class="nav-user-email auth-only" style="display: none;"></span>
-        <a href="/dashboard" id="navDashboardLink" class="nav-link-dashboard auth-only" style="display: none;">Dashboard</a>
-        <a href="#" id="navLogoutLink" class="nav-link-logout auth-only" style="display: none;">Logout</a>
+        <!-- Logged-in user avatar dropdown -->
+        <div class="nav-account auth-only" id="navAccount" style="display: none;" data-open="false">
+          <button class="nav-account-trigger" id="accountTrigger" aria-expanded="false" aria-haspopup="true">
+            <div class="account-avatar" id="navAvatar">
+              <span id="navAvatarInitial" class="account-avatar-initial"></span>
+              <img id="navAvatarImg" src="" alt="" style="display: none; width: 100%; height: 100%; object-fit: cover; border-radius: 50%;" />
+            </div>
+            <span id="navUserName" class="account-name"></span>
+            <span class="chevron">▾</span>
+          </button>
+          <div class="nav-dropdown">
+            <div class="nav-dropdown-header">
+              <div class="nav-dropdown-avatar">
+                <span id="navDropdownAvatarInitial" class="nav-dropdown-avatar-initial"></span>
+                <img id="navDropdownAvatarImg" src="" alt="" style="display: none; width: 100%; height: 100%; object-fit: cover; border-radius: 50%;" />
+              </div>
+              <div>
+                <div id="navDropdownUserName" class="nav-dropdown-name"></div>
+                <div id="navDropdownUserEmail" class="nav-dropdown-email"></div>
+              </div>
+            </div>
+            <div class="nav-dropdown-separator"></div>
+            <a href="/dashboard" class="nav-dropdown-item-link">Dashboard</a>
+            <a href="#" id="navBillingLink" class="nav-dropdown-item-link" style="display:none;" onclick="event.preventDefault(); openBillingPortal();">Billing & Subscription</a>
+            <a href="/settings/profile" class="nav-dropdown-item-link">Email preferences / Profile</a>
+            <div class="nav-dropdown-separator"></div>
+            <a href="#" id="logoutLink" class="nav-dropdown-item-link">Log out</a>
+          </div>
+        </div>
       </nav>
     </header>
 
     <!-- HERO -->
     <section class="hero">
-      <img src="/static/logos/Logo - Red BG.png" alt="Deepmode" style="height: 48px; margin: 0 auto 20px; opacity: 0.9; display: block;" />
       <h1 class="hero-title">Switch on Deepmode.</h1>
       <p class="hero-sub">
-        Turn scattered hours into focused deep work. Block distractions, protect your time, and watch your progress compound.
+        🚀 The world's fastest way to enter deep work — and the only tool that turns your real sessions into AI analysis that helps you improve.
+      </p>
+      <p class="hero-sub" style="margin-top: 12px; font-size: 13px;">
+        A gym for your focus. Take back your day, one deep session at a time.
       </p>
 
       <div class="hero-cta-row">
         <button
           id="heroPrimaryBtn"
           class="btn btn-primary guest-only"
-          onclick="window.location.href='/signup'"
+          onclick="startGuestSession()"
         >
-          Start Free Trial
+          Start a deep session
         </button>
         <button
           id="heroSecondaryBtn"
@@ -512,8 +654,11 @@
         </button>
       </div>
 
-      <p class="hero-footnote">
-        Built for engineers, founders, analysts, and high-performers who treat focus as a skill.
+      <p class="hero-footnote" style="margin-top: 12px;">
+        No signup needed — try in Guest Mode first. Upgrade later if it sticks.
+      </p>
+      <p class="hero-footnote" style="margin-top: 8px;">
+        Built for professionals and students who want one thing: distraction-free focus, one deep session at a time.
       </p>
     </section>
 
@@ -522,13 +667,16 @@
       <h2 class="section-title">How Deepmode works</h2>
       <div class="steps-strip">
         <div class="step-item">
-          <span class="step-number">1</span> Install the Chrome extension
+          <span class="step-number">1</span> Install the Chrome extension<br/>
+          <span style="color: var(--dw-muted); font-size: 12px;">Deepmode takes control of your distraction sites with one toggle.</span>
         </div>
         <div class="step-item">
-          <span class="step-number">2</span> Start your first deepwork session
+          <span class="step-number">2</span> Start your first deep work block<br/>
+          <span style="color: var(--dw-muted); font-size: 12px;">Choose 5, 25, 50 or 90 minutes. Hit start and drop into focus.</span>
         </div>
         <div class="step-item">
-          <span class="step-number">3</span> Let Deepmode block distractions and track your progress
+          <span class="step-number">3</span> Let Deepmode protect and track your session<br/>
+          <span style="color: var(--dw-muted); font-size: 12px;">We block distractions, log your time by project, and feed it into streaks and reports.</span>
         </div>
       </div>
     </section>
@@ -537,19 +685,18 @@
     <section class="section">
       <h2 class="section-title">Why Deepmode?</h2>
       <p class="why-text">
-        Deepmode is built for people who need long, uninterrupted focus to do meaningful work.
+        Deepmode is for people who do real work — engineers, founders, analysts, writers, students — and need long, uninterrupted focus to move the needle.
       </p>
       <ul class="why-bullets">
-        <li>Distraction blocking</li>
-        <li>Accurate session tracking</li>
-        <li>Progress, streaks, and insights</li>
+        <li>Distraction blocking you actually control</li>
+        <li>Accurate session and streak tracking</li>
+        <li>Project-level view of where your time goes</li>
+        <li>AI-written daily and weekly focus reports (Pro)</li>
       </ul>
+      <p class="why-text" style="margin-top: 20px; font-size: 13px; color: var(--dw-muted);">
+        Deepmode exists to help high-performers protect their time and let focused work compound.
+      </p>
     </section>
-
-    <!-- MISSION STATEMENT -->
-    <div class="mission-line">
-      Deepmode exists to help high-performers protect their time and master deep work.
-    </div>
 
     <!-- PRICING -->
     <section id="pricing" class="section">
@@ -557,30 +704,32 @@
         <div class="pricing-title-row">
           <h2 class="section-title" style="margin-bottom: 0;">Deepmode AI Pro</h2>
           <p style="font-size: 14px; color: var(--dw-muted); margin: 8px 0 16px;">
-            One tool to protect your focus and track your deepwork over time.
+            The only practical deep work system with AI-powered analysis of your real behavior.
           </p>
           <div class="pricing-price">£9.99 / month</div>
+          <div class="pricing-price-sub">or £79.99 / year</div>
         </div>
 
         <ul class="why-bullets" style="margin: 24px 0;">
-          <li>Focused deepwork sessions</li>
-          <li>Distraction blocking</li>
-          <li>Session tracking and stats</li>
-          <li>Streaks and progress over time</li>
-          <li>Email summaries</li>
+          <li>Unlimited deep work sessions</li>
+          <li>Distraction blocking with full control</li>
+          <li>Full history + discipline score</li>
+          <li>AI daily & weekly performance reports</li>
+          <li>Project & category breakdowns</li>
+          <li>Email summaries with momentum score and next-week plan</li>
         </ul>
 
         <div class="pricing-cta-row">
           <button class="btn btn-primary" onclick="window.location.href='/signup'" style="flex: 1;">
-            Start Free Trial
+            Start free
           </button>
           <button class="btn btn-secondary" onclick="window.location.href='/install'" style="flex: 1;">
             Install Chrome Extension
           </button>
         </div>
         <div style="font-size: 11px; color: #9ca3af; margin-top: 16px; text-align: center;">
-          Cancel anytime. Your time is worth more than your subscriptions.
-      </div>
+          Cancel anytime. One focused hour per day pays for itself.
+        </div>
 
         <!-- Free vs Pro Comparison Table -->
         <table class="comparison-table" style="margin-top: 32px;">
@@ -588,49 +737,60 @@
             <tr>
               <th>Feature</th>
               <th class="center">Free</th>
-              <th class="center" style="color: var(--dw-accent);">Pro</th>
+              <th class="center" style="color: var(--dw-accent);">Deepmode AI Pro</th>
             </tr>
           </thead>
           <tbody>
             <tr>
-              <td>Deepwork sessions</td>
-              <td class="center">up to 3/day</td>
-              <td class="center pro">unlimited</td>
+              <td>Deep work sessions</td>
+              <td class="center">Up to 3 per day</td>
+              <td class="center pro">Unlimited</td>
             </tr>
             <tr>
               <td>Session lengths</td>
-              <td class="center">5m, 25m</td>
-              <td class="center pro">5m, 25m, 50m, 90m</td>
+              <td class="center">5 min, 25 min</td>
+              <td class="center pro">5, 25, 50, 90 min</td>
             </tr>
             <tr>
               <td>Progress tracking</td>
-              <td class="center">today's overview</td>
-              <td class="center pro">full history + discipline score</td>
+              <td class="center">Today's overview</td>
+              <td class="center pro">Full history + discipline score</td>
             </tr>
             <tr>
               <td>Reports & insights</td>
-              <td class="center">none</td>
-              <td class="center pro">daily & weekly reports</td>
+              <td class="center">Weekly summary</td>
+              <td class="center pro">AI daily & weekly reports</td>
             </tr>
             <tr>
               <td>Streaks</td>
-              <td class="center">today's streak only</td>
-              <td class="center pro">full streak history & trends</td>
+              <td class="center">Today's streak only</td>
+              <td class="center pro">Full streak history & trends</td>
             </tr>
             <tr>
               <td>Distraction blocking</td>
-              <td class="center">yes</td>
-              <td class="center pro">yes</td>
+              <td class="center">Yes</td>
+              <td class="center pro">Yes + advanced controls</td>
+            </tr>
+            <tr>
+              <td>Projects</td>
+              <td class="center">Basic naming</td>
+              <td class="center pro">Project & category analytics</td>
             </tr>
           </tbody>
         </table>
       </div>
     </section>
 
+    <!-- QUOTE BLOCK -->
+    <div class="quote-block">
+      <p>One focused hour is worth more than a day of scattered multitasking.</p>
+      <p>Deepmode helps you protect that hour — every day.</p>
+    </div>
+
     <!-- START TODAY -->
     <section class="section" style="text-align: center;">
       <p style="font-size: 14px; color: var(--dw-muted); margin-bottom: 16px;">
-        Install the extension and begin your first deepwork session in under 60 seconds.
+        Install the extension and begin your first deep work session in under 60 seconds.
       </p>
       <button class="btn btn-primary" onclick="window.location.href='/install'">
         Install Chrome Extension
@@ -641,10 +801,10 @@
     <footer>
       <div style="display: flex; align-items: center; gap: 12px;">
         <img src="/static/logos/Logo - Red BG.png" alt="Deepmode" style="height: 24px; opacity: 0.7;" />
-        <span>Deepmode — a premium deepwork system for high-performance professionals. © 2025</span>
+        <span>Deepmode — a premium deep work system for high-performance professionals. © 2025</span>
       </div>
       <div class="footer-right">
-        <span class="footer-link" onclick="window.location.href='/pricing'">Pricing</span>
+        <span class="footer-link" onclick="window.location.href='#pricing'">Pricing</span>
         <span class="footer-link" onclick="window.location.href='/faq'">FAQ</span>
         <span class="footer-link" onclick="window.location.href='/terms'">Terms</span>
         <span class="footer-link" onclick="window.location.href='/privacy'">Privacy</span>
@@ -654,6 +814,43 @@
   </div>
 
   <script>
+    // Guest session starter (reuse existing logic if available)
+    function startGuestSession() {
+      // Check if extension is installed, if not redirect to install
+      // Otherwise, could open extension popup or redirect to dashboard with guest mode
+      // For now, redirect to install page
+      window.location.href = '/install';
+    }
+
+    // Billing portal opener (for logged-in users)
+    function openBillingPortal() {
+      const token = localStorage.getItem('access_token') || localStorage.getItem('deepmode_token');
+      if (!token) {
+        window.location.href = '/login';
+        return;
+      }
+      
+      fetch('/billing/customer-portal', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': 'Bearer ' + token
+        }
+      })
+      .then(res => res.json())
+      .then(data => {
+        if (data.url) {
+          window.location.href = data.url;
+        } else {
+          window.location.href = '/billing/checkout';
+        }
+      })
+      .catch(err => {
+        console.error('Error opening billing portal:', err);
+        window.location.href = '/billing/checkout';
+      });
+    }
+
     // Auth state management
     (async function() {
       let currentUser = null;
@@ -662,15 +859,44 @@
       function logout() {
         localStorage.removeItem('access_token');
         localStorage.removeItem('deepmode_token');
-        // Notify extension if needed
         if (window.postMessage) {
           window.postMessage({ type: 'DEEPMODE_LOGOUT' }, '*');
         }
         window.location.href = '/';
       }
 
+      // Account dropdown toggle
+      const navAccount = document.getElementById('navAccount');
+      const accountTrigger = document.getElementById('accountTrigger');
+      
+      if (accountTrigger && navAccount) {
+        accountTrigger.addEventListener('click', (e) => {
+          e.stopPropagation();
+          const isOpen = navAccount.dataset.open === 'true';
+          navAccount.dataset.open = isOpen ? 'false' : 'true';
+          accountTrigger.setAttribute('aria-expanded', isOpen ? 'false' : 'true');
+        });
+
+        // Close dropdown when clicking outside
+        document.addEventListener('click', (e) => {
+          if (!navAccount.contains(e.target)) {
+            navAccount.dataset.open = 'false';
+            accountTrigger.setAttribute('aria-expanded', 'false');
+          }
+        });
+
+        // Close dropdown on Esc key
+        document.addEventListener('keydown', (e) => {
+          if (e.key === 'Escape' && navAccount.dataset.open === 'true') {
+            navAccount.dataset.open = 'false';
+            accountTrigger.setAttribute('aria-expanded', 'false');
+            accountTrigger.focus();
+          }
+        });
+      }
+
       // Bind logout handler
-      const logoutLink = document.getElementById('navLogoutLink');
+      const logoutLink = document.getElementById('logoutLink');
       if (logoutLink) {
         logoutLink.addEventListener('click', (e) => {
           e.preventDefault();
@@ -678,9 +904,98 @@
         });
       }
 
+      // Update nav with user profile (similar to dashboard)
+      function updateNavWithProfile(user) {
+        let displayName = '';
+        if (user.first_name && user.last_name) {
+          displayName = `${user.first_name} ${user.last_name}`;
+        } else if (user.first_name) {
+          displayName = user.first_name;
+        } else if (user.email) {
+          displayName = user.email.split('@')[0];
+        }
+
+        let initial = '';
+        if (user.first_name) {
+          initial = user.first_name.charAt(0).toUpperCase();
+        } else if (user.email) {
+          initial = user.email.charAt(0).toUpperCase();
+        }
+
+        // Update nav trigger
+        const navUserName = document.getElementById('navUserName');
+        if (navUserName) {
+          navUserName.textContent = displayName || user.email || 'Account';
+        }
+
+        // Update nav avatars
+        const navAvatar = document.getElementById('navAvatar');
+        const navAvatarInitial = document.getElementById('navAvatarInitial');
+        const navAvatarImg = document.getElementById('navAvatarImg');
+        
+        if (user.avatar_url) {
+          if (navAvatarImg) {
+            navAvatarImg.src = user.avatar_url;
+            navAvatarImg.alt = displayName || user.email || 'User';
+            navAvatarImg.style.display = 'block';
+          }
+          if (navAvatarInitial) {
+            navAvatarInitial.style.display = 'none';
+          }
+        } else {
+          if (navAvatarInitial) {
+            navAvatarInitial.textContent = initial;
+            navAvatarInitial.style.display = 'flex';
+          }
+          if (navAvatarImg) {
+            navAvatarImg.style.display = 'none';
+          }
+        }
+
+        // Update dropdown header
+        const navDropdownUserName = document.getElementById('navDropdownUserName');
+        const navDropdownUserEmail = document.getElementById('navDropdownUserEmail');
+        
+        if (navDropdownUserName) {
+          navDropdownUserName.textContent = displayName || user.email || '';
+        }
+        if (navDropdownUserEmail && user.email) {
+          navDropdownUserEmail.textContent = user.email;
+        }
+
+        // Update dropdown avatar
+        const navDropdownAvatar = document.getElementById('navDropdownAvatar');
+        const navDropdownAvatarInitial = document.getElementById('navDropdownAvatarInitial');
+        const navDropdownAvatarImg = document.getElementById('navDropdownAvatarImg');
+        
+        if (user.avatar_url) {
+          if (navDropdownAvatarImg) {
+            navDropdownAvatarImg.src = user.avatar_url;
+            navDropdownAvatarImg.alt = displayName || user.email || 'User';
+            navDropdownAvatarImg.style.display = 'block';
+          }
+          if (navDropdownAvatarInitial) {
+            navDropdownAvatarInitial.style.display = 'none';
+          }
+        } else {
+          if (navDropdownAvatarInitial) {
+            navDropdownAvatarInitial.textContent = initial;
+            navDropdownAvatarInitial.style.display = 'flex';
+          }
+          if (navDropdownAvatarImg) {
+            navDropdownAvatarImg.style.display = 'none';
+          }
+        }
+
+        // Show/hide billing link based on is_pro
+        const navBillingLink = document.getElementById('navBillingLink');
+        if (navBillingLink) {
+          navBillingLink.style.display = user.is_pro ? 'block' : 'none';
+        }
+      }
+
       // Update UI based on auth state
       function updateUIForGuest() {
-        // Show guest-only elements
         document.querySelectorAll('.guest-only').forEach(el => {
           if (el.tagName === 'BUTTON') {
             el.style.display = 'inline-block';
@@ -690,49 +1005,38 @@
             el.style.display = '';
           }
         });
-        // Hide auth-only elements
         document.querySelectorAll('.auth-only').forEach(el => {
           el.style.display = 'none';
         });
-        // Hide pricing is already visible (no class)
       }
 
       function updateUIForAuth(user) {
         currentUser = user;
         
-        // Hide guest-only elements
         document.querySelectorAll('.guest-only').forEach(el => {
           el.style.display = 'none';
         });
         
-        // Show auth-only base elements
         document.querySelectorAll('.auth-only').forEach(el => {
           if (el.tagName === 'BUTTON') {
             el.style.display = 'inline-block';
-          } else if (el.tagName === 'A' || el.tagName === 'SPAN') {
+          } else if (el.tagName === 'A' || el.tagName === 'SPAN' || el.tagName === 'DIV') {
             el.style.display = '';
           } else {
             el.style.display = '';
           }
         });
 
-        // Update email in nav
-        const navUserEmail = document.getElementById('navUserEmail');
-        if (navUserEmail && user.email) {
-          navUserEmail.textContent = `Logged in as ${user.email}`;
-          navUserEmail.style.display = 'inline-block';
-          navUserEmail.style.marginLeft = '16px';
+        // Show avatar dropdown
+        if (navAccount) {
+          navAccount.style.display = 'flex';
         }
 
-        // Show dashboard and logout links
-        const navDashboardLink = document.getElementById('navDashboardLink');
-        const navLogoutLink = document.getElementById('navLogoutLink');
-        if (navDashboardLink) navDashboardLink.style.display = '';
-        if (navLogoutLink) navLogoutLink.style.display = '';
+        // Update nav with profile
+        updateNavWithProfile(user);
 
         // Update hero CTAs based on Pro status
         if (user.is_pro) {
-          // Pro user: Show dashboard + install extension
           const heroDashboardBtn = document.getElementById('heroDashboardBtn');
           const heroInstallBtn = document.getElementById('heroInstallBtn');
           const heroUpgradeBtn = document.getElementById('heroUpgradeBtn');
@@ -740,21 +1044,17 @@
           if (heroInstallBtn) heroInstallBtn.style.display = 'inline-block';
           if (heroUpgradeBtn) heroUpgradeBtn.style.display = 'none';
           
-          // Hide pricing section for Pro users
           const pricingSection = document.getElementById('pricing');
           if (pricingSection) {
             pricingSection.style.display = 'none';
           }
         } else {
-          // Free user: Show dashboard + upgrade
           const heroDashboardBtn = document.getElementById('heroDashboardBtn');
           const heroUpgradeBtn = document.getElementById('heroUpgradeBtn');
           const heroInstallBtn = document.getElementById('heroInstallBtn');
           if (heroDashboardBtn) heroDashboardBtn.style.display = 'inline-block';
           if (heroUpgradeBtn) heroUpgradeBtn.style.display = 'inline-block';
           if (heroInstallBtn) heroInstallBtn.style.display = 'none';
-          
-          // Pricing section stays visible for Free users
         }
       }
 
@@ -777,11 +1077,9 @@
           const user = await res.json();
           updateUIForAuth(user);
         } else {
-          // Token invalid, treat as guest
           updateUIForGuest();
         }
       } catch (err) {
-        // Error fetching user, treat as guest
         updateUIForGuest();
       }
     })();
