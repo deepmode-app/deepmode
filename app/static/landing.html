@@ -298,6 +298,10 @@
       margin-bottom: 8px;
     }
 
+    .hero-cta-row.guest-only {
+      margin-top: 24px;
+    }
+
     .btn {
       border: none;
       cursor: pointer;
@@ -342,6 +346,19 @@
 
     .section {
       margin-bottom: 48px;
+    }
+
+    .section.centered {
+      text-align: center;
+      max-width: 700px;
+      margin-left: auto;
+      margin-right: auto;
+    }
+
+    .section.centered .why-text,
+    .section.centered .why-bullets {
+      margin-left: auto;
+      margin-right: auto;
     }
 
     .section-title {
@@ -499,6 +516,23 @@
       display: flex;
       gap: 12px;
       margin-top: 24px;
+      align-items: center;
+      justify-content: center;
+    }
+
+    #pricingPlanSelector {
+      padding: 6px 10px;
+      border-radius: 6px;
+      background: #1a1a1f;
+      border: 1px solid #27272f;
+      color: #e5e7eb;
+      font-size: 12px;
+      cursor: pointer;
+    }
+
+    #pricingPlanSelector:focus {
+      outline: none;
+      border-color: var(--dw-accent);
     }
 
     /* Quote block */
@@ -614,7 +648,7 @@
         A gym for your focus. Take back your day, one deep session at a time.
       </p>
 
-      <div class="hero-cta-row">
+      <div class="hero-cta-row" id="heroCtaRow">
         <!-- Guest users -->
         <button
           id="heroPrimaryBtn"
@@ -669,7 +703,7 @@
       <p class="hero-footnote" style="margin-top: 12px;">
         No signup needed — you can try Guest Mode from the extension first.
       </p>
-      <p class="hero-footnote" style="margin-top: 8px;">
+      <p class="hero-footnote guest-only" style="margin-top: 8px; display: none;">
         Built for professionals and students who want one thing: distraction-free focus, one deep session at a time.
       </p>
     </section>
@@ -695,7 +729,7 @@
     </section>
 
     <!-- VALUE PROPOSITION -->
-    <section class="section">
+    <section class="section centered">
       <h2 class="section-title">Why Deepmode?</h2>
       <p class="why-text">
         Deepmode is for people who do real work — engineers, founders, analysts, writers, and students who need long, uninterrupted focus to move the needle.
@@ -703,8 +737,8 @@
       <ul class="why-bullets">
         <li>Distraction blocking you actually control.</li>
         <li>Accurate tracking of sessions, streaks, and time.</li>
-        <li>Project-level visibility into where your hours go.</li>
-        <li>AI-written daily and weekly focus reports (Pro).</li>
+        <li>Project and task breakdown where your hours are spent.</li>
+        <li>AI insights: daily and weekly focus reports with personalized suggestions to improve your productivity based on your data (Pro).</li>
       </ul>
       <p class="why-text" style="margin-top: 20px; font-size: 13px; color: var(--dw-muted);">
         Deepmode exists to help high-performers protect their time and let focused work compound.
@@ -723,17 +757,12 @@
           <div class="pricing-price-sub">or £79.99 / year</div>
         </div>
 
-        <ul class="why-bullets" style="margin: 24px 0;">
-          <li>Unlimited deep work sessions</li>
-          <li>Distraction blocking with full control</li>
-          <li>Full history + discipline score</li>
-          <li>AI daily & weekly performance reports</li>
-          <li>Project & category breakdowns</li>
-          <li>Email summaries with momentum score and next-week plan</li>
-        </ul>
-
         <div class="pricing-cta-row">
-          <button id="pricingCta" class="btn btn-primary" style="flex: 1;">
+          <select id="pricingPlanSelector" style="display: none;">
+            <option value="yearly">Yearly (£79.99/year)</option>
+            <option value="monthly">Monthly (£9.99/month)</option>
+          </select>
+          <button id="pricingCta" class="btn btn-primary" style="flex: 0 1 auto; min-width: 200px;">
             Start free
           </button>
         </div>
@@ -769,7 +798,7 @@
             <tr>
               <td>Reports & insights</td>
               <td class="center">Weekly summary (basic stats)</td>
-              <td class="center pro">AI daily & weekly reports with next-step coaching</td>
+              <td class="center pro">AI daily & weekly insights</td>
             </tr>
             <tr>
               <td>Streaks</td>
@@ -796,16 +825,6 @@
       <p>One focused hour is worth more than a day of scattered multitasking.</p>
       <p>Deepmode helps you protect that hour — every day.</p>
     </div>
-
-    <!-- START TODAY -->
-    <section class="section" style="text-align: center;">
-      <p style="font-size: 14px; color: var(--dw-muted); margin-bottom: 16px;">
-        Install the extension and begin your first deep work session in under 60 seconds.
-      </p>
-      <button class="btn btn-primary" onclick="window.location.href='/install'">
-        Install Chrome Extension
-      </button>
-    </section>
 
     <!-- FOOTER -->
     <footer>
@@ -1034,6 +1053,12 @@
           }
         });
 
+        // Remove gap for auth users
+        const heroCtaRow = document.getElementById('heroCtaRow');
+        if (heroCtaRow) {
+          heroCtaRow.style.marginTop = '';
+        }
+
         // Show avatar dropdown
         if (navAccount) {
           navAccount.style.display = 'flex';
@@ -1064,20 +1089,35 @@
           
           // Update pricing CTA for Free users
           const pricingCta = document.getElementById('pricingCta');
+          const pricingPlanSelector = document.getElementById('pricingPlanSelector');
           const pricingSection = document.getElementById('pricing');
           if (pricingCta && pricingSection && pricingSection.style.display !== 'none') {
+            // Show plan selector and update button text
+            if (pricingPlanSelector) {
+              pricingPlanSelector.style.display = 'block';
+              pricingPlanSelector.value = 'yearly'; // Default to yearly
+            }
             pricingCta.textContent = 'Upgrade to Deepmode AI Pro';
+            
+            // Update button click handler
             pricingCta.onclick = async () => {
               try {
                 const token = localStorage.getItem('access_token') || localStorage.getItem('deepmode_token');
+                const selectedPlan = pricingPlanSelector ? pricingPlanSelector.value : 'yearly';
+                
+                // Disable button and selector during request
+                if (pricingCta) pricingCta.disabled = true;
+                if (pricingPlanSelector) pricingPlanSelector.disabled = true;
+                
                 const res = await fetch('/billing/create-checkout-session', {
                   method: 'POST',
                   headers: {
                     'Content-Type': 'application/json',
                     ...(token ? { 'Authorization': 'Bearer ' + token } : {})
                   },
-                  body: JSON.stringify({ plan: 'yearly' })
+                  body: JSON.stringify({ plan: selectedPlan })
                 });
+                
                 const data = await res.json();
                 if (data.url) {
                   window.location.href = data.url;
@@ -1086,9 +1126,17 @@
                 }
               } catch (e) {
                 console.error('Error starting upgrade checkout from pricing:', e);
+                // Re-enable button and selector on error
+                if (pricingCta) pricingCta.disabled = false;
+                if (pricingPlanSelector) pricingPlanSelector.disabled = false;
                 window.location.href = '/dashboard';
               }
             };
+          } else {
+            // Hide plan selector for guests
+            if (pricingPlanSelector) {
+              pricingPlanSelector.style.display = 'none';
+            }
           }
         }
       }
