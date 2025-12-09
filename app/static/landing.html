@@ -559,6 +559,7 @@
       margin-top: 24px;
       align-items: center;
       justify-content: center;
+      width: 100%;
     }
 
     #pricingPlanSelector {
@@ -802,7 +803,7 @@
             <option value="yearly">Yearly (£79.99/year)</option>
             <option value="monthly">Monthly (£9.99/month)</option>
           </select>
-          <button id="pricingPrimaryBtn" class="btn btn-primary" style="flex: 0 1 auto; min-width: 200px; text-align: center; line-height: 1.5;">
+          <button id="pricingPrimaryBtn" class="btn btn-primary" style="min-width: 200px; text-align: center; line-height: 1.5;">
             Start free
           </button>
         </div>
@@ -876,16 +877,18 @@
         <div style="font-size: 11px; color: var(--dw-muted);">
           Works on all Chromium-based desktop browsers.
         </div>
+      </div>
+      <div class="footer-right" style="display: flex; flex-direction: column; align-items: flex-end; gap: 8px;">
+        <div style="display: flex; gap: 14px;">
+          <span class="footer-link" id="footerPricingLink" onclick="window.location.href='#pricing'">Pricing</span>
+          <span class="footer-link" onclick="window.location.href='/faq'">FAQ</span>
+          <span class="footer-link" onclick="window.location.href='/terms'">Terms</span>
+          <span class="footer-link" onclick="window.location.href='/privacy'">Privacy</span>
+          <span class="footer-link" onclick="window.location.href='/contact'">Contact</span>
+        </div>
         <div style="font-size: 11px; color: var(--dw-muted);">
           Deepmode for Teams - Coming soon.
         </div>
-      </div>
-      <div class="footer-right">
-        <span class="footer-link" onclick="window.location.href='#pricing'">Pricing</span>
-        <span class="footer-link" onclick="window.location.href='/faq'">FAQ</span>
-        <span class="footer-link" onclick="window.location.href='/terms'">Terms</span>
-        <span class="footer-link" onclick="window.location.href='/privacy'">Privacy</span>
-        <span class="footer-link" onclick="window.location.href='/contact'">Contact</span>
       </div>
     </footer>
   </div>
@@ -1156,7 +1159,7 @@
           if (heroInstallBtnPro) heroInstallBtnPro.style.display = 'inline-block';
           if (heroWorkTrackerBtn) heroWorkTrackerBtn.style.display = 'inline-block';
           
-          // Hide pricing section and nav link for Pro users
+          // Hide pricing section, nav link, and footer link for Pro users
           const pricingSection = document.getElementById('pricing');
           if (pricingSection) {
             pricingSection.style.display = 'none';
@@ -1164,6 +1167,10 @@
           const navPricingLink = document.getElementById('navPricingLink');
           if (navPricingLink) {
             navPricingLink.style.display = 'none';
+          }
+          const footerPricingLink = document.getElementById('footerPricingLink');
+          if (footerPricingLink) {
+            footerPricingLink.style.display = 'none';
           }
         } else {
           // Free users: Show Install Extension in secondary row
@@ -1183,7 +1190,7 @@
             pricingPrimaryBtn.textContent = 'Upgrade to Deepmode AI Pro';
             pricingPrimaryBtn.disabled = false;
             
-            // Update button click handler
+            // Update button click handler - match dashboard flow exactly
             pricingPrimaryBtn.onclick = async () => {
               try {
                 const token = localStorage.getItem('access_token') || localStorage.getItem('deepmode_token');
@@ -1191,38 +1198,41 @@
                 
                 // Show loading state
                 pricingPrimaryBtn.disabled = true;
-                const originalText = pricingPrimaryBtn.textContent;
-                pricingPrimaryBtn.textContent = 'Opening Stripe checkout…';
+                pricingPrimaryBtn.textContent = 'Loading...';
                 if (pricingPlanSelector) pricingPlanSelector.disabled = true;
                 
-                const res = await fetch('/billing/create-checkout-session', {
+                const response = await fetch('/billing/create-checkout-session', {
                   method: 'POST',
                   headers: {
                     'Content-Type': 'application/json',
-                    ...(token ? { 'Authorization': 'Bearer ' + token } : {})
+                    'Authorization': 'Bearer ' + token
                   },
-                  body: JSON.stringify({ plan: selectedPlan })
+                  body: JSON.stringify({
+                    email: user.email,
+                    plan: selectedPlan
+                  })
                 });
                 
-                const data = await res.json();
-                if (data.url) {
-                  window.location.href = data.url;
+                if (!response.ok) {
+                  const error = await response.json();
+                  throw new Error(error.detail || 'Failed to create checkout session');
+                }
+                
+                const data = await response.json();
+                if (data.checkout_url) {
+                  window.location.href = data.checkout_url;
                 } else {
-                  // Re-enable on error
-                  pricingPrimaryBtn.disabled = false;
-                  pricingPrimaryBtn.textContent = originalText;
-                  if (pricingPlanSelector) pricingPlanSelector.disabled = false;
-                  window.location.href = '/billing/checkout';
+                  throw new Error('No checkout URL received');
                 }
               } catch (e) {
-                console.error('Error starting upgrade checkout from pricing:', e);
+                console.error('Error creating checkout session:', e);
+                alert('Failed to start checkout. Please try again.');
                 // Re-enable button and selector on error
                 if (pricingPrimaryBtn) {
                   pricingPrimaryBtn.disabled = false;
                   pricingPrimaryBtn.textContent = 'Upgrade to Deepmode AI Pro';
                 }
                 if (pricingPlanSelector) pricingPlanSelector.disabled = false;
-                window.location.href = '/billing/checkout';
               }
             };
           } else {
