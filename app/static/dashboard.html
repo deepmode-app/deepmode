@@ -365,6 +365,8 @@
       display: flex;
       flex-direction: column;
       gap: 4px;
+      text-align: center;
+      width: 100%;
     }
 
     .badge {
@@ -445,7 +447,7 @@
       border: 1px solid rgba(39, 39, 47, 0.5);
       border-radius: 12px;
       padding: 14px 16px;
-      margin-top: 16px;
+      margin-top: 14px;
       margin-bottom: 18px;
       backdrop-filter: blur(10px);
     }
@@ -489,6 +491,7 @@
       display: flex;
       align-items: center;
       justify-content: space-between;
+      margin-top: 16px;
       margin-bottom: 16px;
       border: 1px solid transparent;
       box-shadow: 0 12px 35px rgba(0, 0, 0, 0.55);
@@ -631,7 +634,7 @@
     .cards-row {
       display: grid;
       grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
-      gap: 12px;
+      gap: 16px;
       margin-bottom: 18px;
     }
 
@@ -1813,31 +1816,31 @@
           <h1>Your focus stats</h1>
           <div class="subhead" id="userHint">
             Welcome back.
-            <br/>Protect your focus. Build your discipline. Stay consistent.
+            <br/>Protect your focus. Track your discipline. Build your streaks.
           </div>
         </div>
       </div>
 
       <!-- Start Session Callout -->
-      <div id="startSessionCallout" class="start-session-callout" style="display: block;">
+      <div id="startSessionCallout" class="start-session-callout" style="display: none;">
         <div style="display: flex; align-items: flex-start; gap: 12px;">
           <div style="flex: 1;">
             <div style="font-size: 13px; font-weight: 500; color: #e5e7eb; margin-bottom: 4px;">Start a deepwork session</div>
             <div style="font-size: 12px; color: #9ca3af; line-height: 1.5; margin-bottom: 4px;">
-              Open the Deepmode extension, pick a block (5, 25, 50 or 90 minutes), and type one clear task you'll work on.
+              Open the Deepmode extension, choose a block (5, 25, 50, or 90 minutes), and type one clear task you'll work on.
             </div>
             <div style="font-size: 11px; color: #6b7280; line-height: 1.4;">
               Ritual: choose your time → name your task → stay until the timer ends.
             </div>
           </div>
-          <button onclick="document.getElementById('startSessionCallout').style.display='none'" style="background: transparent; border: none; color: #9ca3af; cursor: pointer; font-size: 18px; line-height: 1; padding: 0; width: 20px; height: 20px;">×</button>
+          <button id="ritualCalloutClose" onclick="closeRitualCallout()" style="background: transparent; border: none; color: #9ca3af; cursor: pointer; font-size: 18px; line-height: 1; padding: 0; width: 20px; height: 20px;">×</button>
         </div>
       </div>
 
       <!-- Manage Projects button -->
       <button id="manageProjectsBtn" class="manage-projects-btn">
         <span class="manage-projects-icon">📁</span>
-        Manage projects
+        Your projects
       </button>
 
     <!-- Last block banner -->
@@ -1886,7 +1889,7 @@
         </div>
         <div class="card-value" id="totalMinutes">--</div>
         <div class="card-sub" id="allTimeSubtext">Your deepwork history</div>
-        <div class="card-locked-hint" id="allTimeHint" style="display: none; font-size: 11px; color: var(--dw-muted); margin-top: 4px;">Full history unlocks with Deepmode AI Pro.</div>
+        <div class="card-locked-hint" id="allTimeHint" style="display: none; font-size: 11px; color: var(--dw-muted); margin-top: 4px;">Unlock full history with Deepmode AI Pro</div>
       </div>
 
       <div class="card card-locked" id="disciplineCard">
@@ -1897,7 +1900,7 @@
         </div>
         <div class="card-value" id="disciplineScore">--</div>
         <div class="card-sub" id="disciplineSubtext">Your deepwork efficiency</div>
-        <div class="card-locked-hint" id="disciplineHint" style="display: none; font-size: 11px; color: var(--dw-muted); margin-top: 4px;">Discipline score unlocks with Deepmode AI Pro.</div>
+        <div class="card-locked-hint" id="disciplineHint" style="display: none; font-size: 11px; color: var(--dw-muted); margin-top: 4px;">Available with Deepmode AI Pro</div>
       </div>
 
       <div class="card" id="streakCard">
@@ -1907,12 +1910,9 @@
         <div id="streakZeroHint" style="display: none; font-size: 11px; color: var(--dw-muted); margin-top: 4px; font-style: italic;">
           No streak yet. Start your first session today.
         </div>
-        <div id="streakUpgradeCallout" style="display: none; font-size: 11px; color: var(--dw-muted); margin-top: 6px; line-height: 1.4;">
-          Detailed streak trends are available in Deepmode AI Pro.
-        </div>
         <div id="streakProLink" style="display: none; margin-top: 8px;">
           <a href="/streak" class="upgrade-btn" style="font-size: 10px; padding: 4px 10px; display: inline-block;">
-            See my AI insights
+            View my AI insights
           </a>
         </div>
       </div>
@@ -1920,7 +1920,7 @@
 
       <!-- Single upgrade hint for Free users only -->
       <p id="freeUpgradeHint" class="dash-pro-upsell" style="display: none; margin-top: 14px; margin-bottom: 24px; font-size: 13px; color: var(--dw-muted);">
-        Unlock full history and AI insights with <a href="/billing/checkout" class="dash-pro-link" style="color: var(--dw-accent); text-decoration: none; transition: color 0.2s ease;" onmouseover="this.style.color='#f3121f'; this.style.textDecoration='underline';" onmouseout="this.style.color='var(--dw-accent)'; this.style.textDecoration='none';">Deepmode AI Pro →</a>
+        Unlock AI insights and full history with <a href="/#pricing" class="dash-pro-link" style="color: var(--dw-accent); text-decoration: none; transition: color 0.2s ease;" onmouseover="this.style.color='#f3121f'; this.style.textDecoration='underline';" onmouseout="this.style.color='var(--dw-accent)'; this.style.textDecoration='none';">Deepmode AI Pro →</a>
       </p>
 
     <div class="card sessions-card">
@@ -2564,7 +2564,7 @@
             }
             const hint = document.getElementById('allTimeHint');
             if (hint) hint.style.display = 'block';
-            if (allTimeSubtext) allTimeSubtext.textContent = 'Full history unlocks with Deepmode AI Pro.';
+            if (allTimeSubtext) allTimeSubtext.textContent = 'Unlock full history with Deepmode AI Pro';
             const totalMinutes = document.getElementById('totalMinutes');
             if (totalMinutes) totalMinutes.textContent = '--';
           }
@@ -2574,7 +2574,7 @@
             }
             const hint = document.getElementById('disciplineHint');
             if (hint) hint.style.display = 'block';
-            if (disciplineSubtext) disciplineSubtext.textContent = 'Discipline score unlocks with Deepmode AI Pro.';
+            if (disciplineSubtext) disciplineSubtext.textContent = 'Available with Deepmode AI Pro';
             const disciplineScore = document.getElementById('disciplineScore');
             if (disciplineScore) disciplineScore.textContent = '--';
           }
@@ -2938,15 +2938,8 @@
       
       if (!banner || !taskEl || !categoryEl || !timerEl) return;
 
-      // Update start session callout visibility
-      const startSessionCallout = document.getElementById("startSessionCallout");
-      if (startSessionCallout) {
-        if (!session) {
-          startSessionCallout.style.display = "block";
-        } else {
-          startSessionCallout.style.display = "none";
-        }
-      }
+      // Update start session callout visibility (controlled by localStorage once-per-day logic)
+      // The checkRitualCalloutVisibility() function handles showing/hiding based on localStorage
 
       if (!session) {
         // Hide live banner when no session
@@ -3060,8 +3053,11 @@
         cssClass = "last-block-banner last-block--completed";
         iconText = "✓";
         title = "Nice work — you finished this block.";
-        subtitle = `${formatMinutesCompact(actual)} on "${taskName}".`;
-        if (breakEl) breakEl.style.display = "block";
+        subtitle = `${formatMinutesCompact(actual)} min on "${taskName}".`;
+        if (breakEl) {
+          breakEl.style.display = "block";
+          breakEl.textContent = "Take a short break, reset, and come back fresh.";
+        }
       } else if (status === "completed_early" || status === "completed-early") {
         cssClass = "last-block-banner last-block--completed-early";
         iconText = "⚡";
@@ -3071,13 +3067,13 @@
       } else if (status === "stopped_early" || status === "stopped-early") {
         cssClass = "last-block-banner last-block--abandoned";
         iconText = "!";
-        title = "Block abandoned — that happens.";
+        title = "Block abandoned — it happens.";
         subtitle = "No deepwork recorded. Start a fresh block when you're ready.";
         if (breakEl) breakEl.style.display = "none";
       } else if (status === "abandoned") {
         cssClass = "last-block-banner last-block--abandoned";
         iconText = "!";
-        title = "Block abandoned — that happens.";
+        title = "Block abandoned — it happens.";
         subtitle = "No deepwork recorded. Start a fresh block when you're ready.";
         if (breakEl) breakEl.style.display = "none";
       } else {
@@ -3095,7 +3091,7 @@
       titleEl.textContent = title;
       subtitleEl.textContent = subtitle;
       if (breakEl && breakEl.style.display === "block") {
-        breakEl.textContent = "Take a short break.";
+        // Break message is already set above for completed blocks
       }
       metaEl.textContent = timeAgoString || "";
 
@@ -4304,7 +4300,7 @@
           displayName = user.email.split('@')[0];
         }
         const welcomeText = displayName ? `Welcome back, ${displayName}.` : 'Welcome back.';
-        userHint.innerHTML = `${welcomeText} <br/>Protect your focus. Build your discipline. Stay consistent.`;
+        userHint.innerHTML = `${welcomeText} <br/>Protect your focus. Track your discipline. Build your streaks.`;
       }
     }
 
@@ -4313,7 +4309,6 @@
       const streakNumber = document.getElementById("streakNumber");
       const streakSubtext = document.getElementById("streakSubtext");
       const streakZeroHint = document.getElementById("streakZeroHint");
-      const streakUpgradeCallout = document.getElementById("streakUpgradeCallout");
       const streakProLink = document.getElementById("streakProLink");
       
       if (!streakCard || !streakNumber) return;
@@ -4324,14 +4319,12 @@
       streakNumber.textContent = streak;
       
       if (isPro) {
-        // Pro users: show normal subtext, hide upgrade callout, show link to full insights
+        // Pro users: show normal subtext, show link to full insights
         if (streakSubtext) streakSubtext.textContent = streak === 1 ? "day" : "days";
-        if (streakUpgradeCallout) streakUpgradeCallout.style.display = "none";
         if (streakProLink) streakProLink.style.display = "block";
         if (streakZeroHint) streakZeroHint.style.display = "none";
       } else {
-        // Free users: show upgrade callout, hide Pro link
-        if (streakUpgradeCallout) streakUpgradeCallout.style.display = "block";
+        // Free users: hide Pro link, show normal streak text
         if (streakProLink) streakProLink.style.display = "none";
         // Show/hide zero streak hint
         if (streak === 0) {
@@ -4339,7 +4332,6 @@
         } else {
           if (streakZeroHint) streakZeroHint.style.display = "none";
         }
-        // Free users always see the upgrade callout with the subtext
         if (streakSubtext) streakSubtext.textContent = streak === 1 ? "day" : "days";
       }
     }
@@ -4609,6 +4601,35 @@
       });
     }
 
+
+    // Ritual callout once-per-day logic
+    function checkRitualCalloutVisibility() {
+      const callout = document.getElementById("startSessionCallout");
+      if (!callout) return;
+      
+      const closedDate = localStorage.getItem("dm_ritual_closed_date");
+      const today = new Date().toDateString();
+      
+      if (closedDate === today) {
+        // Already closed today, hide it
+        callout.style.display = "none";
+      } else {
+        // Not closed today, show it
+        callout.style.display = "block";
+      }
+    }
+
+    function closeRitualCallout() {
+      const callout = document.getElementById("startSessionCallout");
+      if (callout) {
+        callout.style.display = "none";
+        const today = new Date().toDateString();
+        localStorage.setItem("dm_ritual_closed_date", today);
+      }
+    }
+
+    // Check on page load
+    checkRitualCalloutVisibility();
 
     loadUserInfo();
     loadEmailPreferences();
