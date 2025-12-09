@@ -445,7 +445,7 @@
       border: 1px solid rgba(39, 39, 47, 0.5);
       border-radius: 12px;
       padding: 14px 16px;
-      margin-top: 12px;
+      margin-top: 16px;
       margin-bottom: 18px;
       backdrop-filter: blur(10px);
     }
@@ -1748,13 +1748,6 @@
           </a>
         </div>
         <nav class="nav-links">
-          <div id="upgradeContainer" style="display: inline-flex; align-items: center; gap: 8px;">
-            <select id="planSelector" style="display: none; padding: 6px 10px; border-radius: 6px; background: #1a1a1f; border: 1px solid #27272f; color: #e5e7eb; font-size: 12px; cursor: pointer;">
-              <option value="yearly">Yearly</option>
-              <option value="monthly">Monthly</option>
-            </select>
-            <button class="upgrade-btn" id="upgradeBtn">Upgrade to Deepmode AI Pro</button>
-          </div>
           <span class="pro-pill" id="proPill" style="display:none;">Deepmode AI Pro active</span>
           <div class="nav-account" id="navAccount">
             <button class="nav-account-trigger" id="accountTrigger" aria-expanded="false" aria-haspopup="true">
@@ -1820,7 +1813,7 @@
           <h1>Your focus stats</h1>
           <div class="subhead" id="userHint">
             Welcome back.
-            <br/>Protect your focus. Track your discipline. Build your streaks.
+            <br/>Protect your focus. Build your discipline. Stay consistent.
           </div>
         </div>
       </div>
@@ -1831,10 +1824,10 @@
           <div style="flex: 1;">
             <div style="font-size: 13px; font-weight: 500; color: #e5e7eb; margin-bottom: 4px;">Start a deepwork session</div>
             <div style="font-size: 12px; color: #9ca3af; line-height: 1.5; margin-bottom: 4px;">
-              Before you start any serious work, open the Deepmode extension in your browser toolbar, pick a block (5, 25, 50 or 90 minutes), and type one clear task you'll work on.
+              Open the Deepmode extension, pick a block (5, 25, 50 or 90 minutes), and type one clear task you'll work on.
             </div>
             <div style="font-size: 11px; color: #6b7280; line-height: 1.4;">
-              Ritual: choose your time → name the task → stay with it until the timer ends. One block. One task.
+              Ritual: choose your time → name your task → stay until the timer ends.
             </div>
           </div>
           <button onclick="document.getElementById('startSessionCallout').style.display='none'" style="background: transparent; border: none; color: #9ca3af; cursor: pointer; font-size: 18px; line-height: 1; padding: 0; width: 20px; height: 20px;">×</button>
@@ -1853,7 +1846,8 @@
         <div class="last-block-icon"></div>
         <div class="last-block-text">
           <div class="last-block-title">No sessions yet today.</div>
-          <div class="last-block-subtitle">Start your first session — momentum begins with the first block.</div>
+          <div class="last-block-subtitle">Start a 25-minute block and give yourself uninterrupted focus.</div>
+          <div class="last-block-break" style="display: none; font-size: 12px; color: rgba(255, 255, 255, 0.6); margin-top: 4px;">Take a short break.</div>
         </div>
       </div>
       <div class="last-block-meta">Deep blocks are saved here right after you finish.</div>
@@ -1892,7 +1886,7 @@
         </div>
         <div class="card-value" id="totalMinutes">--</div>
         <div class="card-sub" id="allTimeSubtext">Your deepwork history</div>
-        <div class="card-locked-hint" id="allTimeHint" style="display: none; font-size: 11px; color: var(--dw-muted); margin-top: 4px;">Full history is available with Deepmode AI Pro.</div>
+        <div class="card-locked-hint" id="allTimeHint" style="display: none; font-size: 11px; color: var(--dw-muted); margin-top: 4px;">Full history unlocks with Deepmode AI Pro.</div>
       </div>
 
       <div class="card card-locked" id="disciplineCard">
@@ -1914,7 +1908,7 @@
           No streak yet. Start your first session today.
         </div>
         <div id="streakUpgradeCallout" style="display: none; font-size: 11px; color: var(--dw-muted); margin-top: 6px; line-height: 1.4;">
-          Unlock detailed streak history and trends with Deepmode AI Pro.
+          Detailed streak trends are available in Deepmode AI Pro.
         </div>
         <div id="streakProLink" style="display: none; margin-top: 8px;">
           <a href="/streak" class="upgrade-btn" style="font-size: 10px; padding: 4px 10px; display: inline-block;">
@@ -1925,18 +1919,9 @@
       </div>
 
       <!-- Single upgrade hint for Free users only -->
-      <div id="freeUpgradeHint" style="display: none; margin-top: 14px; margin-bottom: 24px;">
-        <a href="#" id="freeUpgradeLink" style="font-size: 13px; color: var(--dw-muted); text-decoration: none; transition: color 0.2s ease; cursor: pointer;" onmouseover="this.style.color='#e5e7eb'; this.style.textDecoration='underline';" onmouseout="this.style.color='var(--dw-muted)'; this.style.textDecoration='none';">
-          Unlock full history and AI insights with Deepmode AI Pro →
-        </a>
-      </div>
-
-      <!-- AI insights CTA for Pro users only -->
-      <div id="proAiInsightsCta" style="display: none; margin-top: 14px; margin-bottom: 24px;">
-        <a href="/streak" class="btn btn-secondary" style="display: inline-block; font-size: 13px; padding: 8px 16px;">
-          Open AI focus insights
-        </a>
-      </div>
+      <p id="freeUpgradeHint" class="dash-pro-upsell" style="display: none; margin-top: 14px; margin-bottom: 24px; font-size: 13px; color: var(--dw-muted);">
+        Unlock full history and AI insights with <a href="/billing/checkout" class="dash-pro-link" style="color: var(--dw-accent); text-decoration: none; transition: color 0.2s ease;" onmouseover="this.style.color='#f3121f'; this.style.textDecoration='underline';" onmouseout="this.style.color='var(--dw-accent)'; this.style.textDecoration='none';">Deepmode AI Pro →</a>
+      </p>
 
     <div class="card sessions-card">
       <div class="sessions-header-row">
@@ -1980,7 +1965,7 @@
       </div>
       
       <div id="emptyState" class="empty" style="display:none;">
-        No sessions yet today. Start a 25-minute block and give yourself clean focus.
+        No sessions yet today. Start a 25-minute block and give yourself uninterrupted focus.
       </div>
       <table id="sessionsTable" style="display:none;">
         <thead>
@@ -2415,86 +2400,13 @@
     }
 
     function updateProStatusUI(user) {
-      const upgradeBtn = document.getElementById("upgradeBtn");
       const proPill = document.getElementById("proPill");
-      const upgradeContainer = document.getElementById("upgradeContainer");
-      const planSelector = document.getElementById("planSelector");
 
       if (!user || !user.is_pro) {
-        // Free user - show upgrade button and plan selector
-        if (upgradeContainer) upgradeContainer.style.display = "inline-flex";
-        if (planSelector) planSelector.style.display = "block";
-        if (upgradeBtn) {
-          upgradeBtn.style.display = "inline-block";
-          // Set default to yearly
-          if (planSelector) planSelector.value = "yearly";
-          
-          // Create shared upgrade function
-          const triggerUpgrade = async function(e) {
-            if (e) e.preventDefault();
-            if (!currentUser || !currentUser.email) {
-              alert("Please log in to upgrade.");
-              return;
-            }
-            
-            const selectedPlan = planSelector ? planSelector.value : "yearly";
-            
-            try {
-              if (upgradeBtn) {
-                upgradeBtn.disabled = true;
-                upgradeBtn.textContent = "Loading...";
-              }
-              if (planSelector) planSelector.disabled = true;
-              
-              const response = await fetch("/billing/create-checkout-session", {
-                method: "POST",
-                headers: {
-                  "Content-Type": "application/json",
-                  "Authorization": "Bearer " + token,
-                },
-                body: JSON.stringify({
-                  email: currentUser.email,
-                  plan: selectedPlan, // Use selected plan (defaults to yearly)
-                }),
-              });
-              
-              if (!response.ok) {
-                const error = await response.json();
-                throw new Error(error.detail || "Failed to create checkout session");
-              }
-              
-              const data = await response.json();
-              if (data.checkout_url) {
-                window.location.href = data.checkout_url;
-              } else {
-                throw new Error("No checkout URL received");
-              }
-            } catch (error) {
-              console.error("Error creating checkout session:", error);
-              alert("Failed to start checkout. Please try again.");
-              if (upgradeBtn) {
-                upgradeBtn.disabled = false;
-                upgradeBtn.textContent = "Upgrade to Deepmode AI Pro";
-              }
-              if (planSelector) planSelector.disabled = false;
-            }
-          };
-          
-          // Attach click handler to upgrade button
-          upgradeBtn.onclick = triggerUpgrade;
-          
-          // Wire up free upgrade hint link
-          const freeUpgradeLink = document.getElementById('freeUpgradeLink');
-          if (freeUpgradeLink) {
-            freeUpgradeLink.onclick = triggerUpgrade;
-          }
-        }
+        // Free user
         if (proPill) proPill.style.display = "none";
       } else {
-        // Pro user - hide upgrade button and plan selector
-        if (upgradeContainer) upgradeContainer.style.display = "none";
-        if (planSelector) planSelector.style.display = "none";
-        if (upgradeBtn) upgradeBtn.style.display = "none";
+        // Pro user
         if (proPill) proPill.style.display = "inline-flex";
       }
     }
@@ -2625,10 +2537,6 @@
             if (disciplineSubtext) disciplineSubtext.textContent = 'Your deepwork efficiency';
           }
           
-          // Show AI insights CTA for Pro users
-          const proAiInsightsCta = document.getElementById('proAiInsightsCta');
-          if (proAiInsightsCta) proAiInsightsCta.style.display = 'block';
-          
           // Hide upgrade hint for Pro users
           const freeUpgradeHint = document.getElementById('freeUpgradeHint');
           if (freeUpgradeHint) freeUpgradeHint.style.display = 'none';
@@ -2656,7 +2564,7 @@
             }
             const hint = document.getElementById('allTimeHint');
             if (hint) hint.style.display = 'block';
-            if (allTimeSubtext) allTimeSubtext.textContent = 'Full history is available with Deepmode AI Pro.';
+            if (allTimeSubtext) allTimeSubtext.textContent = 'Full history unlocks with Deepmode AI Pro.';
             const totalMinutes = document.getElementById('totalMinutes');
             if (totalMinutes) totalMinutes.textContent = '--';
           }
@@ -2674,10 +2582,6 @@
           // Show upgrade hint for Free users
           const freeUpgradeHint = document.getElementById('freeUpgradeHint');
           if (freeUpgradeHint) freeUpgradeHint.style.display = 'block';
-          
-          // Hide AI insights CTA for Free users
-          const proAiInsightsCta = document.getElementById('proAiInsightsCta');
-          if (proAiInsightsCta) proAiInsightsCta.style.display = 'none';
         }
 
         // Update email preferences UI after user info is loaded
@@ -3115,6 +3019,7 @@
       const titleEl = banner.querySelector(".last-block-title");
       const subtitleEl = banner.querySelector(".last-block-subtitle");
       const metaEl = banner.querySelector(".last-block-meta");
+      const breakEl = banner.querySelector(".last-block-break");
 
       if (!iconEl || !titleEl || !subtitleEl || !metaEl) return;
 
@@ -3156,27 +3061,32 @@
         iconText = "✓";
         title = "Nice work — you finished this block.";
         subtitle = `${formatMinutesCompact(actual)} on "${taskName}".`;
+        if (breakEl) breakEl.style.display = "block";
       } else if (status === "completed_early" || status === "completed-early") {
         cssClass = "last-block-banner last-block--completed-early";
         iconText = "⚡";
         title = "Strong move — you wrapped this block early.";
         subtitle = `${formatMinutesCompact(actual)} min out of ${formatMinutesCompact(planned)} min on "${taskName}".`;
+        if (breakEl) breakEl.style.display = "none";
       } else if (status === "stopped_early" || status === "stopped-early") {
         cssClass = "last-block-banner last-block--abandoned";
         iconText = "!";
         title = "Block abandoned — that happens.";
         subtitle = "No deepwork recorded. Start a fresh block when you're ready.";
+        if (breakEl) breakEl.style.display = "none";
       } else if (status === "abandoned") {
         cssClass = "last-block-banner last-block--abandoned";
         iconText = "!";
         title = "Block abandoned — that happens.";
         subtitle = "No deepwork recorded. Start a fresh block when you're ready.";
+        if (breakEl) breakEl.style.display = "none";
       } else {
         // Fallback for unknown status
         cssClass = "last-block-banner last-block--empty";
         iconText = "";
         title = "Last block";
         subtitle = `${formatMinutesCompact(actual)} on "${taskName}"`;
+        if (breakEl) breakEl.style.display = "none";
       }
 
       // Apply styles and content
@@ -3184,6 +3094,9 @@
       iconEl.textContent = iconText;
       titleEl.textContent = title;
       subtitleEl.textContent = subtitle;
+      if (breakEl && breakEl.style.display === "block") {
+        breakEl.textContent = "Take a short break.";
+      }
       metaEl.textContent = timeAgoString || "";
 
       banner.style.display = "block";
@@ -4391,7 +4304,7 @@
           displayName = user.email.split('@')[0];
         }
         const welcomeText = displayName ? `Welcome back, ${displayName}.` : 'Welcome back.';
-        userHint.innerHTML = `${welcomeText} <br/>Protect your focus. Track your discipline. Build your streaks.`;
+        userHint.innerHTML = `${welcomeText} <br/>Protect your focus. Build your discipline. Stay consistent.`;
       }
     }
 
@@ -4423,11 +4336,11 @@
         // Show/hide zero streak hint
         if (streak === 0) {
           if (streakZeroHint) streakZeroHint.style.display = "block";
-          if (streakSubtext) streakSubtext.textContent = "Unlock detailed streak history and trends with Deepmode AI Pro.";
         } else {
           if (streakZeroHint) streakZeroHint.style.display = "none";
-          if (streakSubtext) streakSubtext.textContent = streak === 1 ? "day" : "days";
         }
+        // Free users always see the upgrade callout with the subtext
+        if (streakSubtext) streakSubtext.textContent = streak === 1 ? "day" : "days";
       }
     }
 
