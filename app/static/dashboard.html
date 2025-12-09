@@ -1750,8 +1750,8 @@
         <nav class="nav-links">
           <div id="upgradeContainer" style="display: inline-flex; align-items: center; gap: 8px;">
             <select id="planSelector" style="display: none; padding: 6px 10px; border-radius: 6px; background: #1a1a1f; border: 1px solid #27272f; color: #e5e7eb; font-size: 12px; cursor: pointer;">
-              <option value="yearly">Yearly (£79.99/year)</option>
-              <option value="monthly">Monthly (£9.99/month)</option>
+              <option value="yearly">Yearly</option>
+              <option value="monthly">Monthly</option>
             </select>
             <button class="upgrade-btn" id="upgradeBtn">Upgrade to Deepmode AI Pro</button>
           </div>
@@ -1888,33 +1888,33 @@
       <div class="card card-locked" id="allTimeCard">
         <div class="card-title">
           All-Time
-          <span class="card-pro-badge" id="allTimeProBadge">Pro</span>
+          <span class="card-pro-badge" id="allTimeProBadge" style="display: none;">Pro</span>
         </div>
-        <div class="card-value" id="totalMinutes">0 min</div>
-        <div class="card-sub">Your deepwork history</div>
-        <div class="card-locked-hint" id="allTimeHint">Available with Deepmode AI Pro</div>
+        <div class="card-value" id="totalMinutes">--</div>
+        <div class="card-sub" id="allTimeSubtext">Your deepwork history</div>
+        <div class="card-locked-hint" id="allTimeHint" style="display: none; font-size: 11px; color: var(--dw-muted); margin-top: 4px;">Full history is available with Deepmode AI Pro.</div>
       </div>
 
       <div class="card card-locked" id="disciplineCard">
         <div class="card-title">
           Discipline
-          <span class="card-pro-badge" id="disciplineProBadge">Pro</span>
+          <span class="card-pro-badge" id="disciplineProBadge" style="display: none;">Pro</span>
           <span class="chip" id="sessionCountsChip" style="margin-left: auto;">0 / 0</span>
         </div>
-        <div class="card-value" id="disciplineScore">0%</div>
-        <div class="card-sub">Your deepwork efficiency</div>
-        <div class="card-locked-hint" id="disciplineHint">Available with Deepmode AI Pro</div>
+        <div class="card-value" id="disciplineScore">--</div>
+        <div class="card-sub" id="disciplineSubtext">Your deepwork efficiency</div>
+        <div class="card-locked-hint" id="disciplineHint" style="display: none; font-size: 11px; color: var(--dw-muted); margin-top: 4px;">Discipline score unlocks with Deepmode AI Pro.</div>
       </div>
 
       <div class="card" id="streakCard">
         <div class="card-title">Streak</div>
         <div class="card-value" id="streakNumber">0</div>
         <div class="card-sub" id="streakSubtext">days</div>
-        <div id="streakZeroHint" style="display: none; font-size: 10px; color: var(--dw-muted); margin-top: 4px; font-style: italic;">
+        <div id="streakZeroHint" style="display: none; font-size: 11px; color: var(--dw-muted); margin-top: 4px; font-style: italic;">
           No streak yet. Start your first session today.
         </div>
-        <div id="streakUpgradeCallout" style="display: none; font-size: 10px; color: var(--dw-muted); margin-top: 6px; line-height: 1.4;">
-          Upgrade to Deepmode AI Pro to see full streak history and trends.
+        <div id="streakUpgradeCallout" style="display: none; font-size: 11px; color: var(--dw-muted); margin-top: 6px; line-height: 1.4;">
+          Unlock detailed streak history and trends with Deepmode AI Pro.
         </div>
         <div id="streakProLink" style="display: none; margin-top: 8px;">
           <a href="/streak" class="upgrade-btn" style="font-size: 10px; padding: 4px 10px; display: inline-block;">
@@ -1922,6 +1922,20 @@
           </a>
         </div>
       </div>
+      </div>
+
+      <!-- Single upgrade hint for Free users only -->
+      <div id="freeUpgradeHint" style="display: none; margin-top: 14px; margin-bottom: 24px;">
+        <a href="#" id="freeUpgradeLink" style="font-size: 13px; color: var(--dw-muted); text-decoration: none; transition: color 0.2s ease; cursor: pointer;" onmouseover="this.style.color='#e5e7eb'; this.style.textDecoration='underline';" onmouseout="this.style.color='var(--dw-muted)'; this.style.textDecoration='none';">
+          Unlock full history and AI insights with Deepmode AI Pro →
+        </a>
+      </div>
+
+      <!-- AI insights CTA for Pro users only -->
+      <div id="proAiInsightsCta" style="display: none; margin-top: 14px; margin-bottom: 24px;">
+        <a href="/streak" class="btn btn-secondary" style="display: inline-block; font-size: 13px; padding: 8px 16px;">
+          Open AI focus insights
+        </a>
       </div>
 
     <div class="card sessions-card">
@@ -2415,9 +2429,9 @@
           // Set default to yearly
           if (planSelector) planSelector.value = "yearly";
           
-          // Attach click handler to create Stripe checkout session
-          upgradeBtn.onclick = async function(e) {
-            e.preventDefault();
+          // Create shared upgrade function
+          const triggerUpgrade = async function(e) {
+            if (e) e.preventDefault();
             if (!currentUser || !currentUser.email) {
               alert("Please log in to upgrade.");
               return;
@@ -2426,8 +2440,10 @@
             const selectedPlan = planSelector ? planSelector.value : "yearly";
             
             try {
-              upgradeBtn.disabled = true;
-              upgradeBtn.textContent = "Loading...";
+              if (upgradeBtn) {
+                upgradeBtn.disabled = true;
+                upgradeBtn.textContent = "Loading...";
+              }
               if (planSelector) planSelector.disabled = true;
               
               const response = await fetch("/billing/create-checkout-session", {
@@ -2456,11 +2472,22 @@
             } catch (error) {
               console.error("Error creating checkout session:", error);
               alert("Failed to start checkout. Please try again.");
-              upgradeBtn.disabled = false;
-              upgradeBtn.textContent = "Upgrade to Deepmode AI Pro";
+              if (upgradeBtn) {
+                upgradeBtn.disabled = false;
+                upgradeBtn.textContent = "Upgrade to Deepmode AI Pro";
+              }
               if (planSelector) planSelector.disabled = false;
             }
           };
+          
+          // Attach click handler to upgrade button
+          upgradeBtn.onclick = triggerUpgrade;
+          
+          // Wire up free upgrade hint link
+          const freeUpgradeLink = document.getElementById('freeUpgradeLink');
+          if (freeUpgradeLink) {
+            freeUpgradeLink.onclick = triggerUpgrade;
+          }
         }
         if (proPill) proPill.style.display = "none";
       } else {
@@ -2579,12 +2606,15 @@
           // Enable All-Time and Discipline cards for Pro users
           const allTimeCard = document.getElementById('allTimeCard');
           const disciplineCard = document.getElementById('disciplineCard');
+          const allTimeSubtext = document.getElementById('allTimeSubtext');
+          const disciplineSubtext = document.getElementById('disciplineSubtext');
           if (allTimeCard) {
             allTimeCard.classList.remove('card-locked');
             const proBadge = document.getElementById('allTimeProBadge');
             if (proBadge) proBadge.style.display = 'none';
             const hint = document.getElementById('allTimeHint');
             if (hint) hint.style.display = 'none';
+            if (allTimeSubtext) allTimeSubtext.textContent = 'Your deepwork history';
           }
           if (disciplineCard) {
             disciplineCard.classList.remove('card-locked');
@@ -2592,7 +2622,16 @@
             if (proBadge) proBadge.style.display = 'none';
             const hint = document.getElementById('disciplineHint');
             if (hint) hint.style.display = 'none';
+            if (disciplineSubtext) disciplineSubtext.textContent = 'Your deepwork efficiency';
           }
+          
+          // Show AI insights CTA for Pro users
+          const proAiInsightsCta = document.getElementById('proAiInsightsCta');
+          if (proAiInsightsCta) proAiInsightsCta.style.display = 'block';
+          
+          // Hide upgrade hint for Pro users
+          const freeUpgradeHint = document.getElementById('freeUpgradeHint');
+          if (freeUpgradeHint) freeUpgradeHint.style.display = 'none';
         } else {
           if (badgeEl) {
             badgeEl.textContent = "Deepmode";
@@ -2609,12 +2648,36 @@
           // Keep All-Time and Discipline cards locked for Free users
           const allTimeCard = document.getElementById('allTimeCard');
           const disciplineCard = document.getElementById('disciplineCard');
-          if (allTimeCard && !allTimeCard.classList.contains('card-locked')) {
-            allTimeCard.classList.add('card-locked');
+          const allTimeSubtext = document.getElementById('allTimeSubtext');
+          const disciplineSubtext = document.getElementById('disciplineSubtext');
+          if (allTimeCard) {
+            if (!allTimeCard.classList.contains('card-locked')) {
+              allTimeCard.classList.add('card-locked');
+            }
+            const hint = document.getElementById('allTimeHint');
+            if (hint) hint.style.display = 'block';
+            if (allTimeSubtext) allTimeSubtext.textContent = 'Full history is available with Deepmode AI Pro.';
+            const totalMinutes = document.getElementById('totalMinutes');
+            if (totalMinutes) totalMinutes.textContent = '--';
           }
-          if (disciplineCard && !disciplineCard.classList.contains('card-locked')) {
-            disciplineCard.classList.add('card-locked');
+          if (disciplineCard) {
+            if (!disciplineCard.classList.contains('card-locked')) {
+              disciplineCard.classList.add('card-locked');
+            }
+            const hint = document.getElementById('disciplineHint');
+            if (hint) hint.style.display = 'block';
+            if (disciplineSubtext) disciplineSubtext.textContent = 'Discipline score unlocks with Deepmode AI Pro.';
+            const disciplineScore = document.getElementById('disciplineScore');
+            if (disciplineScore) disciplineScore.textContent = '--';
           }
+          
+          // Show upgrade hint for Free users
+          const freeUpgradeHint = document.getElementById('freeUpgradeHint');
+          if (freeUpgradeHint) freeUpgradeHint.style.display = 'block';
+          
+          // Hide AI insights CTA for Free users
+          const proAiInsightsCta = document.getElementById('proAiInsightsCta');
+          if (proAiInsightsCta) proAiInsightsCta.style.display = 'none';
         }
 
         // Update email preferences UI after user info is loaded
@@ -3069,14 +3132,9 @@
       
       const lastSession = finishedSessions.length > 0 ? finishedSessions[0] : null;
 
-      // No sessions or no finished session
+      // No sessions or no finished session - hide banner, empty state will show in Recent sessions
       if (!lastSession) {
-        banner.className = "last-block-banner last-block--empty";
-        iconEl.textContent = "";
-        titleEl.textContent = "No sessions yet today.";
-        subtitleEl.textContent = "Start a 25-minute block and give yourself clean focus.";
-        metaEl.textContent = "";
-        banner.style.display = "block";
+        banner.style.display = "none";
         return;
       }
 
@@ -4351,23 +4409,25 @@
       
       // Always show streak number
       streakNumber.textContent = streak;
-      streakSubtext.textContent = streak === 1 ? "day" : "days";
-      
-      // Show/hide zero streak hint
-      if (streak === 0) {
-        if (streakZeroHint) streakZeroHint.style.display = "block";
-      } else {
-        if (streakZeroHint) streakZeroHint.style.display = "none";
-      }
       
       if (isPro) {
-        // Pro users: hide upgrade callout, show link to full insights
+        // Pro users: show normal subtext, hide upgrade callout, show link to full insights
+        if (streakSubtext) streakSubtext.textContent = streak === 1 ? "day" : "days";
         if (streakUpgradeCallout) streakUpgradeCallout.style.display = "none";
         if (streakProLink) streakProLink.style.display = "block";
+        if (streakZeroHint) streakZeroHint.style.display = "none";
       } else {
         // Free users: show upgrade callout, hide Pro link
         if (streakUpgradeCallout) streakUpgradeCallout.style.display = "block";
         if (streakProLink) streakProLink.style.display = "none";
+        // Show/hide zero streak hint
+        if (streak === 0) {
+          if (streakZeroHint) streakZeroHint.style.display = "block";
+          if (streakSubtext) streakSubtext.textContent = "Unlock detailed streak history and trends with Deepmode AI Pro.";
+        } else {
+          if (streakZeroHint) streakZeroHint.style.display = "none";
+          if (streakSubtext) streakSubtext.textContent = streak === 1 ? "day" : "days";
+        }
       }
     }
 
