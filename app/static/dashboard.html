@@ -445,6 +445,7 @@
       border: 1px solid rgba(39, 39, 47, 0.5);
       border-radius: 12px;
       padding: 14px 16px;
+      margin-top: 12px;
       margin-bottom: 18px;
       backdrop-filter: blur(10px);
     }
@@ -488,7 +489,7 @@
       display: flex;
       align-items: center;
       justify-content: space-between;
-      margin-bottom: 20px;
+      margin-bottom: 16px;
       border: 1px solid transparent;
       box-shadow: 0 12px 35px rgba(0, 0, 0, 0.55);
       backdrop-filter: blur(20px);
@@ -1818,7 +1819,8 @@
         <div class="left-header">
           <h1>Your focus stats</h1>
           <div class="subhead" id="userHint">
-            Protect your focus. Track your discipline. Build your streaks.
+            Welcome back.
+            <br/>Protect your focus. Track your discipline. Build your streaks.
           </div>
         </div>
       </div>
@@ -1829,10 +1831,10 @@
           <div style="flex: 1;">
             <div style="font-size: 13px; font-weight: 500; color: #e5e7eb; margin-bottom: 4px;">Start a deepwork session</div>
             <div style="font-size: 12px; color: #9ca3af; line-height: 1.5; margin-bottom: 4px;">
-              Click the Deepmode icon in your Chrome toolbar to start a session from the extension.
+              Before you start any serious work, open the Deepmode extension in your browser toolbar, pick a block (5, 25, 50 or 90 minutes), and type one clear task you'll work on.
             </div>
-            <div style="font-size: 11px; color: #6b7280;">
-              If you don't see it, pin Deepmode from the extensions menu.
+            <div style="font-size: 11px; color: #6b7280; line-height: 1.4;">
+              Ritual: choose your time → name the task → stay with it until the timer ends. One block. One task.
             </div>
           </div>
           <button onclick="document.getElementById('startSessionCallout').style.display='none'" style="background: transparent; border: none; color: #9ca3af; cursor: pointer; font-size: 18px; line-height: 1; padding: 0; width: 20px; height: 20px;">×</button>
@@ -1912,11 +1914,11 @@
           No streak yet. Start your first session today.
         </div>
         <div id="streakUpgradeCallout" style="display: none; font-size: 10px; color: var(--dw-muted); margin-top: 6px; line-height: 1.4;">
-          Upgrade to Deepmode AI Pro to see your full streak history and trends.
+          Upgrade to Deepmode AI Pro to see full streak history and trends.
         </div>
         <div id="streakProLink" style="display: none; margin-top: 8px;">
           <a href="/streak" class="upgrade-btn" style="font-size: 10px; padding: 4px 10px; display: inline-block;">
-            View your work tracker
+            See my AI insights
           </a>
         </div>
       </div>
@@ -3095,22 +3097,22 @@
         cssClass = "last-block-banner last-block--completed";
         iconText = "✓";
         title = "Nice work — you finished this block.";
-        subtitle = `${formatMinutesCompact(actual)} on "${taskName}"`;
+        subtitle = `${formatMinutesCompact(actual)} on "${taskName}".`;
       } else if (status === "completed_early" || status === "completed-early") {
         cssClass = "last-block-banner last-block--completed-early";
         iconText = "⚡";
         title = "Strong move — you wrapped this block early.";
-        subtitle = `${formatMinutesCompact(actual)} done out of ${formatMinutesCompact(planned)} on "${taskName}".`;
+        subtitle = `${formatMinutesCompact(actual)} min out of ${formatMinutesCompact(planned)} min on "${taskName}".`;
       } else if (status === "stopped_early" || status === "stopped-early") {
-        cssClass = "last-block-banner last-block--stopped-early";
-        iconText = "⏸";
-        title = "You stopped this block early.";
-        subtitle = `${formatMinutesCompact(actual)} out of ${formatMinutesCompact(planned)} on "${taskName}". Next one will feel easier.`;
+        cssClass = "last-block-banner last-block--abandoned";
+        iconText = "!";
+        title = "Block abandoned — that happens.";
+        subtitle = "No deepwork recorded. Start a fresh block when you're ready.";
       } else if (status === "abandoned") {
         cssClass = "last-block-banner last-block--abandoned";
         iconText = "!";
         title = "Block abandoned — that happens.";
-        subtitle = "No deep work recorded. Start a fresh block when you're ready.";
+        subtitle = "No deepwork recorded. Start a fresh block when you're ready.";
       } else {
         // Fallback for unknown status
         cssClass = "last-block-banner last-block--empty";
@@ -4323,8 +4325,14 @@
 
       // Update header welcome message
       const userHint = document.getElementById("userHint");
-      if (userHint && user.first_name) {
-        const welcomeText = `Welcome back, ${user.first_name}.`;
+      if (userHint) {
+        let displayName = '';
+        if (user.first_name) {
+          displayName = user.first_name;
+        } else if (user.email) {
+          displayName = user.email.split('@')[0];
+        }
+        const welcomeText = displayName ? `Welcome back, ${displayName}.` : 'Welcome back.';
         userHint.innerHTML = `${welcomeText} <br/>Protect your focus. Track your discipline. Build your streaks.`;
       }
     }
