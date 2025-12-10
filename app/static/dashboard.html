@@ -404,6 +404,7 @@
       margin: 20px 0 14px;
       width: 100%;
       display: flex;
+      flex-direction: column;
       align-items: center;
       justify-content: center;
       gap: 10px;
@@ -505,8 +506,15 @@
 
     .last-block-left {
       display: flex;
+      flex-direction: column;
       align-items: center;
-      gap: 12px;
+      text-align: center;
+      width: 100%;
+      gap: 8px;
+    }
+    
+    .last-block-icon {
+      margin-bottom: 4px;
     }
 
     .last-block-icon {
@@ -1864,6 +1872,9 @@
             <div style="font-size: 11px; color: #6b7280; line-height: 1.4;">
               Ritual: choose your time → name your task → stay until the timer ends.
             </div>
+            <div style="font-size: 10px; color: #6b7280; line-height: 1.4; margin-top: 6px; font-style: italic;">
+              Tip: Pin the Deepmode extension to your toolbar for faster sessions.
+            </div>
           </div>
           <button id="ritualCalloutClose" onclick="closeRitualCallout()" style="background: transparent; border: none; color: #9ca3af; cursor: pointer; font-size: 18px; line-height: 1; padding: 0; width: 20px; height: 20px;">×</button>
         </div>
@@ -1894,7 +1905,7 @@
     <!-- Centered live session banner -->
     <div id="liveSessionBanner" class="live-banner">
       <div style="display: flex; flex-direction: column; gap: 4px;">
-        <div style="display: flex; align-items: center; gap: 8px;">
+        <div style="display: flex; align-items: center; gap: 8px; justify-content: center; flex-wrap: wrap;">
           <span class="live-dot"></span>
           <span class="current-label">Current deepwork session:</span>
           <span class="current-task" id="currentSessionTask"></span>
@@ -1903,9 +1914,8 @@
           <span class="current-separator">—</span>
           <span class="current-timer" id="currentSessionTimer"></span>
         </div>
-        <div style="font-size: 11px; color: #9ca3af; margin-left: 20px;">
-          Stay in Deepmode until the timer ends.
-          <span style="margin-left: 8px; font-style: italic;">One session at a time.</span>
+        <div style="font-size: 11px; color: #9ca3af; text-align: center; margin-top: 6px; width: 100%;">
+          Stay with your block — this is where your momentum is built.
         </div>
       </div>
     </div>
@@ -1955,7 +1965,7 @@
       <!-- Pro user AI insights CTA -->
       <div id="proAiInsightsCta" style="display: none; margin-top: 14px; margin-bottom: 24px; text-align: center;">
         <a href="/streak" style="color: var(--dw-accent); text-decoration: none; font-size: 13px; transition: color 0.2s ease;" onmouseover="this.style.color='#f3121f'; this.style.textDecoration='underline';" onmouseout="this.style.color='var(--dw-accent)'; this.style.textDecoration='none';">
-          View AI insights into my work sessions and recommendations for improvement →
+          View my AI performance breakdown & next steps →
         </a>
       </div>
 
@@ -3097,32 +3107,59 @@
       let cssClass = "";
 
       // Map status to display properties
+      // Calculate completion percentage for stopped_early vs abandoned
+      const completionPercent = planned > 0 ? (actual / planned) * 100 : 0;
+      
       if (status === "completed") {
         cssClass = "last-block-banner last-block--completed";
         iconText = "✓";
-        title = "Nice work — you finished this block.";
-        subtitle = `${formatMinutesCompact(actual)} min on "${taskName}".`;
+        title = "Great work — you completed this session.";
+        subtitle = `${formatMinutesCompact(actual)} on "${taskName}".`;
         if (breakEl) {
           breakEl.style.display = "block";
-          breakEl.textContent = "Take a short break, reset, and come back fresh.";
+          breakEl.textContent = "Take a short break — RESET and return sharp for the next block.";
         }
       } else if (status === "completed_early" || status === "completed-early") {
         cssClass = "last-block-banner last-block--completed-early";
         iconText = "⚡";
-        title = "Strong move — you wrapped this block early.";
-        subtitle = `${formatMinutesCompact(actual)} min out of ${formatMinutesCompact(planned)} min on "${taskName}".`;
-        if (breakEl) breakEl.style.display = "none";
+        title = "Strong work — you made real progress.";
+        subtitle = `${formatMinutesCompact(actual)} out of ${formatMinutesCompact(planned)} on "${taskName}".`;
+        if (breakEl) {
+          breakEl.style.display = "block";
+          breakEl.textContent = "Finish the next one fully to lock in momentum.";
+        }
       } else if (status === "stopped_early" || status === "stopped-early") {
         cssClass = "last-block-banner last-block--abandoned";
         iconText = "!";
-        title = "Block abandoned — it happens.";
-        subtitle = "No deepwork recorded. Start a fresh block when you're ready.";
-        if (breakEl) breakEl.style.display = "none";
+        if (completionPercent >= 50) {
+          // Stopped early but >50% complete
+          title = "Strong work — you made real progress.";
+          subtitle = `${formatMinutesCompact(actual)} out of ${formatMinutesCompact(planned)} on "${taskName}".`;
+          if (breakEl) {
+            breakEl.style.display = "block";
+            breakEl.textContent = "Finish the next one fully to lock in momentum.";
+          }
+        } else {
+          // Stopped early but <50% complete (abandoned)
+          if (actual === 0) {
+            title = "Block interrupted — reset and start a clean one when you're ready.";
+            subtitle = "No deepwork recorded. Start a fresh block when you're ready.";
+          } else {
+            title = "Block interrupted — reset and start a clean one when you're ready.";
+            subtitle = `${formatMinutesCompact(actual)} out of ${formatMinutesCompact(planned)} on "${taskName}".`;
+          }
+          if (breakEl) breakEl.style.display = "none";
+        }
       } else if (status === "abandoned") {
         cssClass = "last-block-banner last-block--abandoned";
         iconText = "!";
-        title = "Block abandoned — it happens.";
-        subtitle = "No deepwork recorded. Start a fresh block when you're ready.";
+        if (actual === 0) {
+          title = "Block interrupted — reset and start a clean one when you're ready.";
+          subtitle = "No deepwork recorded. Start a fresh block when you're ready.";
+        } else {
+          title = "Block interrupted — reset and start a clean one when you're ready.";
+          subtitle = `${formatMinutesCompact(actual)} out of ${formatMinutesCompact(planned)} on "${taskName}".`;
+        }
         if (breakEl) breakEl.style.display = "none";
       } else {
         // Fallback for unknown status
