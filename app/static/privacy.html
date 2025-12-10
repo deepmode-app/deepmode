@@ -2,8 +2,12 @@
 <html lang="en">
 <head>
   <meta charset="UTF-8">
-  <title>Deepmode – Privacy Policy</title>
+  <title>Privacy Policy — Deepmode</title>
   <meta name="viewport" content="width=device-width, initial-scale=1">
+  <link rel="icon" type="image/png" href="/static/logos/Logo - Red BG.png">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
   <style>
     :root {
       --dw-bg: #050509;
@@ -15,23 +19,25 @@
     }
     * { box-sizing: border-box; margin: 0; padding: 0; }
     body {
-      font-family: -apple-system, BlinkMacSystemFont, system-ui, sans-serif;
+      font-family: Inter, -apple-system, BlinkMacSystemFont, system-ui, sans-serif;
       background: #050509;
       color: var(--dw-text);
       min-height: 100vh;
     }
-    a { color: #93c5fd; text-decoration: none; }
+    a { color: var(--dw-accent); text-decoration: none; }
     a:hover { text-decoration: underline; }
     .page {
-      max-width: 820px;
+      max-width: 720px;
       margin: 0 auto;
-      padding: 24px 16px 40px;
+      padding: 24px 16px 60px;
     }
     .nav {
       display: flex;
       justify-content: space-between;
       align-items: center;
-      margin-bottom: 32px;
+      margin-bottom: 40px;
+      padding: 16px 0;
+      border-bottom: 1px solid var(--dw-border);
     }
     .nav-left {
       display: flex;
@@ -48,44 +54,60 @@
       font-size: 13px;
       color: var(--dw-muted);
     }
-    .nav-link { cursor: pointer; }
+    .nav-link { 
+      cursor: pointer; 
+      color: var(--dw-muted);
+      text-decoration: none;
+    }
+    .nav-link:hover { color: var(--dw-text); text-decoration: none; }
     .card {
       background: var(--dw-card);
-      border-radius: 18px;
+      border-radius: 16px;
       border: 1px solid var(--dw-border);
-      padding: 24px 20px 22px;
+      padding: 28px 24px;
     }
     h1 {
       font-size: 24px;
       margin-bottom: 8px;
+      font-weight: 600;
     }
     .subtitle {
       font-size: 13px;
       color: var(--dw-muted);
-      margin-bottom: 18px;
+      margin-bottom: 24px;
+      line-height: 1.6;
     }
     h2 {
       font-size: 15px;
-      margin-top: 20px;
-      margin-bottom: 6px;
+      font-weight: 600;
+      margin-top: 24px;
+      margin-bottom: 8px;
+      color: var(--dw-text);
     }
     p {
       font-size: 13px;
-      line-height: 1.6;
-      color: #e5e7eb;
-      margin-bottom: 8px;
+      line-height: 1.7;
+      color: #d1d5db;
+      margin-bottom: 10px;
     }
     ul {
-      margin: 4px 0 10px 18px;
+      margin: 8px 0 12px 20px;
       font-size: 13px;
-      line-height: 1.6;
-      color: #e5e7eb;
+      line-height: 1.7;
+      color: #d1d5db;
     }
     li { margin-bottom: 4px; }
-    footer {
+    .last-updated {
+      font-size: 11px;
+      color: var(--dw-muted);
       margin-top: 24px;
-      padding-top: 14px;
-      border-top: 1px solid #111827;
+      padding-top: 16px;
+      border-top: 1px solid var(--dw-border);
+    }
+    footer {
+      margin-top: 48px;
+      padding-top: 20px;
+      border-top: 1px solid var(--dw-border);
       display: flex;
       justify-content: space-between;
       gap: 10px;
@@ -96,17 +118,24 @@
     .footer-right { display: flex; gap: 14px; }
     .footer-link { cursor: pointer; }
     .footer-link:hover { color: #e5e7eb; }
+    .footer-subtle {
+      font-size: 10px;
+      color: var(--dw-muted);
+      margin-top: 12px;
+    }
   </style>
 </head>
 <body>
   <div class="page">
     <header class="nav">
       <div class="nav-left">
-        <img src="/static/logos/Logo - Red BG.png" alt="Deepmode" class="nav-logo" />
+        <a href="/">
+          <img src="/static/logos/Logo - Red BG.png" alt="Deepmode" class="nav-logo" />
+        </a>
       </div>
       <nav class="nav-links">
         <a href="/" class="nav-link">Home</a>
-        <a href="/pricing" class="nav-link">Pricing</a>
+        <a href="/#pricing" class="nav-link">Pricing</a>
         <a href="/terms" class="nav-link">Terms</a>
       </nav>
     </header>
@@ -114,71 +143,62 @@
     <main class="card">
       <h1>Privacy Policy</h1>
       <p class="subtitle">
-        This policy explains what data Deepmode collects, why we collect it, and how we handle it.
+        This policy explains what data Deepmode collects, why we collect it, and how we handle it. 
         Our goal is simple: track your focus, not your life.
       </p>
 
       <h2>1. Who we are</h2>
       <p>
-        Deepmode is a focus and productivity tool that helps you work in timed sessions and track
-        your progress. If you have any questions about this policy, email
+        Deepmode is a focus and productivity tool that helps you work in timed sessions 
+        and track your progress. For questions about this policy, email 
         <a href="mailto:hi@deepmode.app">hi@deepmode.app</a>.
       </p>
 
       <h2>2. Data we collect</h2>
       <p>We collect the minimum data needed to run the product:</p>
       <ul>
-        <li><strong>Account details</strong>: your email address and a hashed password.</li>
-        <li>
-          <strong>Focus data</strong>: session start and end times, planned and actual duration,
-          categories, project names, notes, streaks and basic completion stats.
-        </li>
-        <li>
-          <strong>Product usage</strong>: which features you use, error logs and basic analytics
-          that help us understand performance and reliability.
-        </li>
-        <li>
-          <strong>Billing data</strong> (Pro only): handled by our payment processor (currently Stripe),
-          which may collect your name, card details and billing address.
-        </li>
+        <li><strong>Account details:</strong> your email address and a hashed password</li>
+        <li><strong>Focus data:</strong> session times, tasks, projects, categories, notes, streaks, and completion stats</li>
+        <li><strong>Product usage:</strong> which features you use, error logs, and basic analytics for performance</li>
+        <li><strong>Billing data (Pro only):</strong> handled by Stripe, which may collect name, card details, and billing address</li>
       </ul>
 
       <h2>3. What the Chrome extension can see</h2>
       <p>
-        The Deepmode extension needs to know which site you’re on in order to block distraction sites.
+        The Deepmode extension needs to know which site you're on to block distraction sites. 
         It may read the URL of your current tab for this purpose.
       </p>
       <p>
-        We do <strong>not</strong> capture screenshots, page contents or keystrokes. We do not sell
-        or share your browsing history.
+        We do <strong>not</strong> capture screenshots, page contents, or keystrokes. 
+        We do not sell or share your browsing history.
       </p>
 
       <h2>4. How we use your data</h2>
       <p>We use your data to:</p>
       <ul>
-        <li>create and maintain your account,</li>
-        <li>run focus sessions and show you accurate stats and streaks,</li>
-        <li>send essential emails (verification, password reset, subscription updates), and</li>
-        <li>improve Deepmode’s performance and reliability.</li>
+        <li>Create and maintain your account</li>
+        <li>Run focus sessions and show you accurate stats and streaks</li>
+        <li>Send essential emails (verification, password reset, subscription updates)</li>
+        <li>Improve Deepmode's performance and reliability</li>
       </ul>
       <p>
-        We may also send optional product updates or tips. You can unsubscribe from those at any time.
+        We may also send optional product updates or tips. You can unsubscribe from those anytime.
       </p>
 
       <h2>5. Cookies and local storage</h2>
       <p>
-        We use cookies or similar storage mainly for authentication and session management so you stay
-        signed in. You can clear these in your browser settings, but some features may stop working.
+        We use cookies or local storage mainly for authentication and session management. 
+        You can clear these in your browser settings, but some features may stop working.
       </p>
 
       <h2>6. How we share data</h2>
       <p>
-        We do not sell your data. We share it only with trusted processors who help us run Deepmode, for example:
+        We do not sell your data. We share it only with trusted processors who help us run Deepmode:
       </p>
       <ul>
-        <li>cloud hosting and database providers,</li>
-        <li>email delivery services,</li>
-        <li>payment processors (such as Stripe).</li>
+        <li>Cloud hosting and database providers</li>
+        <li>Email delivery services</li>
+        <li>Payment processors (Stripe)</li>
       </ul>
       <p>
         These providers are bound by contracts that limit how they can use your data.
@@ -186,46 +206,49 @@
 
       <h2>7. Data retention</h2>
       <p>
-        We keep your account and focus data for as long as your account is active so you can see historical
-        stats and streaks. If you request deletion, we remove or anonymise your personal data where we are
-        not required to keep it for legal, security or accounting reasons.
+        We keep your account and focus data for as long as your account is active so you can see 
+        historical stats and streaks. If you request deletion, we remove or anonymise your personal data 
+        where we are not required to keep it for legal, security, or accounting reasons.
       </p>
 
       <h2>8. Your rights</h2>
       <p>
-        Depending on where you live (for example, the EU or UK), you may have rights to access, correct
+        Depending on where you live (e.g., EU or UK), you may have rights to access, correct, 
         or delete your personal data, and to object to certain types of processing.
       </p>
       <p>
-        To exercise these rights, email <a href="mailto:hi@deepmode.app">hi@deepmode.app</a>. We may
-        need to verify your identity before processing your request.
+        To exercise these rights, email <a href="mailto:hi@deepmode.app">hi@deepmode.app</a>. 
+        We may need to verify your identity before processing your request.
       </p>
 
       <h2>9. Security</h2>
       <p>
-        We take reasonable technical and organisational measures to protect your data, including using
-        encryption in transit and restricting access to production systems. No online service can
-        guarantee absolute security, but we design Deepmode with security in mind.
+        We take reasonable technical and organisational measures to protect your data, 
+        including encryption in transit and restricting access to production systems. 
+        No online service can guarantee absolute security, but we design Deepmode with security in mind.
       </p>
 
       <h2>10. Changes to this policy</h2>
       <p>
-        We may update this policy as Deepmode evolves. When we make material changes, we’ll update the
-        “Last updated” date and, where appropriate, notify you by email or in-app.
+        We may update this policy as Deepmode evolves. When we make material changes, 
+        we'll update the "Last updated" date and, where appropriate, notify you by email or in-app.
       </p>
 
-      <p style="font-size:11px;color:var(--dw-muted);margin-top:10px;">
-        Last updated: October 2025
-      </p>
+      <div class="last-updated">
+        Last updated: December 2025
+      </div>
     </main>
 
     <footer>
-      <div>Deepmode © 2025</div>
+      <div>
+        <div>Deepmode © 2025</div>
+        <div class="footer-subtle">Works on all Chromium-based desktop browsers. Deepmode for Teams — coming soon.</div>
+      </div>
       <div class="footer-right">
         <span class="footer-link" onclick="window.location.href='/'">Home</span>
-        <span class="footer-link" onclick="window.location.href='/pricing'">Pricing</span>
+        <span class="footer-link" onclick="window.location.href='/#pricing'">Pricing</span>
         <span class="footer-link" onclick="window.location.href='/terms'">Terms</span>
-        <span class="footer-link" onclick="window.location.href='/contact'">Contact</span>
+        <span class="footer-link" onclick="window.location.href='/support'">Support</span>
       </div>
     </footer>
   </div>

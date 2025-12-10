@@ -2,8 +2,12 @@
 <html lang="en">
 <head>
   <meta charset="UTF-8">
-  <title>Deepmode – Contact</title>
+  <title>Contact — Deepmode</title>
   <meta name="viewport" content="width=device-width, initial-scale=1">
+  <link rel="icon" type="image/png" href="/static/logos/Logo - Red BG.png">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
   <style>
     :root {
       --dw-bg: #050509;
@@ -15,23 +19,25 @@
     }
     * { box-sizing: border-box; margin: 0; padding: 0; }
     body {
-      font-family: -apple-system, BlinkMacSystemFont, system-ui, sans-serif;
+      font-family: Inter, -apple-system, BlinkMacSystemFont, system-ui, sans-serif;
       background: #050509;
       color: var(--dw-text);
       min-height: 100vh;
     }
-    a { color: #93c5fd; text-decoration: none; }
+    a { color: var(--dw-accent); text-decoration: none; }
     a:hover { text-decoration: underline; }
     .page {
-      max-width: 680px;
+      max-width: 600px;
       margin: 0 auto;
-      padding: 24px 16px 40px;
+      padding: 24px 16px 60px;
     }
     .nav {
       display: flex;
       justify-content: space-between;
       align-items: center;
-      margin-bottom: 32px;
+      margin-bottom: 40px;
+      padding: 16px 0;
+      border-bottom: 1px solid var(--dw-border);
     }
     .nav-left {
       display: flex;
@@ -48,34 +54,42 @@
       font-size: 13px;
       color: var(--dw-muted);
     }
-    .nav-link { cursor: pointer; }
+    .nav-link { 
+      cursor: pointer; 
+      color: var(--dw-muted);
+      text-decoration: none;
+    }
+    .nav-link:hover { color: var(--dw-text); text-decoration: none; }
     .card {
       background: var(--dw-card);
-      border-radius: 18px;
+      border-radius: 16px;
       border: 1px solid var(--dw-border);
-      padding: 24px 20px 22px;
+      padding: 28px 24px;
     }
     h1 {
       font-size: 24px;
-      margin-bottom: 8px;
+      margin-bottom: 12px;
+      font-weight: 600;
     }
     p {
-      font-size: 13px;
-      line-height: 1.6;
-      color: #e5e7eb;
-      margin-bottom: 10px;
+      font-size: 14px;
+      line-height: 1.7;
+      color: #d1d5db;
+      margin-bottom: 12px;
     }
-    ul {
-      margin: 4px 0 10px 18px;
-      font-size: 13px;
-      line-height: 1.6;
-      color: #e5e7eb;
+    .email-link {
+      font-size: 16px;
+      color: var(--dw-accent);
+      font-weight: 500;
     }
-    li { margin-bottom: 4px; }
+    .muted {
+      font-size: 12px;
+      color: var(--dw-muted);
+    }
     footer {
-      margin-top: 24px;
-      padding-top: 14px;
-      border-top: 1px solid #111827;
+      margin-top: 48px;
+      padding-top: 20px;
+      border-top: 1px solid var(--dw-border);
       display: flex;
       justify-content: space-between;
       gap: 10px;
@@ -86,17 +100,24 @@
     .footer-right { display: flex; gap: 14px; }
     .footer-link { cursor: pointer; }
     .footer-link:hover { color: #e5e7eb; }
+    .footer-subtle {
+      font-size: 10px;
+      color: var(--dw-muted);
+      margin-top: 12px;
+    }
   </style>
 </head>
 <body>
   <div class="page">
     <header class="nav">
       <div class="nav-left">
-        <img src="/static/logos/Logo - Red BG.png" alt="Deepmode" class="nav-logo" />
+        <a href="/">
+          <img src="/static/logos/Logo - Red BG.png" alt="Deepmode" class="nav-logo" />
+        </a>
       </div>
       <nav class="nav-links">
         <a href="/" class="nav-link">Home</a>
-        <a href="/pricing" class="nav-link">Pricing</a>
+        <a href="/#pricing" class="nav-link">Pricing</a>
         <a href="/faq" class="nav-link">FAQ</a>
       </nav>
     </header>
@@ -104,41 +125,35 @@
     <main class="card">
       <h1>Contact</h1>
       <p>
-        Deepmode is built for people who care about their work. If something is unclear, broken or missing,
-        we want to hear from you.
+        Deepmode is built for people who take their work seriously. 
+        If something is unclear, broken, or missing, we want to hear from you.
       </p>
 
       <p>
-        The fastest way to reach us is by email:
+        Email us at:
       </p>
 
-      <p style="font-size:14px;margin-bottom:12px;">
-        <a href="mailto:hi@deepmode.app">hi@deepmode.app</a>
+      <p style="margin-bottom: 20px;">
+        <a href="mailto:hi@deepmode.app" class="email-link">hi@deepmode.app</a>
       </p>
-
-      <p>We read every message. Typical use cases:</p>
-      <ul>
-        <li>product questions or feedback,</li>
-        <li>bug reports (ideally with steps or screenshots),</li>
-        <li>billing or account issues,</li>
-        <li>partnership or integration ideas.</li>
-      </ul>
 
       <p>
-        We aim to respond within 24–48 hours on weekdays. If your request involves sensitive account changes,
-        we may ask you to verify ownership via the email linked to your Deepmode account.
+        We read every message. We typically respond within 24 hours on weekdays.
       </p>
 
-      <p style="font-size:12px;color:var(--dw-muted);margin-top:10px;">
-        For data or privacy requests, please mention “Privacy” in the subject line.
+      <p class="muted" style="margin-top: 16px;">
+        For privacy or data deletion requests, include "Privacy" in the subject line.
       </p>
     </main>
 
     <footer>
-      <div>Deepmode © 2025</div>
+      <div>
+        <div>Deepmode © 2025</div>
+        <div class="footer-subtle">Works on all Chromium-based desktop browsers. Deepmode for Teams — coming soon.</div>
+      </div>
       <div class="footer-right">
         <span class="footer-link" onclick="window.location.href='/'">Home</span>
-        <span class="footer-link" onclick="window.location.href='/pricing'">Pricing</span>
+        <span class="footer-link" onclick="window.location.href='/#pricing'">Pricing</span>
         <span class="footer-link" onclick="window.location.href='/terms'">Terms</span>
         <span class="footer-link" onclick="window.location.href='/privacy'">Privacy</span>
       </div>

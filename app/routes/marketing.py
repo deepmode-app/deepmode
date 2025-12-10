@@ -3,7 +3,7 @@
 from pathlib import Path
 
 from fastapi import APIRouter, HTTPException
-from fastapi.responses import FileResponse
+from fastapi.responses import FileResponse, RedirectResponse
 
 # Router for all public / marketing pages
 router = APIRouter(tags=["marketing"])
@@ -28,9 +28,9 @@ def _static_file(name: str) -> FileResponse:
 @router.get("/pricing", include_in_schema=False)
 def pricing_page():
     """
-    Public pricing page.
+    Redirect to landing page pricing section.
     """
-    return _static_file("pricing.html")
+    return RedirectResponse("/#pricing", status_code=302)
 
 
 @router.get("/terms", include_in_schema=False)

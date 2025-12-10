@@ -4,6 +4,10 @@
   <meta charset="UTF-8">
   <title>Deepmode – FAQ</title>
   <meta name="viewport" content="width=device-width, initial-scale=1">
+  <link rel="icon" type="image/png" href="/static/logos/Logo - Red BG.png">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
   <style>
     :root {
       --dw-bg: #050509;
@@ -15,23 +19,25 @@
     }
     * { box-sizing: border-box; margin: 0; padding: 0; }
     body {
-      font-family: -apple-system, BlinkMacSystemFont, system-ui, sans-serif;
+      font-family: Inter, -apple-system, BlinkMacSystemFont, system-ui, sans-serif;
       background: #050509;
       color: var(--dw-text);
       min-height: 100vh;
     }
-    a { color: #93c5fd; text-decoration: none; }
+    a { color: var(--dw-accent); text-decoration: none; }
     a:hover { text-decoration: underline; }
     .page {
-      max-width: 820px;
+      max-width: 720px;
       margin: 0 auto;
-      padding: 24px 16px 40px;
+      padding: 24px 16px 60px;
     }
     .nav {
       display: flex;
       justify-content: space-between;
       align-items: center;
-      margin-bottom: 32px;
+      margin-bottom: 40px;
+      padding: 16px 0;
+      border-bottom: 1px solid var(--dw-border);
     }
     .nav-left {
       display: flex;
@@ -48,25 +54,31 @@
       font-size: 13px;
       color: var(--dw-muted);
     }
-    .nav-link { cursor: pointer; }
+    .nav-link { 
+      cursor: pointer; 
+      color: var(--dw-muted);
+      text-decoration: none;
+    }
+    .nav-link:hover { color: var(--dw-text); text-decoration: none; }
     h1 {
-      font-size: 24px;
-      margin-bottom: 6px;
+      font-size: 28px;
+      margin-bottom: 8px;
+      font-weight: 600;
     }
     .subtitle {
-      font-size: 13px;
+      font-size: 14px;
       color: var(--dw-muted);
-      margin-bottom: 18px;
+      margin-bottom: 32px;
     }
     .faq-list {
-      border-radius: 18px;
+      border-radius: 16px;
       border: 1px solid var(--dw-border);
       background: var(--dw-card);
-      padding: 18px 18px 16px;
+      padding: 8px 20px;
     }
     details {
-      border-bottom: 1px solid #111827;
-      padding: 10px 0;
+      border-bottom: 1px solid var(--dw-border);
+      padding: 16px 0;
     }
     details:last-of-type {
       border-bottom: none;
@@ -75,34 +87,33 @@
       list-style: none;
       cursor: pointer;
       font-size: 14px;
+      font-weight: 500;
       display: flex;
       justify-content: space-between;
       align-items: center;
-      color: #e5e7eb;
+      color: var(--dw-text);
     }
     summary::-webkit-details-marker { display: none; }
     .marker {
-      font-size: 16px;
+      font-size: 18px;
       color: var(--dw-muted);
       margin-left: 10px;
+      transition: transform 0.2s;
     }
-    p {
+    details[open] .marker {
+      transform: rotate(45deg);
+    }
+    .answer {
       font-size: 13px;
-      line-height: 1.6;
-      color: #e5e7eb;
-      margin-top: 6px;
+      line-height: 1.7;
+      color: #d1d5db;
+      margin-top: 10px;
+      padding-right: 24px;
     }
-    ul {
-      margin: 6px 0 4px 18px;
-      font-size: 13px;
-      line-height: 1.6;
-      color: #e5e7eb;
-    }
-    li { margin-bottom: 3px; }
     footer {
-      margin-top: 24px;
-      padding-top: 14px;
-      border-top: 1px solid #111827;
+      margin-top: 48px;
+      padding-top: 20px;
+      border-top: 1px solid var(--dw-border);
       display: flex;
       justify-content: space-between;
       gap: 10px;
@@ -113,93 +124,153 @@
     .footer-right { display: flex; gap: 14px; }
     .footer-link { cursor: pointer; }
     .footer-link:hover { color: #e5e7eb; }
+    .footer-subtle {
+      font-size: 10px;
+      color: var(--dw-muted);
+      margin-top: 12px;
+    }
   </style>
 </head>
 <body>
   <div class="page">
     <header class="nav">
       <div class="nav-left">
-        <img src="/static/logos/Logo - Red BG.png" alt="Deepmode" class="nav-logo" />
+        <a href="/">
+          <img src="/static/logos/Logo - Red BG.png" alt="Deepmode" class="nav-logo" />
+        </a>
       </div>
       <nav class="nav-links">
         <a href="/" class="nav-link">Home</a>
-        <a href="/pricing" class="nav-link">Pricing</a>
+        <a href="/#pricing" class="nav-link">Pricing</a>
         <a href="/login" class="nav-link">Log in</a>
       </nav>
     </header>
 
     <main>
       <h1>FAQ</h1>
-      <p class="subtitle">
-        Straight answers to the most common questions about Deepmode.
-      </p>
+      <p class="subtitle">Straight answers to common questions about Deepmode.</p>
 
       <div class="faq-list">
         <details open>
           <summary>
-            <span>What is Deepmode, in one line?</span>
+            <span>What is Deepmode?</span>
             <span class="marker">+</span>
           </summary>
-          <p>
-            Deepmode is a focus tool that locks you into timed work blocks, tracks your streaks and discipline,
-            and blocks the websites that usually derail you.
+          <p class="answer">
+            Deepmode is a focus system that helps you work in timed blocks, track your streaks and discipline, 
+            and block distracting websites. It's built for professionals and students who need long, uninterrupted focus.
           </p>
         </details>
 
         <details>
           <summary>
-            <span>How do the focus blocks work?</span>
+            <span>How does the Chrome extension work?</span>
             <span class="marker">+</span>
           </summary>
-          <p>
-            You choose a task, project and duration (for example 25, 50 or 90 minutes). When you start a block,
-            the timer runs and your session is recorded in the dashboard. If you’re using the Chrome extension,
-            your distraction sites are blocked for the duration of the block.
+          <p class="answer">
+            Install the extension, configure which sites you want blocked during focus time, then start a session. 
+            While your timer runs, those sites are inaccessible. When the session ends, access returns to normal.
           </p>
         </details>
 
         <details>
           <summary>
-            <span>What’s the difference between Free and Pro?</span>
+            <span>What are deepwork sessions?</span>
             <span class="marker">+</span>
           </summary>
-          <p>
-            The free tier lets you run up to 3 sessions per day with the core Deepmode flows.
-            Pro unlocks unlimited sessions, longer deep blocks, richer stats and future power-user features.
+          <p class="answer">
+            A deepwork session is a timed block of focused work — 5, 25, 50, or 90 minutes. 
+            You name your task, start the timer, and commit to staying with it until the end. 
+            Each completed session builds your streak and discipline score.
           </p>
         </details>
 
         <details>
           <summary>
-            <span>Does Deepmode track everything I do in the browser?</span>
+            <span>What does the AI actually analyze?</span>
             <span class="marker">+</span>
           </summary>
-          <p>
-            No. The extension only needs to know which site you’re on in order to block distraction sites.
-            We do not record page contents, keystrokes or screenshots. For details, see the
-            <a href="/privacy">Privacy Policy</a>.
+          <p class="answer">
+            The AI reviews your session data — minutes worked, completion rates, streaks, projects, and categories. 
+            It identifies patterns in your behaviour and gives you actionable insights to improve. 
+            It does not analyze screen content, keystrokes, or what you're working on inside your browser.
           </p>
         </details>
 
         <details>
           <summary>
-            <span>What happens if I forget to end a session?</span>
+            <span>Do I need an account to start?</span>
             <span class="marker">+</span>
           </summary>
-          <p>
-            Deepmode will automatically close obviously stale sessions after a long period of inactivity so
-            they don’t distort your stats. You can always clean up or edit sessions from your dashboard.
+          <p class="answer">
+            Yes. You'll need to create a free account to sync your sessions and track your progress across devices.
           </p>
         </details>
 
         <details>
           <summary>
-            <span>Who is Deepmode for?</span>
+            <span>What's included in the free version?</span>
             <span class="marker">+</span>
           </summary>
-          <p>
-            Deepmode is used by students, engineers, founders and independent creators who want a quiet,
-            intentional way to ship work without turning their life into a to-do app.
+          <p class="answer">
+            Free includes up to 3 sessions per day, 5 and 25-minute timers, project tagging, 
+            and a dashboard with streaks and discipline score. It's enough to build the habit.
+          </p>
+        </details>
+
+        <details>
+          <summary>
+            <span>What's included in Pro?</span>
+            <span class="marker">+</span>
+          </summary>
+          <p class="answer">
+            Pro unlocks unlimited sessions, 50 and 90-minute deep blocks, full session history, 
+            AI-generated daily and weekly insights, and advanced analytics. 
+            It's for people who are serious about compounding their focus.
+          </p>
+        </details>
+
+        <details>
+          <summary>
+            <span>Does Deepmode block all distractions?</span>
+            <span class="marker">+</span>
+          </summary>
+          <p class="answer">
+            Deepmode blocks the websites you configure as distracting during active sessions. 
+            It won't block desktop apps or mobile — it's focused on browser-based distraction.
+          </p>
+        </details>
+
+        <details>
+          <summary>
+            <span>Which browsers are supported?</span>
+            <span class="marker">+</span>
+          </summary>
+          <p class="answer">
+            Deepmode works on all Chromium-based desktop browsers — Chrome, Edge, Brave, Arc, and others. 
+            Firefox and Safari support is not currently available.
+          </p>
+        </details>
+
+        <details>
+          <summary>
+            <span>Does Deepmode store my data?</span>
+            <span class="marker">+</span>
+          </summary>
+          <p class="answer">
+            Yes, we store your session data (times, tasks, projects, categories) so you can see your history and streaks. 
+            We do not store page contents, keystrokes, or screenshots. See our <a href="/privacy">Privacy Policy</a> for details.
+          </p>
+        </details>
+
+        <details>
+          <summary>
+            <span>Can I cancel anytime?</span>
+            <span class="marker">+</span>
+          </summary>
+          <p class="answer">
+            Yes. You can cancel your Pro subscription anytime from the Stripe billing portal. 
+            You'll keep Pro access until the end of your current billing period.
           </p>
         </details>
 
@@ -208,33 +279,21 @@
             <span>Is there a mobile app?</span>
             <span class="marker">+</span>
           </summary>
-          <p>
-            Today, Deepmode is focused on laptop/desktop work with the web app and Chrome extension.
-            Mobile support is on the roadmap once the core experience is battle-tested.
+          <p class="answer">
+            Not yet. Deepmode is currently focused on desktop — where most serious work happens. 
+            Mobile support is on the roadmap.
           </p>
         </details>
 
         <details>
           <summary>
-            <span>How do I cancel Pro?</span>
+            <span>Is Deepmode safe for work computers?</span>
             <span class="marker">+</span>
           </summary>
-          <p>
-            You can cancel future renewals at any time via the billing portal link you receive from Stripe,
-            or by emailing <a href="mailto:hi@deepmode.app">hi@deepmode.app</a>. Your current paid period
-            will continue until it expires.
-          </p>
-        </details>
-
-        <details>
-          <summary>
-            <span>Can I delete my account and data?</span>
-            <span class="marker">+</span>
-          </summary>
-          <p>
-            Yes. Email <a href="mailto:hi@deepmode.app">hi@deepmode.app</a> from the address you registered
-            with and request deletion. We will remove or anonymise your personal data unless we are required
-            to retain some information for legal or accounting reasons.
+          <p class="answer">
+            Yes. The extension only reads the URL of your current tab to check if it should be blocked. 
+            It doesn't capture screen content, send browsing history, or access sensitive data. 
+            It's safe for personal and work machines.
           </p>
         </details>
 
@@ -243,23 +302,25 @@
             <span>I found a bug or have a feature idea.</span>
             <span class="marker">+</span>
           </summary>
-          <p>
-            We want to hear it. Send a short note (ideally with steps to reproduce or a screenshot) to
-            <a href="mailto:hi@deepmode.app">hi@deepmode.app</a>. The product is built for people
-            who actually use it every day.
+          <p class="answer">
+            We want to hear it. Email <a href="mailto:hi@deepmode.app">hi@deepmode.app</a> with details. 
+            Deepmode is built for people who use it daily — your feedback shapes the product.
           </p>
         </details>
       </div>
     </main>
 
     <footer>
-      <div>Deepmode © 2025</div>
+      <div>
+        <div>Deepmode © 2025</div>
+        <div class="footer-subtle">Works on all Chromium-based desktop browsers. Deepmode for Teams — coming soon.</div>
+      </div>
       <div class="footer-right">
         <span class="footer-link" onclick="window.location.href='/'">Home</span>
-        <span class="footer-link" onclick="window.location.href='/pricing'">Pricing</span>
+        <span class="footer-link" onclick="window.location.href='/#pricing'">Pricing</span>
         <span class="footer-link" onclick="window.location.href='/terms'">Terms</span>
         <span class="footer-link" onclick="window.location.href='/privacy'">Privacy</span>
-        <span class="footer-link" onclick="window.location.href='/contact'">Contact</span>
+        <span class="footer-link" onclick="window.location.href='/support'">Support</span>
       </div>
     </footer>
   </div>

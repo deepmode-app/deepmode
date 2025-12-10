@@ -877,8 +877,8 @@ async def create_customer_portal(request: Request, payload: CustomerPortalReques
 
 @router.get("/billing/checkout")
 def fake_checkout():
-    # Right now this just sends to pricing. Later you can make a nice pricing page.
-    return RedirectResponse("/pricing")
+    # Redirect to landing page pricing section
+    return RedirectResponse("/#pricing")
 
 
 # ---------- Billing Portal Route (GET) ----------
