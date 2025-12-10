@@ -656,8 +656,13 @@
       margin-bottom: 4px;
       display: flex;
       align-items: center;
-      justify-content: space-between;
+      justify-content: center;
       position: relative;
+      text-align: center;
+    }
+    
+    .card-title > span:first-child {
+      text-align: center;
     }
 
     .card-locked {
@@ -939,10 +944,15 @@
 
     /* Session table checkboxes */
     .session-select {
-      width: 16px;
-      height: 16px;
+      width: 12px;
+      height: 12px;
       cursor: pointer;
       accent-color: var(--dw-accent);
+    }
+    
+    #sessionsSelectAll {
+      width: 16px;
+      height: 16px;
     }
 
     .session-select:hover {
@@ -1001,7 +1011,7 @@
     }
 
     th {
-      text-align: left;
+      text-align: center;
       color: var(--dw-muted);
       font-weight: 500;
       font-size: 11px;
@@ -1834,11 +1844,11 @@
 
       <div class="header">
         <div class="left-header">
-          <h1>Your focus stats</h1>
-          <div class="subhead" id="userHint">
+          <h1>YOUR FOCUS DASHBOARD</h1>
+          <div class="subhead" id="userHint" style="margin-top: 12px;">
             Welcome back.
-            <br style="margin-top: 8px; display: block;"/>
-            <span style="margin-top: 8px; display: inline-block;">Protect your focus. Track your discipline. Build your streaks.</span>
+            <br style="margin-top: 10px; display: block;"/>
+            <span style="margin-top: 10px; display: inline-block;">Protect your time. Build your discipline. Keep your momentum.</span>
           </div>
         </div>
       </div>
@@ -1914,11 +1924,6 @@
         <div id="streakZeroHint" style="display: none; font-size: 11px; color: var(--dw-muted); margin-top: 4px; font-style: italic;">
           No streak yet. Start your first session today.
         </div>
-        <div id="streakProLink" style="display: none; margin-top: 8px;">
-          <a href="/streak" class="upgrade-btn" style="font-size: 10px; padding: 4px 10px; display: inline-block;">
-            View my AI insights
-          </a>
-        </div>
       </div>
 
       <div class="card card-locked" id="allTimeCard">
@@ -1935,7 +1940,6 @@
         <div class="card-title">
           Discipline
           <span class="card-pro-badge-top-right" id="disciplineProBadge" style="display: none;">PRO</span>
-          <span class="chip" id="sessionCountsChip" style="margin-left: auto;">0 / 0</span>
         </div>
         <div class="card-value" id="disciplineScore">--</div>
         <div class="card-sub" id="disciplineSubtext">Your deepwork efficiency</div>
@@ -1947,6 +1951,13 @@
       <p id="freeUpgradeHint" class="dash-pro-upsell" style="display: none; margin-top: 14px; margin-bottom: 24px; font-size: 13px; color: var(--dw-muted); text-align: center;">
         Unlock AI insights into your work session and Pro features with <a href="/#pricing" class="dash-pro-link" style="color: var(--dw-accent); text-decoration: none; transition: color 0.2s ease;" onmouseover="this.style.color='#f3121f'; this.style.textDecoration='underline';" onmouseout="this.style.color='var(--dw-accent)'; this.style.textDecoration='none';">Deepmode AI Pro →</a>
       </p>
+
+      <!-- Pro user AI insights CTA -->
+      <div id="proAiInsightsCta" style="display: none; margin-top: 14px; margin-bottom: 24px; text-align: center;">
+        <a href="/streak" style="color: var(--dw-accent); text-decoration: none; font-size: 13px; transition: color 0.2s ease;" onmouseover="this.style.color='#f3121f'; this.style.textDecoration='underline';" onmouseout="this.style.color='var(--dw-accent)'; this.style.textDecoration='none';">
+          View AI insights into my work sessions and recommendations for improvement →
+        </a>
+      </div>
 
     <div class="card sessions-card">
       <div class="sessions-header-row" style="justify-content: space-between; align-items: center;">
@@ -2565,6 +2576,10 @@
           // Hide upgrade hint for Pro users
           const freeUpgradeHint = document.getElementById('freeUpgradeHint');
           if (freeUpgradeHint) freeUpgradeHint.style.display = 'none';
+          
+          // Show Pro AI insights CTA
+          const proAiInsightsCta = document.getElementById('proAiInsightsCta');
+          if (proAiInsightsCta) proAiInsightsCta.style.display = 'block';
         } else {
           if (badgeEl) {
             badgeEl.textContent = "Deepmode";
@@ -2611,6 +2626,10 @@
           // Show upgrade hint for Free users
           const freeUpgradeHint = document.getElementById('freeUpgradeHint');
           if (freeUpgradeHint) freeUpgradeHint.style.display = 'block';
+          
+          // Hide Pro AI insights CTA for Free users
+          const proAiInsightsCta = document.getElementById('proAiInsightsCta');
+          if (proAiInsightsCta) proAiInsightsCta.style.display = 'none';
         }
 
         // Update email preferences UI after user info is loaded
@@ -3210,15 +3229,12 @@
           // Update All-Time and Discipline based on Pro status
           const totalMinutesEl = document.getElementById("totalMinutes");
           const disciplineScoreEl = document.getElementById("disciplineScore");
-          const sessionCountsChipEl = document.getElementById("sessionCountsChip");
           if (currentUser && currentUser.is_pro) {
             if (totalMinutesEl) totalMinutesEl.textContent = "0 min";
             if (disciplineScoreEl) disciplineScoreEl.textContent = "0%";
-            if (sessionCountsChipEl) sessionCountsChipEl.textContent = "0 / 0";
           } else {
             if (totalMinutesEl) totalMinutesEl.textContent = "--";
             if (disciplineScoreEl) disciplineScoreEl.textContent = "--";
-            if (sessionCountsChipEl) sessionCountsChipEl.textContent = "--";
           }
           updateLiveBanner(null);
           // Show last block banner when no sessions
@@ -3383,19 +3399,15 @@
         // Update All-Time and Discipline cards based on Pro status
         const totalMinutesEl = document.getElementById("totalMinutes");
         const disciplineScoreEl = document.getElementById("disciplineScore");
-        const sessionCountsChipEl = document.getElementById("sessionCountsChip");
-        
         if (currentUser && currentUser.is_pro) {
           // Pro users see actual values
           if (totalMinutesEl) totalMinutesEl.textContent = total + " min";
           const score = started > 0 ? Math.round((completed / started) * 100) : 0;
           if (disciplineScoreEl) disciplineScoreEl.textContent = score + "%";
-          if (sessionCountsChipEl) sessionCountsChipEl.textContent = completed + " / " + started;
         } else {
           // Free users see "--" to create psychological desire
           if (totalMinutesEl) totalMinutesEl.textContent = "--";
           if (disciplineScoreEl) disciplineScoreEl.textContent = "--";
-          if (sessionCountsChipEl) sessionCountsChipEl.textContent = "--";
         }
 
         // Update live banner (this will show/hide it based on runningSession)
@@ -4329,7 +4341,7 @@
           displayName = user.email.split('@')[0];
         }
         const welcomeText = displayName ? `Welcome back, ${displayName}.` : 'Welcome back.';
-        userHint.innerHTML = `${welcomeText} <br style="margin-top: 10px; display: block;"/><span style="margin-top: 10px; display: inline-block;">Protect your focus. Track your discipline. Build your streaks.</span>`;
+        userHint.innerHTML = `${welcomeText} <br style="margin-top: 10px; display: block;"/><span style="margin-top: 10px; display: inline-block;">Protect your time. Build your discipline. Keep your momentum.</span>`;
       }
     }
 
@@ -4348,13 +4360,11 @@
       streakNumber.textContent = streak;
       
       if (isPro) {
-        // Pro users: show normal subtext, show link to full insights
+        // Pro users: show normal subtext
         if (streakSubtext) streakSubtext.textContent = streak === 1 ? "day" : "days";
-        if (streakProLink) streakProLink.style.display = "block";
         if (streakZeroHint) streakZeroHint.style.display = "none";
       } else {
-        // Free users: hide Pro link, show normal streak text
-        if (streakProLink) streakProLink.style.display = "none";
+        // Free users: show normal streak text
         // Show/hide zero streak hint
         if (streak === 0) {
           if (streakZeroHint) streakZeroHint.style.display = "block";
