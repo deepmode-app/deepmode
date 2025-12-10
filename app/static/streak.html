@@ -87,11 +87,14 @@
     .back-link:hover { color: var(--dw-text); }
     .page-header {
       margin-bottom: 32px;
+      text-align: center;
     }
     h1 {
       font-size: 28px;
       font-weight: 600;
       margin-bottom: 8px;
+      text-transform: uppercase;
+      letter-spacing: 0.02em;
     }
     .subtitle {
       font-size: 14px;
@@ -103,6 +106,7 @@
       grid-template-columns: repeat(auto-fit, minmax(160px, 1fr));
       gap: 16px;
       margin-bottom: 32px;
+      margin-top: 8px;
     }
     .stat-card {
       background: var(--dw-card);
@@ -179,15 +183,18 @@
       border-radius: 18px;
       padding: 32px 28px;
       margin-bottom: 24px;
+      margin-top: 24px;
     }
     .ai-panel h2 {
       font-size: 18px;
       font-weight: 600;
-      margin-bottom: 20px;
+      margin-bottom: 12px;
     }
     .ai-content {
       line-height: 1.7;
       color: var(--dw-text);
+      max-width: 800px;
+      margin: 0 auto;
     }
     .ai-content h2 {
       font-size: 16px;
@@ -367,8 +374,8 @@
     <a href="/dashboard" class="back-link">← Back to dashboard</a>
 
     <div class="page-header">
-      <h1>Work tracker</h1>
-      <p class="subtitle">Your last 7 days of deep work — minutes, streaks, projects and a clear read on your momentum.</p>
+      <h1>Your focus report</h1>
+      <p class="subtitle">Your last 7 days of deep work — where your time went, how your streaks are trending, and what to improve next.</p>
     </div>
 
     <div id="loading" class="loading">Loading your work tracker…</div>
@@ -440,14 +447,15 @@
 
       <!-- AI Insights Panel -->
       <div id="aiPanel" class="ai-panel" style="display: none;">
-        <h2>AI performance review</h2>
+        <h2>AI focus review</h2>
+        <p style="font-size: 12px; color: var(--dw-muted); margin-bottom: 20px; line-height: 1.6;">An AI coach's view of your week — patterns, wins, and what to fix next.</p>
         <div id="aiContent" class="ai-content"></div>
         <div id="aiError" class="ai-error" style="display: none;"></div>
       </div>
 
       <!-- Free User AI Upsell -->
       <div id="aiUpsell" class="ai-panel" style="display: none;">
-        <h2>AI performance review</h2>
+        <h2>AI focus review</h2>
         <p style="margin-bottom: 16px; line-height: 1.7;">
           Deepmode Pro turns your raw minutes into a weekly performance review — with patterns, momentum score and next steps based on your actual work.
         </p>
