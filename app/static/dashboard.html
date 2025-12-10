@@ -644,6 +644,8 @@
       padding: 12px 14px;
       box-shadow: 0 18px 40px rgba(0, 0, 0, 0.75);
       border: 1px solid var(--dw-border);
+      position: relative;
+      text-align: center;
     }
 
     .card-title {
@@ -655,6 +657,7 @@
       display: flex;
       align-items: center;
       justify-content: space-between;
+      position: relative;
     }
 
     .card-locked {
@@ -673,6 +676,21 @@
       border-radius: 4px;
       background: rgba(229, 9, 20, 0.08);
       margin-left: 8px;
+    }
+
+    .card-pro-badge-top-right {
+      position: absolute;
+      top: 8px;
+      right: 8px;
+      font-size: 8px;
+      text-transform: uppercase;
+      letter-spacing: 0.1em;
+      color: var(--dw-accent);
+      padding: 3px 6px;
+      border: 1px solid var(--dw-accent);
+      border-radius: 6px;
+      background: rgba(229, 9, 20, 0.1);
+      font-weight: 600;
     }
 
     .card-locked-hint {
@@ -712,12 +730,14 @@
     .card-value {
       font-size: 20px;
       font-weight: 600;
+      text-align: center;
     }
 
     .card-sub {
       margin-top: 2px;
       font-size: 11px;
       color: var(--dw-muted);
+      text-align: center;
     }
 
     .chip {
@@ -1000,6 +1020,7 @@
       font-size: 12px;
       color: var(--dw-muted);
       padding: 4px 0 2px;
+      text-align: center;
     }
 
     .error-banner {
@@ -1816,7 +1837,8 @@
           <h1>Your focus stats</h1>
           <div class="subhead" id="userHint">
             Welcome back.
-            <br/>Protect your focus. Track your discipline. Build your streaks.
+            <br style="margin-top: 8px; display: block;"/>
+            <span style="margin-top: 8px; display: inline-block;">Protect your focus. Track your discipline. Build your streaks.</span>
           </div>
         </div>
       </div>
@@ -1838,10 +1860,13 @@
       </div>
 
       <!-- Manage Projects button -->
-      <button id="manageProjectsBtn" class="manage-projects-btn">
-        <span class="manage-projects-icon">📁</span>
-        Your projects
-      </button>
+      <div style="display: flex; flex-direction: column; align-items: center; margin-bottom: 18px;">
+        <button id="manageProjectsBtn" class="manage-projects-btn">
+          <span class="manage-projects-icon">💻</span>
+          Manage your Projects
+        </button>
+        <a href="/" class="back-to-homepage-link" style="margin-top: 8px; font-size: 11px; color: rgba(156, 163, 175, 0.6); text-decoration: none; transition: color 0.2s ease;" onmouseover="this.style.color='rgba(156, 163, 175, 0.8)';" onmouseout="this.style.color='rgba(156, 163, 175, 0.6)';">Back to Homepage</a>
+      </div>
 
     <!-- Last block banner -->
     <div id="dm-last-block-banner" class="last-block-banner last-block--empty" style="display:none;">
@@ -1879,28 +1904,7 @@
       <div class="card">
         <div class="card-title">Today</div>
         <div class="card-value" id="todayMinutes">0 min</div>
-        <div class="card-sub">Deep blocks finished today</div>
-      </div>
-
-      <div class="card card-locked" id="allTimeCard">
-        <div class="card-title">
-          All-Time
-          <span class="card-pro-badge" id="allTimeProBadge" style="display: none;">Pro</span>
-        </div>
-        <div class="card-value" id="totalMinutes">--</div>
-        <div class="card-sub" id="allTimeSubtext">Your deepwork history</div>
-        <div class="card-locked-hint" id="allTimeHint" style="display: none; font-size: 11px; color: var(--dw-muted); margin-top: 4px;">Unlock full history with Deepmode AI Pro</div>
-      </div>
-
-      <div class="card card-locked" id="disciplineCard">
-        <div class="card-title">
-          Discipline
-          <span class="card-pro-badge" id="disciplineProBadge" style="display: none;">Pro</span>
-          <span class="chip" id="sessionCountsChip" style="margin-left: auto;">0 / 0</span>
-        </div>
-        <div class="card-value" id="disciplineScore">--</div>
-        <div class="card-sub" id="disciplineSubtext">Your deepwork efficiency</div>
-        <div class="card-locked-hint" id="disciplineHint" style="display: none; font-size: 11px; color: var(--dw-muted); margin-top: 4px;">Available with Deepmode AI Pro</div>
+        <div class="card-sub">Deepwork sessions today</div>
       </div>
 
       <div class="card" id="streakCard">
@@ -1916,17 +1920,38 @@
           </a>
         </div>
       </div>
+
+      <div class="card card-locked" id="allTimeCard">
+        <div class="card-title">
+          All-Time
+          <span class="card-pro-badge-top-right" id="allTimeProBadge" style="display: none;">PRO</span>
+        </div>
+        <div class="card-value" id="totalMinutes">--</div>
+        <div class="card-sub" id="allTimeSubtext">Your deepwork history</div>
+        <div class="card-locked-hint" id="allTimeHint" style="display: none; font-size: 11px; color: var(--dw-muted); margin-top: 4px;">Unlock full history with Deepmode AI Pro</div>
+      </div>
+
+      <div class="card card-locked" id="disciplineCard">
+        <div class="card-title">
+          Discipline
+          <span class="card-pro-badge-top-right" id="disciplineProBadge" style="display: none;">PRO</span>
+          <span class="chip" id="sessionCountsChip" style="margin-left: auto;">0 / 0</span>
+        </div>
+        <div class="card-value" id="disciplineScore">--</div>
+        <div class="card-sub" id="disciplineSubtext">Your deepwork efficiency</div>
+        <div class="card-locked-hint" id="disciplineHint" style="display: none; font-size: 11px; color: var(--dw-muted); margin-top: 4px;">Available with Deepmode AI Pro</div>
+      </div>
       </div>
 
       <!-- Single upgrade hint for Free users only -->
-      <p id="freeUpgradeHint" class="dash-pro-upsell" style="display: none; margin-top: 14px; margin-bottom: 24px; font-size: 13px; color: var(--dw-muted);">
-        Unlock AI insights and full history with <a href="/#pricing" class="dash-pro-link" style="color: var(--dw-accent); text-decoration: none; transition: color 0.2s ease;" onmouseover="this.style.color='#f3121f'; this.style.textDecoration='underline';" onmouseout="this.style.color='var(--dw-accent)'; this.style.textDecoration='none';">Deepmode AI Pro →</a>
+      <p id="freeUpgradeHint" class="dash-pro-upsell" style="display: none; margin-top: 14px; margin-bottom: 24px; font-size: 13px; color: var(--dw-muted); text-align: center;">
+        Unlock AI insights into your work session and Pro features with <a href="/#pricing" class="dash-pro-link" style="color: var(--dw-accent); text-decoration: none; transition: color 0.2s ease;" onmouseover="this.style.color='#f3121f'; this.style.textDecoration='underline';" onmouseout="this.style.color='var(--dw-accent)'; this.style.textDecoration='none';">Deepmode AI Pro →</a>
       </p>
 
     <div class="card sessions-card">
-      <div class="sessions-header-row">
-        <h2>Recent sessions</h2>
-        <div class="session-filters">
+      <div class="sessions-header-row" style="justify-content: space-between; align-items: center;">
+        <h2 style="flex: 1; text-align: center; margin: 0;">Your work sessions</h2>
+        <div class="session-filters" style="flex: 0 0 auto;">
           <label for="projectFilter" class="filter-label">Project</label>
           <select id="projectFilter" class="filter-select">
             <option value="__ALL__">All projects</option>
@@ -2562,9 +2587,11 @@
             if (!allTimeCard.classList.contains('card-locked')) {
               allTimeCard.classList.add('card-locked');
             }
+            const proBadge = document.getElementById('allTimeProBadge');
+            if (proBadge) proBadge.style.display = 'block';
             const hint = document.getElementById('allTimeHint');
-            if (hint) hint.style.display = 'block';
-            if (allTimeSubtext) allTimeSubtext.textContent = 'Unlock full history with Deepmode AI Pro';
+            if (hint) hint.style.display = 'none';
+            if (allTimeSubtext) allTimeSubtext.textContent = 'Your deepwork history';
             const totalMinutes = document.getElementById('totalMinutes');
             if (totalMinutes) totalMinutes.textContent = '--';
           }
@@ -2572,9 +2599,11 @@
             if (!disciplineCard.classList.contains('card-locked')) {
               disciplineCard.classList.add('card-locked');
             }
+            const proBadge = document.getElementById('disciplineProBadge');
+            if (proBadge) proBadge.style.display = 'block';
             const hint = document.getElementById('disciplineHint');
-            if (hint) hint.style.display = 'block';
-            if (disciplineSubtext) disciplineSubtext.textContent = 'Available with Deepmode AI Pro';
+            if (hint) hint.style.display = 'none';
+            if (disciplineSubtext) disciplineSubtext.textContent = 'Your deepwork efficiency';
             const disciplineScore = document.getElementById('disciplineScore');
             if (disciplineScore) disciplineScore.textContent = '--';
           }
@@ -4300,7 +4329,7 @@
           displayName = user.email.split('@')[0];
         }
         const welcomeText = displayName ? `Welcome back, ${displayName}.` : 'Welcome back.';
-        userHint.innerHTML = `${welcomeText} <br/>Protect your focus. Track your discipline. Build your streaks.`;
+        userHint.innerHTML = `${welcomeText} <br style="margin-top: 10px; display: block;"/><span style="margin-top: 10px; display: inline-block;">Protect your focus. Track your discipline. Build your streaks.</span>`;
       }
     }
 
