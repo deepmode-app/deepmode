@@ -1,33 +1,44 @@
 {
-    "manifest_version": 3,
-    "name": "Deepmode Pro – Focus Blocks",
-    "version": "2.3.1",
-    "description": "Block distractions and finish deep work in 5, 25, 50 or 90 minute focus blocks.",
-    "action": {
-      "default_popup": "popup.html",
-      "default_title": "Deepmode Pro – Focus Blocks"
-    },
-    "permissions": [
-      "storage",
-      "tabs",
-      "scripting",
-      "alarms",
-      "notifications"
-    ],
-    "host_permissions": [
-      "https://deepmode.app/*"
-    ],
-    "background": {
-      "service_worker": "background.js"
-    },
-    "content_scripts": [
-      {
-        "matches": [
-          "https://deepmode.app/*"
-        ],
-        "js": ["connect.js"],
-        "run_at": "document_idle"
-      }
-    ]
-  }
-  
+  "manifest_version": 3,
+  "name": "Deepmode – Focus Blocks",
+  "version": "2.4.0",
+  "description": "Enter focus mode — one intentional block at a time. Block distractions and finish deep work in 5, 25, 50 or 90 minute focus blocks.",
+  "icons": {
+    "16": "icons/icon16.png",
+    "32": "icons/icon32.png",
+    "48": "icons/icon48.png",
+    "128": "icons/icon128.png"
+  },
+  "action": {
+    "default_popup": "popup.html",
+    "default_title": "Deepmode",
+    "default_icon": {
+      "16": "icons/icon16.png",
+      "32": "icons/icon32.png",
+      "48": "icons/icon48.png",
+      "128": "icons/icon128.png"
+    }
+  },
+  "permissions": [
+    "storage",
+    "tabs",
+    "scripting",
+    "alarms",
+    "notifications"
+  ],
+  "host_permissions": [
+    "https://deepmode.app/*"
+  ],
+  "background": {
+    "service_worker": "background.js"
+  },
+  "content_scripts": [
+    {
+      "matches": [
+        "https://deepmode.app/*"
+      ],
+      "js": ["connect.js"],
+      "run_at": "document_idle"
+    }
+  ]
+}

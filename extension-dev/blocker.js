@@ -4,6 +4,43 @@ console.log("Deepmode blocker loaded on this page.");
 // Keep track of page media state so we can restore it
 let deepmodeMediaState = [];
 
+// ---------- MOTIVATIONAL LINES POOL ----------
+
+const DM_MOTIVATION_LINES = [
+  (task) => `Keep building momentum — go back to "${task}".`,
+  (task) => `Real progress is on "${task}", not here.`,
+  (task) => `Don't let this tab win — finish "${task}" first.`,
+  (task) => `Your future self cares about "${task}" more than this page.`,
+  (task) => `Stay with "${task}" — this is where the real dopamine comes from.`,
+  (task) => `Deep focus now, everything else later. Back to "${task}".`,
+  (task) => `You started this block for "${task}". Honor that decision.`,
+  (task) => `One more stretch on "${task}" beats ten minutes of scrolling.`,
+  (task) => `Protect your focus — return to "${task}".`,
+  (task) => `You're building discipline rep by rep. Stick with "${task}".`,
+  (task) => `Distractions are cheap. "${task}" is not.`,
+  (task) => `Stay in Deepmode — finish the hard part of "${task}".`,
+  (task) => `This site will still be here. Your block for "${task}" won't.`,
+  (task) => `Momentum is fragile. Guard it — go back to "${task}".`,
+  (task) => `You're closer than you think on "${task}". Keep going.`,
+  (task) => `Train your brain: choose "${task}" over this tab.`,
+  (task) => `Scroll less. Ship more. Back to "${task}".`,
+  (task) => `Your best work happens in blocks like this — stay on "${task}".`,
+  (task) => `Tiny choice: distraction or "${task}". Choose the one that compounds.`,
+  (task) => `One finished block on "${task}" beats a day of half-focus.`,
+  (task) => `This is the test. Stay with "${task}" until the timer ends.`,
+  (task) => `Deep workers say no to this tab and yes to "${task}".`,
+  (task) => `Refocus now — even 5 more minutes on "${task}" matters.`,
+  (task) => `You locked in for a reason. Return to "${task}".`,
+];
+
+function getMotivationLine(taskName) {
+  const task = taskName && taskName.trim() ? taskName.trim() : "your task";
+  const idx = Math.floor(Math.random() * DM_MOTIVATION_LINES.length);
+  return DM_MOTIVATION_LINES[idx](task);
+}
+
+// ---------- MEDIA MUTE/RESTORE ----------
+
 /**
  * Mute + pause all audio/video elements on the page,
  * while remembering their previous state so we can restore later.
@@ -97,6 +134,8 @@ function forcePlayInPage() {
   }
 }
 
+// ---------- OVERLAY ----------
+
 function showOverlay(activeSession) {
   if (document.getElementById("deepwork-overlay")) return;
 
@@ -121,24 +160,11 @@ function showOverlay(activeSession) {
 function renderOverlay(activeSession, isPro) {
   if (document.getElementById("deepwork-overlay")) return;
 
-  // Try to personalize with the current task
-  const taskLabel = (activeSession && activeSession.task)
-    ? `"${activeSession.task}"`
-    : "your current Deepmode block";
-
-  const brandText = isPro ? "Deepmode Pro AI" : "DeepMode AI";
-
-  // Pool of minimal, calm messages (exactly 5)
-  const messages = [
-    `Deepwork in progress.`,
-    `This site is blocked during your session.`,
-    `Return to your work and stay in Deepmode.`,
-    `Future you is watching.`,
-    `Stay with it. You're close.`
-  ];
-
-  const randomMessage =
-    messages[Math.floor(Math.random() * messages.length)];
+  // Get the task name for personalized motivation
+  const taskName = activeSession && activeSession.task ? activeSession.task : null;
+  
+  // Get a random motivational line
+  const motivationLine = getMotivationLine(taskName);
 
   const overlay = document.createElement("div");
   overlay.id = "deepwork-overlay";
@@ -157,25 +183,25 @@ function renderOverlay(activeSession, isPro) {
     <div class="deepmode-overlay-bg-logo"></div>
     <div style="
       background:#111118;
-      padding:24px 28px;
+      padding:28px 32px;
       border-radius:18px;
       box-shadow:0 22px 60px rgba(0,0,0,0.85);
-      max-width:480px;
+      max-width:520px;
       text-align:center;
       color:#f5f5f5;
       font-family:Inter,-apple-system,BlinkMacSystemFont,'Segoe UI',system-ui,sans-serif;
       position:relative;
       z-index:1;
     ">
-      <div style="font-size:11px; text-transform:uppercase; letter-spacing:0.15em; color:#9ca3af; margin-bottom:6px;">
-        ${brandText}
+      <div style="font-size:10px; text-transform:uppercase; letter-spacing:0.18em; color:#6b7280; margin-bottom:10px; font-weight:500;">
+        DEEPMODE FOCUS LOCK
       </div>
-      <h2 style="margin:0 0 10px; font-size:22px;">Deepwork in progress.</h2>
-      <p style="margin:0; font-size:14px; color:#e5e7eb; line-height:1.5;">
-        ${randomMessage}
+      <h2 style="margin:0 0 14px; font-size:24px; font-weight:600;">Deepwork in progress.</h2>
+      <p id="dm-motivation-line" style="margin:0 0 16px; font-size:15px; color:#e5e7eb; line-height:1.6;">
+        ${motivationLine}
       </p>
-      <p style="margin:10px 0 0; font-size:12px; color:#9ca3af;">
-        Close this tab or end your block from the Deepmode extension popup.
+      <p style="margin:0; font-size:11px; color:#6b7280; line-height:1.5;">
+        If you really need this site, end your block from the Deepmode extension.
       </p>
     </div>
   `;

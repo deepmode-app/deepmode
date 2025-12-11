@@ -14,6 +14,7 @@
         --accent: #e50914;
         --muted: #9ca3af;
         --border: #27272f;
+        --success: #22c55e;
         
         /* Legacy vars (for compatibility) */
         --dw-bg: var(--background);
@@ -30,7 +31,7 @@
       body {
         margin: 0;
         padding: 12px;
-        min-width: 280px;
+        min-width: 300px;
         background: radial-gradient(circle at top, #111118 0, #050509 45%, #020205 100%);
         color: var(--dw-text);
         font-family: Inter, -apple-system, BlinkMacSystemFont, "Segoe UI", system-ui, sans-serif;
@@ -40,31 +41,115 @@
         position: relative;
         background: var(--dw-card);
         border-radius: 14px;
-        padding: 12px 12px 10px;
+        padding: 14px 14px 12px;
         box-shadow: 0 14px 30px rgba(0, 0, 0, 0.7);
       }
 
-      .badge {
-        font-size: 10px;
-        text-transform: uppercase;
-        letter-spacing: 0.14em;
-        color: var(--dw-muted);
-        margin-bottom: 4px;
+      /* Header section */
+      .popup-header {
+        display: flex;
+        align-items: center;
+        margin-bottom: 10px;
       }
 
-      h3 {
-        margin: 0 0 8px;
-        font-size: 16px;
+      .popup-logo {
+        display: flex;
+        align-items: center;
+      }
+
+      .popup-logo-mark {
+        width: 32px;
+        height: 32px;
+        margin-right: 10px;
+      }
+
+      .popup-title-block {
+        display: flex;
+        flex-direction: column;
+      }
+
+      .popup-title {
         font-weight: 600;
-        letter-spacing: 0.03em;
+        font-size: 16px;
+        letter-spacing: 0.02em;
       }
 
+      .popup-subtitle {
+        font-size: 11px;
+        color: var(--dw-muted);
+        line-height: 1.4;
+      }
+
+      /* Status box */
+      .status-box {
+        background: rgba(0, 0, 0, 0.3);
+        border: 1px solid var(--dw-border);
+        border-radius: 10px;
+        padding: 10px 12px;
+        margin-bottom: 12px;
+      }
+
+      .status-mode {
+        font-size: 12px;
+        font-weight: 500;
+        margin-bottom: 2px;
+      }
+
+      .status-detail {
+        font-size: 10px;
+        color: var(--dw-muted);
+        line-height: 1.5;
+      }
+
+      .status-cta {
+        font-size: 10px;
+        color: var(--dw-accent);
+        cursor: pointer;
+        margin-top: 4px;
+        display: block;
+      }
+
+      .status-cta:hover {
+        text-decoration: underline;
+      }
+
+      .status-actions {
+        display: flex;
+        justify-content: flex-end;
+        margin-top: 6px;
+      }
+
+      .btn-ghost {
+        background: transparent;
+        border: 1px solid var(--dw-border);
+        color: var(--dw-muted);
+        padding: 4px 10px;
+        border-radius: 6px;
+        font-size: 10px;
+        cursor: pointer;
+        transition: all 0.15s;
+      }
+
+      .btn-ghost:hover {
+        border-color: var(--dw-muted);
+        color: var(--dw-text);
+      }
+
+      /* Form elements */
       label {
         display: block;
         font-size: 11px;
-        margin-top: 6px;
-        margin-bottom: 2px;
+        margin-top: 8px;
+        margin-bottom: 3px;
         color: var(--dw-muted);
+        font-weight: 500;
+      }
+
+      .dw-field-hint {
+        font-size: 9px;
+        color: #6b7280;
+        margin: 3px 0 0 0;
+        line-height: 1.4;
       }
 
       input,
@@ -72,14 +157,27 @@
       textarea {
         width: 100%;
         margin: 0;
-        padding: 6px 7px;
-        border-radius: 7px;
-        border: 1px solid #27272f;
-        background: #050509;
+        padding: 8px 10px;
+        border-radius: 8px;
+        border: 1px solid var(--dw-border);
+        background: var(--dw-bg);
         color: var(--dw-text);
         font-size: 12px;
         box-sizing: border-box;
         resize: vertical;
+        transition: border-color 0.15s, box-shadow 0.3s;
+      }
+
+      input:focus,
+      select:focus,
+      textarea:focus {
+        outline: none;
+        border-color: var(--dw-accent);
+      }
+
+      input.task-valid {
+        border-color: var(--success);
+        box-shadow: 0 0 0 2px rgba(34, 197, 94, 0.15);
       }
 
       input:disabled,
@@ -88,16 +186,18 @@
         opacity: 0.5;
       }
 
+      /* Buttons */
       button {
         width: 100%;
-        padding: 7px 6px;
+        padding: 10px 8px;
         margin-top: 8px;
-        border-radius: 7px;
+        border-radius: 8px;
         border: none;
         font-size: 12px;
         font-weight: 500;
         cursor: pointer;
         box-sizing: border-box;
+        transition: all 0.15s;
       }
 
       #startBtn {
@@ -107,11 +207,13 @@
 
       #startBtn:hover:not(:disabled) {
         background: #f3121f;
+        transform: scale(1.02);
       }
 
       #startBtn:disabled {
         background: #4b5563;
         cursor: default;
+        transform: none;
       }
 
       #endBtn {
@@ -125,11 +227,43 @@
         border-color: #b91c1c;
       }
 
-      .current-session {
+      /* Ritual line */
+      .ritual-line {
+        font-size: 10px;
+        color: var(--dw-muted);
+        text-align: center;
         margin-top: 8px;
+        line-height: 1.4;
+      }
+
+      /* Early end warning */
+      .early-end-warning {
+        font-size: 9px;
+        color: #f59e0b;
+        text-align: center;
+        margin-top: 4px;
+        display: none;
+      }
+
+      /* Momentum snippet */
+      .momentum-snippet {
+        font-size: 10px;
+        color: var(--dw-muted);
+        text-align: center;
+        margin-top: 8px;
+        padding-top: 8px;
+        border-top: 1px solid var(--dw-border);
+        display: none;
+      }
+
+      .current-session {
+        margin-top: 10px;
         font-size: 11px;
         color: var(--dw-muted);
         line-height: 1.4;
+        padding: 8px 10px;
+        background: rgba(0, 0, 0, 0.3);
+        border-radius: 8px;
       }
 
       .current-session strong {
@@ -137,28 +271,16 @@
       }
 
       .status {
-        margin-top: 6px;
+        margin-top: 8px;
         font-size: 11px;
         color: var(--dw-text);
-      }
-
-      .dashboard-link {
-        margin-top: 4px;
-        font-size: 11px;
-        color: var(--dw-accent);
-        text-align: right;
-        cursor: pointer;
-      }
-
-      .dashboard-link:hover {
-        text-decoration: underline;
+        min-height: 16px;
       }
 
       /* Blocklist section (collapsible) */
-
       details.blocklist-section {
-        margin-top: 8px;
-        padding-top: 6px;
+        margin-top: 10px;
+        padding-top: 8px;
         border-top: 1px solid var(--dw-border);
       }
 
@@ -183,47 +305,70 @@
 
       .blocklist-title {
         font-size: 11px;
+        font-weight: 600;
         text-transform: uppercase;
-        letter-spacing: 0.12em;
-        color: var(--dw-muted);
+        letter-spacing: 0.08em;
+        color: var(--dw-text);
       }
 
       .blocklist-hint {
         font-size: 10px;
         color: var(--dw-muted);
-        opacity: 0.9;
       }
 
       details.blocklist-section[open] .blocklist-hint::after {
-        content: " (hide)";
+        content: "";
       }
 
       details.blocklist-section:not([open]) .blocklist-hint::after {
-        content: " (advanced)";
+        content: "";
       }
 
       .blocklist-inner {
-        margin-top: 6px;
+        margin-top: 8px;
+      }
+
+      .blocklist-info {
+        font-size: 10px;
+        color: var(--dw-muted);
+        line-height: 1.5;
+        margin-bottom: 8px;
+      }
+
+      .blocking-status {
+        font-size: 10px;
+        color: var(--dw-muted);
+        padding: 6px 8px;
+        background: rgba(0,0,0,0.3);
+        border-radius: 6px;
+        text-align: center;
+        margin-bottom: 8px;
+      }
+
+      .blocking-status.active {
+        color: #bbf7d0;
+        background: rgba(34, 197, 94, 0.1);
       }
 
       .pill-row {
         display: flex;
         flex-wrap: wrap;
         gap: 4px;
-        margin-top: 4px;
+        margin-top: 6px;
       }
 
       .site-pill {
         border-radius: 999px;
         padding: 4px 8px;
-        font-size: 11px;
-        border: 1px solid #27272f;
+        font-size: 10px;
+        border: 1px solid var(--dw-border);
         background: var(--dw-pill-bg);
         color: var(--dw-text);
         cursor: pointer;
         display: inline-flex;
         align-items: center;
         gap: 4px;
+        transition: all 0.15s;
       }
 
       .site-pill.active {
@@ -233,18 +378,49 @@
       }
 
       .site-pill span.icon {
-        font-size: 11px;
+        font-size: 10px;
         opacity: 0.9;
       }
 
       .blocklist-subtext {
         font-size: 10px;
         color: var(--dw-muted);
-        margin-top: 4px;
+        margin-top: 6px;
+        line-height: 1.4;
+      }
+
+      /* Footer */
+      .popup-footer {
+        margin-top: 10px;
+        padding-top: 8px;
+        border-top: 1px solid var(--dw-border);
+        text-align: center;
+      }
+
+      .footer-link {
+        font-size: 11px;
+        color: var(--dw-accent);
+        cursor: pointer;
+        text-decoration: none;
+      }
+
+      .footer-link:hover {
+        text-decoration: underline;
+      }
+
+      .footer-logout {
+        font-size: 9px;
+        color: var(--dw-muted);
+        cursor: pointer;
+        margin-top: 6px;
+        display: block;
+      }
+
+      .footer-logout:hover {
+        color: var(--dw-text);
       }
 
       /* Priming overlay */
-
       .priming-overlay {
         position: absolute;
         inset: 0;
@@ -380,127 +556,72 @@
           transform: translateY(0);
         }
       }
-
-      /* Upgrade row under plan hint */
-      .upgrade-row {
-        display: flex;
-        align-items: center;
-        justify-content: space-between;
-        margin-top: 4px;
-        gap: 6px;
-      }
-
-      .upgrade-copy {
-        font-size: 9px;
-        color: #6b7280;
-      }
-
-      #upgradeBtn {
-        width: auto;
-        padding: 5px 8px;
-        margin-top: 0;
-        border-radius: 999px;
-        background: #18181f;
-        color: #f9fafb;
-        border: 1px solid #4b5563;
-        font-size: 10px;
-        cursor: pointer;
-        white-space: nowrap;
-      }
-
-      #upgradeBtn:hover {
-        background: #111827;
-        border-color: #9ca3af;
-      }
-
-      .popup-header {
-        display: flex;
-        align-items: center;
-        margin-bottom: 12px;
-      }
-
-      .popup-logo {
-        display: flex;
-        align-items: center;
-      }
-
-      .popup-logo-mark {
-        width: 32px;
-        height: 32px;
-        margin-right: 8px;
-      }
-
-      .popup-title-block {
-        display: flex;
-        flex-direction: column;
-      }
-
-      .popup-title {
-        font-weight: 600;
-        font-size: 14px;
-      }
-
-      .popup-subtitle {
-        font-size: 11px;
-        color: rgba(255, 255, 255, 0.55);
-      }
-
     </style>
   </head>
   <body>
     <div class="card">
+      <!-- Header -->
       <div class="popup-header">
         <div class="popup-logo">
           <img src="icon.png" alt="Deepmode" class="popup-logo-mark" />
           <div class="popup-title-block">
             <div class="popup-title">Deepmode</div>
             <div class="popup-subtitle">
-              Choose your session length and stay in Deepmode.
+              Enter focus mode — one intentional block at a time.
             </div>
           </div>
         </div>
       </div>
 
-      <!-- auth/plan state -->
-      <div id="authState"
-           style="font-size: 11px; margin-top: 6px; color: #9ca3af;"></div>
-      <div id="planLabel"
-           style="font-size: 11px; margin-top: 2px; color:#e5e7eb;"></div>
-
-      <div class="upgrade-row" id="upgradeRow" style="display:none;">
-        <div class="upgrade-copy" id="upgradeCopy"></div>
-        <button id="upgradeBtn">Upgrade</button>
+      <!-- Status box (dynamic based on auth state) -->
+      <div id="statusBox" class="status-box">
+        <div class="status-mode" id="statusMode">Loading...</div>
+        <div class="status-detail" id="statusDetail"></div>
+        <div class="status-actions" id="statusActions"></div>
       </div>
 
-      <label>Task</label>
-      <input id="task" type="text" placeholder="Name your work" />
+      <!-- Form fields -->
+      <label for="task">Task</label>
+      <input id="task" type="text" placeholder="What will you focus on this block?" />
+      <p class="dw-field-hint">Keep it specific. One block → one task.</p>
 
-      <label>Category</label>
+      <label for="category">Category</label>
       <select id="category">
-        <option value="design">Design</option>
-        <option value="coding">Software / Coding</option>
-        <option value="reading">Reading</option>
+        <option value="coding">Coding / Engineering</option>
+        <option value="writing">Writing</option>
+        <option value="design">Design / Creative</option>
         <option value="research">Research</option>
+        <option value="reading">Reading / Deep learning</option>
+        <option value="study">Study / Coursework</option>
+        <option value="revision">Exam prep / Revision</option>
+        <option value="planning">Planning / Strategy</option>
+        <option value="admin">Admin / Email</option>
+        <option value="freelance">Freelance / Side project</option>
         <option value="fitness">Fitness / Training</option>
-        <option value="admin">Admin</option>
-        <option value="planning">Planning</option>
-        <option value="revision">Revision</option>
-        <option value="freelance">Freelance</option>
         <option value="other">Other</option>
       </select>
+      <p class="dw-field-hint">Optional — helps organise your work insights.</p>
 
-      <label>Duration (minutes)</label>
+      <label for="duration">Duration</label>
       <select id="duration">
-        <option value="5">Micro (5m) – Break Inertia</option>
-        <option value="25" selected>Sprint (25m) – Classic Pomodoro</option>
-        <option value="50">Deep (50m) – Serious Focus</option>
-        <option value="90">Immersive (90m) – Full Flow Reset</option>
+        <option value="5">5 min — Quick start</option>
+        <option value="25" selected>25 min — Sprint</option>
+        <option value="50">50 min — Deep dive (Pro)</option>
+        <option value="90">90 min — Immersion (Pro)</option>
       </select>
-      <div id="durationHint"
-           style="font-size:10px;color:#6b7280;margin-top:2px;"></div>
 
-      <button id="startBtn">Start Session</button>
+      <button id="startBtn">Start Deepwork</button>
       <button id="endBtn" disabled>End Session</button>
+
+      <div class="ritual-line">
+        Ritual: choose your time → name your task → stay until the timer ends.
+      </div>
+
+      <div id="earlyEndWarning" class="early-end-warning">
+        Ending early resets this block. Stay with it if you can.
+      </div>
+
+      <div id="momentumSnippet" class="momentum-snippet"></div>
 
       <div id="currentSession" class="current-session" style="display:none;">
         <strong>Current Deepwork:</strong>
@@ -532,28 +653,35 @@
       <!-- Collapsible Blocklist UI -->
       <details class="blocklist-section">
         <summary class="blocklist-header">
-          <div class="blocklist-title">Blocked sites 👉 </div>
-          <div class="blocklist-hint"> ->Edit</div>
+          <div class="blocklist-title">Distraction blocking</div>
+          <div class="blocklist-hint" id="blocklistToggleHint">Edit (show/hide)</div>
         </summary>
 
         <div class="blocklist-inner">
+          <div class="blocklist-info">
+            These sites stay blocked during deepwork. Only allow one if your task truly requires it.
+          </div>
+
+          <div id="blockingStatus" class="blocking-status">
+            No active block. Start a deepwork session to activate blocking.
+          </div>
+
           <div id="defaultSitesRow" class="pill-row">
             <!-- filled by popup.js -->
           </div>
 
-          <div class="blocklist-subtext">
-            Popular distractions are on by default. Toggle sites off only if it's needed for your deepwork session.
-          </div>
-
-          <label style="margin-top:6px;">More sites to block (one per line)</label>
+          <label style="margin-top:8px;">More sites to block (one per line)</label>
           <textarea id="customSites" rows="3"
             placeholder="example.com&#10;news.site&#10;social.example"></textarea>
         </div>
       </details>
 
       <div class="status" id="status"></div>
-      <div id="dashboardLink" class="dashboard-link">
-        View dashboard
+
+      <!-- Footer -->
+      <div class="popup-footer">
+        <span id="dashboardLink" class="footer-link">View my work stats →</span>
+        <span id="logoutLink" class="footer-logout" style="display:none;">Log out</span>
       </div>
     </div>
 
