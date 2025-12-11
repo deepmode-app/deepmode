@@ -77,3 +77,19 @@ window.addEventListener("message", (event) => {
     return;
   }
 });
+
+// Listen for messages from the extension popup (logout triggered from extension)
+chrome.runtime.onMessage.addListener((msg, sender, sendResponse) => {
+  if (msg && msg.type === "EXTENSION_LOGOUT") {
+    console.log("Deepmode connect: received EXTENSION_LOGOUT from popup");
+    
+    // Clear dashboard localStorage and redirect to homepage
+    localStorage.removeItem("access_token");
+    localStorage.removeItem("deepmode_token");
+    
+    // Redirect to homepage
+    window.location.href = "/";
+    
+    sendResponse({ success: true });
+  }
+});

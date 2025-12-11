@@ -405,26 +405,83 @@ document.addEventListener("DOMContentLoaded", () => {
 
   if (logoutLink) {
     logoutLink.addEventListener("click", async () => {
-      // Clear local storage
-      chrome.storage.local.remove(
-        [STORAGE_KEYS.ACTIVE_SESSION, STORAGE_KEYS.ACCESS_TOKEN],
-        () => {
-          accessToken = null;
-          isProUser = false;
-          
-          if (timerInterval) clearInterval(timerInterval);
-          if (primingTimerId) clearInterval(primingTimerId);
-          if (primingOverlay) {
-            primingOverlay.style.display = "none";
-            primingOverlay.classList.remove("visible", "fade-out");
+      statusDiv.style.color = "#9ca3af";
+      statusDiv.textContent = "Logging out...";
+
+      // Get current token and active session before clearing
+      chrome.storage.local.get(
+        [STORAGE_KEYS.ACCESS_TOKEN, STORAGE_KEYS.ACTIVE_SESSION],
+        async (result) => {
+          const token = result[STORAGE_KEYS.ACCESS_TOKEN];
+          const active = result[STORAGE_KEYS.ACTIVE_SESSION];
+
+          // 1. End any running session via API (if signed in and session is not guest)
+          if (token && active && active.id && !active.isGuest) {
+            try {
+              await fetch(`${API_BASE_URL}/sessions/${active.id}/end`, {
+                method: "PATCH",
+                headers: {
+                  "Content-Type": "application/json",
+                  "Authorization": "Bearer " + token,
+                },
+              });
+              console.log("[Deepmode Popup] Active session ended on logout");
+            } catch (err) {
+              console.warn("[Deepmode Popup] Failed to end session on logout:", err);
+            }
           }
-          
-          updateAuthState();
-          applyPlanUI();
-          setUIForActiveSession(null);
-          
-          statusDiv.style.color = "#9ca3af";
-          statusDiv.textContent = "Logged out.";
+
+          // 2. Clear extension storage
+          chrome.storage.local.remove(
+            [STORAGE_KEYS.ACTIVE_SESSION, STORAGE_KEYS.ACCESS_TOKEN],
+            () => {
+              console.log("[Deepmode Popup] Cleared extension storage on logout");
+
+              // 3. Send logout message to all dashboard/app tabs to logout there too
+              chrome.tabs.query({}, (tabs) => {
+                tabs.forEach((tab) => {
+                  if (tab.url && (tab.url.includes("deepmode.app") || tab.url.includes("deepmode.onrender.com") || tab.url.includes("localhost:8000") || tab.url.includes("127.0.0.1:8000"))) {
+                    try {
+                      chrome.tabs.sendMessage(tab.id, { type: "EXTENSION_LOGOUT" }, () => {
+                        // Ignore errors for tabs that don't have the content script
+                        if (chrome.runtime.lastError) {
+                          // Try injecting a script to handle logout
+                          chrome.scripting.executeScript({
+                            target: { tabId: tab.id },
+                            func: () => {
+                              localStorage.removeItem("access_token");
+                              localStorage.removeItem("deepmode_token");
+                              window.location.href = "/";
+                            }
+                          }).catch(() => {});
+                        }
+                      });
+                    } catch (e) {
+                      console.warn("[Deepmode Popup] Could not send logout to tab:", e);
+                    }
+                  }
+                });
+              });
+
+              // 4. Update popup UI
+              accessToken = null;
+              isProUser = false;
+              
+              if (timerInterval) clearInterval(timerInterval);
+              if (primingTimerId) clearInterval(primingTimerId);
+              if (primingOverlay) {
+                primingOverlay.style.display = "none";
+                primingOverlay.classList.remove("visible", "fade-out");
+              }
+              
+              updateAuthState();
+              applyPlanUI();
+              setUIForActiveSession(null);
+              
+              statusDiv.style.color = "#22c55e";
+              statusDiv.textContent = "Logged out successfully.";
+            }
+          );
         }
       );
     });
