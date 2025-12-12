@@ -67,27 +67,27 @@ document.addEventListener("DOMContentLoaded", () => {
     if (chrome.notifications.getPermissionLevel) {
       chrome.notifications.getPermissionLevel((level) => {
         if (level === "denied") {
-          const hasActiveSession = currentSessionBox && currentSessionBox.style.display !== "none";
-          
-          if (!hasActiveSession) {
-            const originalText = statusDiv.textContent;
-            statusDiv.style.color = "#ffb84d";
-            statusDiv.style.fontSize = "11px";
-            statusDiv.style.lineHeight = "1.4";
-            statusDiv.textContent = "🔔 Enable notifications for timer alerts: Windows Settings > System > Notifications > Chrome";
-            statusDiv.title = "Notifications help you know when your block finishes. Enable in Windows Settings.";
+            const hasActiveSession = currentSessionBox && currentSessionBox.style.display !== "none";
             
-            setTimeout(() => {
-              chrome.storage.local.get([STORAGE_KEYS.ACTIVE_SESSION], (result) => {
-                if (!result[STORAGE_KEYS.ACTIVE_SESSION] && statusDiv.textContent.includes("Enable notifications")) {
-                  statusDiv.textContent = originalText || "";
-                  statusDiv.style.color = "";
-                  statusDiv.style.fontSize = "";
-                  statusDiv.style.lineHeight = "";
-                  statusDiv.title = "";
-                }
-              });
-            }, 10000);
+            if (!hasActiveSession) {
+              const originalText = statusDiv.textContent;
+              statusDiv.style.color = "#ffb84d";
+              statusDiv.style.fontSize = "11px";
+              statusDiv.style.lineHeight = "1.4";
+              statusDiv.textContent = "🔔 Enable notifications for timer alerts: Windows Settings > System > Notifications > Chrome";
+              statusDiv.title = "Notifications help you know when your block finishes. Enable in Windows Settings.";
+              
+              setTimeout(() => {
+                chrome.storage.local.get([STORAGE_KEYS.ACTIVE_SESSION], (result) => {
+                  if (!result[STORAGE_KEYS.ACTIVE_SESSION] && statusDiv.textContent.includes("Enable notifications")) {
+                    statusDiv.textContent = originalText || "";
+                    statusDiv.style.color = "";
+                    statusDiv.style.fontSize = "";
+                    statusDiv.style.lineHeight = "";
+                    statusDiv.title = "";
+                  }
+                });
+              }, 10000);
           }
         } else if (level === "granted") {
           console.log("[Deepmode Popup] Notifications enabled ✓");
@@ -115,12 +115,15 @@ document.addEventListener("DOMContentLoaded", () => {
   };
 
   // ---------- Task input validation feedback ----------
+  // Calm, steady feedback: neutral when empty, steady green when has content
+  // No flickering or rapid color changes - reinforces commitment, not anxiety
 
   taskInput.addEventListener("input", () => {
     const value = taskInput.value.trim();
     if (value.length > 0) {
       taskInput.classList.add("task-valid");
-      setTimeout(() => taskInput.classList.remove("task-valid"), 300);
+    } else {
+      taskInput.classList.remove("task-valid");
     }
   });
 
@@ -143,8 +146,8 @@ document.addEventListener("DOMContentLoaded", () => {
 
     if (!accessToken) {
       // Guest mode
-      statusMode.innerHTML = "👓 Guest mode — nothing is saved.";
-      statusDetail.innerHTML = `<span class="status-cta" id="signInCta">Sign in to unlock tracking, history, projects, and momentum →</span>`;
+      statusMode.innerHTML = "👓 Guest mode — sessions stay on this device.";
+      statusDetail.innerHTML = `<span class="status-cta" id="signInCta">Sign in to track your time, projects, and progress across days →</span>`;
       statusActions.innerHTML = '';
       
       document.getElementById("signInCta")?.addEventListener("click", () => {
@@ -159,8 +162,8 @@ document.addEventListener("DOMContentLoaded", () => {
       if (momentumSnippet) momentumSnippet.style.display = "none";
 
     } else if (!isProUser) {
-      // Free user
-      statusMode.innerHTML = "🟣 Signed in — your work is being tracked.";
+      // Free user (Signed in)
+      statusMode.innerHTML = "🟣 Signed in — your focus sessions are saved and visible in your dashboard.";
       statusDetail.innerHTML = `<span class="status-cta" id="seeProCta">See Pro features →</span>`;
       statusActions.innerHTML = '';
       
@@ -180,12 +183,12 @@ document.addEventListener("DOMContentLoaded", () => {
 
     } else {
       // Pro user
-      statusMode.innerHTML = "🟢 Deepmode Pro — focus unlocked.";
+      statusMode.innerHTML = "🟢 Pro active — full history, AI insights, and momentum tracking enabled.";
       statusDetail.innerHTML = "";
       statusActions.innerHTML = "";
 
       if (dashboardLink) {
-        dashboardLink.textContent = "View my analytics & streaks →";
+        dashboardLink.textContent = "View my work stats →";
         dashboardLink.onclick = () => chrome.tabs.create({ url: DASHBOARD_URL });
       }
       if (logoutLink) logoutLink.style.display = "block";
@@ -579,78 +582,78 @@ document.addEventListener("DOMContentLoaded", () => {
     }
   }
 
-  // ---------- AUTO END ----------
+	// ---------- AUTO END ----------
 
-  async function autoEndSession(sessionId, isGuest) {
+	async function autoEndSession(sessionId, isGuest) {
     statusDiv.textContent = "Time's up. Ending your block…";
 
-    if (isGuest || !accessToken) {
-      chrome.storage.local.get([STORAGE_KEYS.ACTIVE_SESSION], (result) => {
-        const active = result[STORAGE_KEYS.ACTIVE_SESSION];
-        if (!active || active.id !== sessionId) {
-          setUIForActiveSession(null);
-          return;
-        }
+	  if (isGuest || !accessToken) {
+		chrome.storage.local.get([STORAGE_KEYS.ACTIVE_SESSION], (result) => {
+		  const active = result[STORAGE_KEYS.ACTIVE_SESSION];
+		  if (!active || active.id !== sessionId) {
+			setUIForActiveSession(null);
+			return;
+		  }
 
-        const start = new Date(active.start_time);
-        const now = new Date();
-        const mins = Math.max(1, Math.floor((now - start) / 60000));
+		  const start = new Date(active.start_time);
+		  const now = new Date();
+		  const mins = Math.max(1, Math.floor((now - start) / 60000));
 
-        const taskLabel = active.task
+		  const taskLabel = active.task
           ? `"${active.task}"`
-          : "this Deepmode block";
+			: "this Deepmode block";
 
-        statusDiv.style.color = "#22c55e";
-        statusDiv.textContent =
-          `Block complete — you stayed in Deepmode for ~${mins} min on ${taskLabel}.`;
+		  statusDiv.style.color = "#22c55e";
+		  statusDiv.textContent =
+			`Block complete — you stayed in Deepmode for ~${mins} min on ${taskLabel}.`;
 
-        chrome.storage.local.remove(STORAGE_KEYS.ACTIVE_SESSION, () => {
-          setUIForActiveSession(null);
-        });
-      });
-      return;
-    }
+		  chrome.storage.local.remove(STORAGE_KEYS.ACTIVE_SESSION, () => {
+			setUIForActiveSession(null);
+		  });
+		});
+		return;
+	  }
 
-    try {
-      const response = await fetch(
-        `${API_BASE_URL}/sessions/${sessionId}/end`,
-        {
-          method: "PATCH",
-          headers: {
-            "Content-Type": "application/json",
-            Authorization: "Bearer " + accessToken,
-          },
-        }
-      );
+	  try {
+		const response = await fetch(
+		  `${API_BASE_URL}/sessions/${sessionId}/end`,
+		  {
+			method: "PATCH",
+			headers: {
+			  "Content-Type": "application/json",
+			  Authorization: "Bearer " + accessToken,
+			},
+		  }
+		);
 
-      if (!response.ok) {
-        console.error("Auto end failed", response.status);
-        statusDiv.style.color = "#e50914";
-        statusDiv.textContent =
+		if (!response.ok) {
+		  console.error("Auto end failed", response.status);
+		  statusDiv.style.color = "#e50914";
+		  statusDiv.textContent =
           "Couldn't auto-end your session on the server, but your block is finished.";
-      } else {
-        const data = await response.json();
+		} else {
+		  const data = await response.json();
 
-        const mins = data.actual_duration_minutes ?? 0;
-        const label = data.task
+		  const mins = data.actual_duration_minutes ?? 0;
+		  const label = data.task
           ? `"${data.task}"`
-          : "your Deepmode block";
+			: "your Deepmode block";
 
-        statusDiv.style.color = "#22c55e";
-        statusDiv.textContent =
-          `Block complete — logged ~${mins} min on ${label}.`;
-      }
-    } catch (err) {
-      console.error(err);
-      statusDiv.style.color = "#e50914";
-      statusDiv.textContent =
-        "Network issue while ending session — your block is done locally.";
-    } finally {
-      chrome.storage.local.remove(STORAGE_KEYS.ACTIVE_SESSION, () => {
-        setUIForActiveSession(null);
-      });
-    }
-  }
+		  statusDiv.style.color = "#22c55e";
+		  statusDiv.textContent =
+			`Block complete — logged ~${mins} min on ${label}.`;
+		}
+	  } catch (err) {
+		console.error(err);
+		statusDiv.style.color = "#e50914";
+		statusDiv.textContent =
+		  "Network issue while ending session — your block is done locally.";
+	  } finally {
+		chrome.storage.local.remove(STORAGE_KEYS.ACTIVE_SESSION, () => {
+		  setUIForActiveSession(null);
+		});
+	  }
+	}
 
   // ---------- PLAN / LIMIT ERROR HANDLER ----------
 

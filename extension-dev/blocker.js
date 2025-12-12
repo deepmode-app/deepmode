@@ -201,7 +201,8 @@ function renderOverlay(activeSession, isPro) {
         ${motivationLine}
       </p>
       <p style="margin:0; font-size:11px; color:#6b7280; line-height:1.5;">
-        If you really need this site, end your block from the Deepmode extension.
+        Distractions are blocked to protect this focus block.<br/>
+        If this site is essential for your task, you can allow it from the Deepmode extension.
       </p>
     </div>
   `;

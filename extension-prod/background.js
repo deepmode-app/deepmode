@@ -248,8 +248,8 @@ chrome.runtime.onMessage.addListener((msg, sender, sendResponse) => {
           {
             type: "basic",
             iconUrl: "icon.png",
-            title: "Deepwork block complete",
-            message: "Great work. Take a short break and come back. You're building your future one session at a time.",
+            title: "Block complete",
+            message: "Block complete. Step away, reset, then start the next one intentionally.",
             priority: 2
           },
           (notificationId) => {
@@ -551,8 +551,8 @@ chrome.alarms.onAlarm.addListener((alarm) => {
           {
             type: "basic",
             iconUrl: "icon.png",
-            title: "5 minutes left",
-            message: "Stay with it. Finish this block strong.",
+            title: "Halfway there",
+            message: "You're halfway through. Stay with the task — this is where momentum builds.",
             priority: 1
           },
           (notificationId) => {
@@ -622,8 +622,8 @@ chrome.alarms.onAlarm.addListener((alarm) => {
         {
           type: "basic",
           iconUrl: "icon.png",
-          title: "Deepwork block complete",
-          message: "Great work. Take a short break and come back. You're building your future one session at a time.",
+          title: "Block complete",
+          message: "Block complete. Step away, reset, then start the next one intentionally.",
           priority: 2
         },
         (notificationId) => {

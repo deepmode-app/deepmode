@@ -54,6 +54,8 @@ You must always produce these exact sections:
 
    - Do NOT list every number mechanically — interpret them.
 
+   - When sufficient historical data exists (previous week average provided), include ONE comparative sentence contrasting this week's focused minutes against the user's previous average. Example: "Compared to your previous average, you worked +18% more focused minutes this week." Only include if data supports it. Never fabricate percentages.
+
 2. Pattern You Should Know
 
    - 1–2 sentences.
@@ -209,6 +211,14 @@ Do NOT include <html>, <body>, or <head> tags. Return only the content that will
             avg_sessions_per_day = total_sessions / days_worked
             context_switching = f"{avg_sessions_per_day:.1f} sessions per active day"
 
+        # Get previous week average for comparative insight (if available)
+        previous_week_avg = stats.get('previous_week_avg_minutes', None)
+        previous_week_line = ""
+        if previous_week_avg is not None and previous_week_avg > 0:
+            previous_week_line = f"Previous week average minutes: {previous_week_avg}"
+        else:
+            previous_week_line = "Previous week average minutes: Not available (insufficient historical data)"
+
         # Build user content with template
         user_content = f"""You are generating a Deepmode performance report.
 
@@ -224,6 +234,8 @@ Longest streak: {longest_streak} days
 Days worked: {days_worked} of 7
 Best day: {best_day}
 Weakest day: {worst_day}
+
+{previous_week_line}
 
 Projects summary:
 {project_breakdown}

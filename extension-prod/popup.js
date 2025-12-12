@@ -115,12 +115,15 @@ document.addEventListener("DOMContentLoaded", () => {
   };
 
   // ---------- Task input validation feedback ----------
+  // Calm, steady feedback: neutral when empty, steady green when has content
+  // No flickering or rapid color changes - reinforces commitment, not anxiety
 
   taskInput.addEventListener("input", () => {
     const value = taskInput.value.trim();
     if (value.length > 0) {
       taskInput.classList.add("task-valid");
-      setTimeout(() => taskInput.classList.remove("task-valid"), 300);
+    } else {
+      taskInput.classList.remove("task-valid");
     }
   });
 
@@ -143,8 +146,8 @@ document.addEventListener("DOMContentLoaded", () => {
 
     if (!accessToken) {
       // Guest mode
-      statusMode.innerHTML = "👓 Guest mode — nothing is saved.";
-      statusDetail.innerHTML = `<span class="status-cta" id="signInCta">Sign in to unlock tracking, history, projects, and momentum →</span>`;
+      statusMode.innerHTML = "👓 Guest mode — sessions stay on this device.";
+      statusDetail.innerHTML = `<span class="status-cta" id="signInCta">Sign in to track your time, projects, and progress across days →</span>`;
       statusActions.innerHTML = '';
       
       document.getElementById("signInCta")?.addEventListener("click", () => {
@@ -159,8 +162,8 @@ document.addEventListener("DOMContentLoaded", () => {
       if (momentumSnippet) momentumSnippet.style.display = "none";
 
     } else if (!isProUser) {
-      // Free user
-      statusMode.innerHTML = "🟣 Signed in — your work is being tracked.";
+      // Free user (Signed in)
+      statusMode.innerHTML = "🟣 Signed in — your focus sessions are saved and visible in your dashboard.";
       statusDetail.innerHTML = `<span class="status-cta" id="seeProCta">See Pro features →</span>`;
       statusActions.innerHTML = '';
       
@@ -180,12 +183,12 @@ document.addEventListener("DOMContentLoaded", () => {
 
     } else {
       // Pro user
-      statusMode.innerHTML = "🟢 Deepmode Pro — focus unlocked.";
+      statusMode.innerHTML = "🟢 Pro active — full history, AI insights, and momentum tracking enabled.";
       statusDetail.innerHTML = "";
       statusActions.innerHTML = "";
 
       if (dashboardLink) {
-        dashboardLink.textContent = "View my analytics & streaks →";
+        dashboardLink.textContent = "View my work stats →";
         dashboardLink.onclick = () => chrome.tabs.create({ url: DASHBOARD_URL });
       }
       if (logoutLink) logoutLink.style.display = "block";
@@ -325,7 +328,7 @@ document.addEventListener("DOMContentLoaded", () => {
       );
 
       statusDiv.style.color = "#e5e7eb";
-      
+
       if (remainingMs <= 0) {
         statusDiv.textContent = "Deepmode on – Time's up! Check notifications.";
         clearInterval(timerInterval);
@@ -579,78 +582,78 @@ document.addEventListener("DOMContentLoaded", () => {
     }
   }
 
-  // ---------- AUTO END ----------
+	// ---------- AUTO END ----------
 
-  async function autoEndSession(sessionId, isGuest) {
+	async function autoEndSession(sessionId, isGuest) {
     statusDiv.textContent = "Time's up. Ending your block…";
 
-    if (isGuest || !accessToken) {
-      chrome.storage.local.get([STORAGE_KEYS.ACTIVE_SESSION], (result) => {
-        const active = result[STORAGE_KEYS.ACTIVE_SESSION];
-        if (!active || active.id !== sessionId) {
-          setUIForActiveSession(null);
-          return;
-        }
+	  if (isGuest || !accessToken) {
+		chrome.storage.local.get([STORAGE_KEYS.ACTIVE_SESSION], (result) => {
+		  const active = result[STORAGE_KEYS.ACTIVE_SESSION];
+		  if (!active || active.id !== sessionId) {
+			setUIForActiveSession(null);
+			return;
+		  }
 
-        const start = new Date(active.start_time);
-        const now = new Date();
-        const mins = Math.max(1, Math.floor((now - start) / 60000));
+		  const start = new Date(active.start_time);
+		  const now = new Date();
+		  const mins = Math.max(1, Math.floor((now - start) / 60000));
 
-        const taskLabel = active.task
+		  const taskLabel = active.task
           ? `"${active.task}"`
-          : "this Deepmode block";
+			: "this Deepmode block";
 
-        statusDiv.style.color = "#22c55e";
-        statusDiv.textContent =
-          `Block complete — you stayed in Deepmode for ~${mins} min on ${taskLabel}.`;
+		  statusDiv.style.color = "#22c55e";
+		  statusDiv.textContent =
+			`Block complete — you stayed in Deepmode for ~${mins} min on ${taskLabel}.`;
 
-        chrome.storage.local.remove(STORAGE_KEYS.ACTIVE_SESSION, () => {
-          setUIForActiveSession(null);
-        });
-      });
-      return;
-    }
+		  chrome.storage.local.remove(STORAGE_KEYS.ACTIVE_SESSION, () => {
+			setUIForActiveSession(null);
+		  });
+		});
+		return;
+	  }
 
-    try {
-      const response = await fetch(
-        `${API_BASE_URL}/sessions/${sessionId}/end`,
-        {
-          method: "PATCH",
-          headers: {
-            "Content-Type": "application/json",
-            Authorization: "Bearer " + accessToken,
-          },
-        }
-      );
+	  try {
+		const response = await fetch(
+		  `${API_BASE_URL}/sessions/${sessionId}/end`,
+		  {
+			method: "PATCH",
+			headers: {
+			  "Content-Type": "application/json",
+			  Authorization: "Bearer " + accessToken,
+			},
+		  }
+		);
 
-      if (!response.ok) {
-        console.error("Auto end failed", response.status);
-        statusDiv.style.color = "#e50914";
-        statusDiv.textContent =
+		if (!response.ok) {
+		  console.error("Auto end failed", response.status);
+		  statusDiv.style.color = "#e50914";
+		  statusDiv.textContent =
           "Couldn't auto-end your session on the server, but your block is finished.";
-      } else {
-        const data = await response.json();
+		} else {
+		  const data = await response.json();
 
-        const mins = data.actual_duration_minutes ?? 0;
-        const label = data.task
+		  const mins = data.actual_duration_minutes ?? 0;
+		  const label = data.task
           ? `"${data.task}"`
-          : "your Deepmode block";
+			: "your Deepmode block";
 
-        statusDiv.style.color = "#22c55e";
-        statusDiv.textContent =
-          `Block complete — logged ~${mins} min on ${label}.`;
-      }
-    } catch (err) {
-      console.error(err);
-      statusDiv.style.color = "#e50914";
-      statusDiv.textContent =
-        "Network issue while ending session — your block is done locally.";
-    } finally {
-      chrome.storage.local.remove(STORAGE_KEYS.ACTIVE_SESSION, () => {
-        setUIForActiveSession(null);
-      });
-    }
-  }
+		  statusDiv.style.color = "#22c55e";
+		  statusDiv.textContent =
+			`Block complete — logged ~${mins} min on ${label}.`;
+		}
+	  } catch (err) {
+		console.error(err);
+		statusDiv.style.color = "#e50914";
+		statusDiv.textContent =
+		  "Network issue while ending session — your block is done locally.";
+	  } finally {
+		chrome.storage.local.remove(STORAGE_KEYS.ACTIVE_SESSION, () => {
+		  setUIForActiveSession(null);
+		});
+	  }
+	}
 
   // ---------- PLAN / LIMIT ERROR HANDLER ----------
 
@@ -1085,8 +1088,8 @@ document.addEventListener("DOMContentLoaded", () => {
       const newToken = changes[STORAGE_KEYS.ACCESS_TOKEN].newValue || null;
       accessToken = newToken;
 
-      if (!newToken) {
-        isProUser = false;
+        if (!newToken) {
+          isProUser = false;
         if (timerInterval) clearInterval(timerInterval);
         if (primingTimerId) clearInterval(primingTimerId);
         if (primingOverlay) {

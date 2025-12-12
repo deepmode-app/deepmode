@@ -31,7 +31,7 @@
     "http://127.0.0.1:8000/*",
     "http://localhost:8000/*",
     "https://deepmode.onrender.com/*",
-    "https://deepmode.app/*"
+	"https://deepmode.app/*"    
   ],
   "background": {
     "service_worker": "background.js"
@@ -42,7 +42,7 @@
         "http://127.0.0.1:8000/*",
         "http://localhost:8000/*",
         "https://deepmode.onrender.com/*",
-        "https://deepmode.app/*"
+		"https://deepmode.app/*"        
       ],
       "js": ["connect.js"],
       "run_at": "document_idle"
