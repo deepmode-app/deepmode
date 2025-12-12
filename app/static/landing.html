@@ -369,19 +369,6 @@
       margin-top: 24px;
     }
 
-    .hero-cta-secondary-row {
-      display: flex;
-      justify-content: center;
-      flex-wrap: wrap;
-      gap: 10px;
-      margin-top: 10px;
-    }
-
-    .hero-cta-secondary-row .btn {
-      font-size: 12px;
-      padding: 7px 12px;
-    }
-
     @keyframes fadeUp {
       from {
         opacity: 0;
@@ -435,6 +422,44 @@
       font-size: 11px;
       color: var(--dw-muted);
       margin-top: 6px;
+    }
+
+    .hero-credibility {
+      font-size: 12px;
+      color: var(--dw-muted);
+      margin: 0 auto;
+      max-width: 480px;
+      opacity: 0.8;
+      font-style: italic;
+    }
+
+    /* PAIN → SOLUTION */
+    .pain-solution {
+      margin-top: 48px;
+      margin-bottom: 48px;
+      padding: 32px 0;
+      border-top: 1px solid rgba(39, 39, 47, 0.4);
+      border-bottom: 1px solid rgba(39, 39, 47, 0.4);
+    }
+
+    .pain-text {
+      font-size: 15px;
+      color: var(--dw-muted);
+      margin-bottom: 16px;
+      line-height: 1.6;
+    }
+
+    .solution-text {
+      font-size: 15px;
+      color: var(--dw-text);
+      line-height: 1.6;
+      max-width: 600px;
+      margin: 0 auto;
+    }
+
+    .step-desc {
+      color: var(--dw-muted);
+      font-size: 12px;
     }
 
     /* HOW IT WORKS */
@@ -559,17 +584,38 @@
       margin-bottom: 24px;
     }
 
-    .pricing-price {
-      font-size: 32px;
-      font-weight: 600;
+    .pricing-value-headline {
+      font-size: 16px;
       color: var(--dw-text);
+      margin: 12px 0 20px;
+      line-height: 1.5;
+      font-weight: 500;
+    }
+
+    .pricing-price-row {
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      gap: 16px;
       margin: 8px 0;
     }
 
-    .pricing-price-sub {
-      font-size: 14px;
+    .pricing-price {
+      font-size: 18px;
+      font-weight: 500;
       color: var(--dw-muted);
-      margin-top: 4px;
+    }
+
+    .pricing-price-divider {
+      color: var(--dw-border);
+      font-size: 18px;
+    }
+
+    .pricing-cancel-note {
+      font-size: 11px;
+      color: var(--dw-muted);
+      margin-top: 16px;
+      text-align: center;
     }
 
     .comparison-table {
@@ -639,31 +685,6 @@
     #pricingPlanSelector:focus {
       outline: none;
       border-color: var(--dw-accent);
-    }
-
-    /* Quote block */
-    .quote-block {
-      text-align: center;
-      font-size: 16px;
-      line-height: 1.6;
-      color: var(--dw-text);
-      padding: 32px 0;
-      border-top: 1px solid rgba(39, 39, 47, 0.3);
-      border-bottom: 1px solid rgba(39, 39, 47, 0.3);
-      margin: 48px 0;
-      max-width: 600px;
-      margin-left: auto;
-      margin-right: auto;
-    }
-
-    .quote-block p {
-      margin-bottom: 8px;
-    }
-
-    .quote-block p:last-child {
-      margin-bottom: 0;
-      color: var(--dw-muted);
-      font-size: 14px;
     }
 
     /* FOOTER */
@@ -756,9 +777,14 @@
 
     <!-- HERO -->
     <section class="hero">
-      <h1 class="hero-title">Switch on Deepmode.</h1>
+      <h1 class="hero-title">Know exactly where your time goes.</h1>
+      <h1 class="hero-title" style="margin-top: 4px;">Turn focused blocks into real progress.</h1>
       <p class="hero-sub">
-        The fastest way to enter deep work — with AI that learns how you focus and helps you get better every session.
+        Deepmode helps you define one task, lock in focused work,<br>
+        and see exactly how you spend your time — with AI insights that help you improve.
+      </p>
+      <p class="hero-credibility">
+        Built and used daily by engineers, professionals, and serious students who value their time.
       </p>
 
       <div class="hero-cta-row" id="heroCtaRow">
@@ -770,93 +796,75 @@
         >
           Install Chrome Extension
         </button>
+      </div>
+      <p class="hero-footnote guest-only" style="margin-top: 10px;">
+        Try instantly — no signup required
+      </p>
+
+      <!-- Free users -->
+      <div class="hero-cta-row free-only" id="heroCtaRowFree" style="display: none;">
         <button
-          id="heroSecondaryBtn"
-          class="btn btn-secondary guest-only"
-          onclick="window.location.href='/signup'"
-        >
-          Start free
-        </button>
-        <!-- Logged-in users: Primary CTA -->
-        <button
-          id="heroDashboardBtnAuth"
-          class="btn btn-primary auth-only"
+          class="btn btn-primary"
           onclick="window.location.href='/dashboard'"
-          style="display: none;"
         >
           Go to my work dashboard
         </button>
       </div>
-      <!-- Logged-in users: Secondary row -->
-      <div class="hero-cta-secondary-row auth-only" id="heroCtaSecondaryRow" style="display: none;">
-        <!-- Free users -->
+      <p class="hero-footnote free-only" id="heroUpgradeLine" style="margin-top: 10px; display: none;">
+        <a href="#pricing" style="color: var(--dw-accent); text-decoration: none;">Upgrade for AI insights →</a>
+      </p>
+
+      <!-- Pro users -->
+      <div class="hero-cta-row pro-only" id="heroCtaRowPro" style="display: none;">
         <button
-          id="heroInstallBtnFree"
-          class="btn btn-secondary free-only"
-          onclick="window.location.href='/install'"
-          style="display: none;"
+          class="btn btn-primary"
+          onclick="window.location.href='/dashboard'"
         >
-          Install Chrome Extension
-        </button>
-        <!-- Pro users -->
-        <button
-          id="heroInstallBtnPro"
-          class="btn btn-secondary pro-only"
-          onclick="window.location.href='/install'"
-          style="display: none;"
-        >
-          Install Chrome Extension
-        </button>
-        <button
-          id="heroWorkTrackerBtn"
-          class="btn btn-secondary pro-only"
-          onclick="window.location.href='/streak'"
-          style="display: none;"
-        >
-          See my AI insights
+          Open my work dashboard
         </button>
       </div>
+    </section>
 
-      <p class="hero-footnote guest-only" style="margin-top: 12px;">
-        No signup needed — you can try Guest Mode from the extension first.
+    <!-- PAIN → SOLUTION -->
+    <section class="section centered pain-solution">
+      <p class="pain-text">
+        Most people work all day — and still don't know where their time went.
+      </p>
+      <p class="solution-text">
+        Deepmode turns work into intentional focus blocks, tracked by task, project, and category — so progress compounds instead of leaking away.
       </p>
     </section>
 
-    <!-- 3-STEP ONBOARDING -->
+    <!-- HOW IT WORKS -->
     <section id="how" class="section centered">
-      <h2 class="section-title">How Deepmode works</h2>
-      <!-- TODO: Add three product screenshots here (extension, dashboard, AI report) before launch -->
+      <h2 class="section-title">How it works</h2>
       <div class="steps-strip">
         <div class="step-item">
-          <span class="step-number">1.</span> Install the Chrome extension<br/>
-          <span style="color: var(--dw-muted); font-size: 12px;">Instant control over your distraction sites — one toggle and you're protected.</span>
+          <span class="step-number">1.</span> Define one task<br/>
+          <span class="step-desc">Decide exactly what you'll work on before you start.</span>
         </div>
         <div class="step-item">
-          <span class="step-number">2.</span> Start a deep work session<br/>
-          <span style="color: var(--dw-muted); font-size: 12px;">Pick 5, 25, 50, or 90 minutes and lock into focus on command.</span>
+          <span class="step-number">2.</span> Lock in a focus block<br/>
+          <span class="step-desc">Choose 5, 25, 50, or 90 minutes. Distractions are blocked automatically.</span>
         </div>
         <div class="step-item">
-          <span class="step-number">3.</span> Deepmode handles the rest<br/>
-          <span style="color: var(--dw-muted); font-size: 12px;">It blocks distractions, tracks your time, and turns your habits into insight.</span>
+          <span class="step-number">3.</span> Review and improve<br/>
+          <span class="step-desc">Deepmode tracks your time and shows patterns so each week gets sharper.</span>
         </div>
       </div>
     </section>
 
-    <!-- VALUE PROPOSITION -->
+    <!-- WHY DEEPMODE -->
     <section class="section centered">
       <h2 class="section-title">Why Deepmode?</h2>
       <p class="why-text">
-        Deepmode is built for anyone who wants to protect their time, sharpen their focus and progress every single day.
+        Deepmode is built for people who care about progress — not just staying busy.
       </p>
       <ul class="why-bullets">
-        <li>Distraction blocking with total control.</li>
-        <li>Precise tracking of sessions and streaks.</li>
-        <li>Clear breakdowns of where your time goes.</li>
-        <li>AI-powered daily & weekly insights (Pro).</li>
+        <li>Total control over distractions</li>
+        <li>Clear tracking by task, project, and category</li>
+        <li>Daily &amp; weekly AI insights into how you actually work</li>
       </ul>
-      <p class="why-text" style="margin-top: 20px; font-size: 13px; color: var(--dw-muted);">
-        Deepmode exists so you can protect your time and let focused work compound.
-      </p>
     </section>
 
     <!-- PRICING -->
@@ -864,11 +872,14 @@
       <div class="pricing-card">
         <div class="pricing-title-row">
           <h2 class="section-title" style="margin-bottom: 0;">Deepmode AI Pro</h2>
-          <p style="font-size: 14px; color: var(--dw-muted); margin: 8px 0 16px;">
-            The only deep work system that analyzes your real behaviour and gives you actionable insights — automatically.
+          <p class="pricing-value-headline">
+            Focus tracking that pays for itself in one focused hour a day — with AI-powered insights that help you improve every week.
           </p>
-          <div class="pricing-price">£9.99 / month</div>
-          <div class="pricing-price-sub">or £79.99 / year</div>
+          <div class="pricing-price-row">
+            <span class="pricing-price">£9.99 / month</span>
+            <span class="pricing-price-divider">·</span>
+            <span class="pricing-price">£79.99 / year</span>
+          </div>
         </div>
 
         <div class="pricing-cta-row">
@@ -880,8 +891,8 @@
             Start free
           </button>
         </div>
-        <div style="font-size: 11px; color: #9ca3af; margin-top: 16px; text-align: center;">
-          Cancel anytime. One focused hour per day pays for itself.
+        <div class="pricing-cancel-note">
+          Cancel anytime. No lock-in.
         </div>
 
         <!-- Free vs Pro Comparison Table -->
@@ -934,22 +945,20 @@
       </div>
     </section>
 
-    <!-- QUOTE BLOCK -->
-    <div class="quote-block">
-      <p>One focused hour can change your day. Focused days can change your life.</p>
-      <p>Deepmode helps you create both — daily.</p>
-    </div>
-
     <!-- FOOTER -->
     <footer>
       <div style="display: flex; flex-direction: column; gap: 8px;">
-      <div style="display: flex; align-items: center; gap: 12px;">
-        <img src="/static/logos/Logo - Red BG.png" alt="Deepmode" style="height: 24px; opacity: 0.7;" />
-        <span>Deepmode — a premium deep work system for high-performance professionals. © 2025</span>
-      </div>
+        <div style="display: flex; align-items: center; gap: 12px;">
+          <img src="/static/logos/Logo - Red BG.png" alt="Deepmode" style="height: 24px; opacity: 0.7;" />
+          <span>Deepmode — a premium deep work system for high-performance professionals. © 2025</span>
+        </div>
         <div style="display: flex; align-items: center; gap: 12px; font-size: 11px; color: var(--dw-muted);">
           <span style="width: 24px;"></span>
           <span>Works on all Chromium-based desktop browsers.</span>
+        </div>
+        <div style="display: flex; align-items: center; gap: 12px; font-size: 11px; color: var(--dw-muted);">
+          <span style="width: 24px;"></span>
+          <span>Deepmode for Teams — coming soon.</span>
         </div>
       </div>
       <div class="footer-right" style="display: flex; flex-direction: column; align-items: flex-end; gap: 8px;">
@@ -960,9 +969,6 @@
           <span class="footer-link" onclick="window.location.href='/privacy'">Privacy</span>
           <span class="footer-link" onclick="window.location.href='/terms'">Terms</span>
           <span class="footer-link" onclick="window.location.href='/support#contact'">Contact</span>
-        </div>
-        <div style="font-size: 11px; color: var(--dw-muted);">
-          Deepmode for Teams - Coming soon.
         </div>
       </div>
     </footer>
@@ -1111,28 +1117,27 @@
 
       // Update UI based on auth state
       function updateUIForGuest() {
+        // Show guest elements
         document.querySelectorAll('.guest-only').forEach(el => {
           if (el.tagName === 'BUTTON') {
             el.style.display = 'inline-block';
-          } else if (el.tagName === 'A' || el.tagName === 'P') {
+          } else if (el.tagName === 'A' || el.tagName === 'P' || el.tagName === 'DIV') {
             el.style.display = '';
           } else {
             el.style.display = '';
           }
         });
+        // Hide auth elements
         document.querySelectorAll('.auth-only').forEach(el => {
           el.style.display = 'none';
         });
-        // Add gap for guest mode
-        const heroCtaRow = document.getElementById('heroCtaRow');
-        if (heroCtaRow) {
-          heroCtaRow.style.marginTop = '24px';
-        }
-        // Hide secondary row for guests
-        const heroCtaSecondaryRow = document.getElementById('heroCtaSecondaryRow');
-        if (heroCtaSecondaryRow) {
-          heroCtaSecondaryRow.style.display = 'none';
-        }
+        // Hide Free/Pro specific elements
+        document.querySelectorAll('.free-only').forEach(el => {
+          el.style.display = 'none';
+        });
+        document.querySelectorAll('.pro-only').forEach(el => {
+          el.style.display = 'none';
+        });
         
         // Set pricing CTA for guests
         const pricingPrimaryBtn = document.getElementById('pricingPrimaryBtn');
@@ -1152,10 +1157,12 @@
       function updateUIForAuth(user) {
         currentUser = user;
         
+        // Hide guest elements
         document.querySelectorAll('.guest-only').forEach(el => {
           el.style.display = 'none';
         });
         
+        // Show auth elements
         document.querySelectorAll('.auth-only').forEach(el => {
           if (el.tagName === 'BUTTON') {
             el.style.display = 'inline-block';
@@ -1165,12 +1172,6 @@
             el.style.display = '';
           }
         });
-
-        // Remove gap for auth users
-        const heroCtaRow = document.getElementById('heroCtaRow');
-        if (heroCtaRow) {
-          heroCtaRow.style.marginTop = '';
-        }
 
         // Show avatar dropdown
         if (navAccount) {
@@ -1186,19 +1187,21 @@
           navProBadge.style.display = user.is_pro ? 'inline-flex' : 'none';
         }
 
-        // Show primary hero CTA for all authenticated users
-        const heroDashboardBtnAuth = document.getElementById('heroDashboardBtnAuth');
-        const heroCtaSecondaryRow = document.getElementById('heroCtaSecondaryRow');
-        if (heroDashboardBtnAuth) heroDashboardBtnAuth.style.display = 'inline-block';
-        if (heroCtaSecondaryRow) heroCtaSecondaryRow.style.display = 'flex';
-
         // Update hero CTAs based on Pro status
         if (user.is_pro) {
-          // Pro users: Show Install Extension + See AI insights in secondary row
-          const heroInstallBtnPro = document.getElementById('heroInstallBtnPro');
-          const heroWorkTrackerBtn = document.getElementById('heroWorkTrackerBtn');
-          if (heroInstallBtnPro) heroInstallBtnPro.style.display = 'inline-block';
-          if (heroWorkTrackerBtn) heroWorkTrackerBtn.style.display = 'inline-block';
+          // Pro users: Show Pro CTAs, hide Free CTAs
+          document.querySelectorAll('.pro-only').forEach(el => {
+            if (el.tagName === 'BUTTON') {
+              el.style.display = 'inline-block';
+            } else if (el.tagName === 'DIV') {
+              el.style.display = 'flex';
+            } else {
+              el.style.display = '';
+            }
+          });
+          document.querySelectorAll('.free-only').forEach(el => {
+            el.style.display = 'none';
+          });
           
           // Hide pricing section, nav link, and footer link for Pro users
           const pricingSection = document.getElementById('pricing');
@@ -1214,9 +1217,19 @@
             footerPricingLink.style.display = 'none';
           }
         } else {
-          // Free users: Show Install Extension in secondary row
-          const heroInstallBtnFree = document.getElementById('heroInstallBtnFree');
-          if (heroInstallBtnFree) heroInstallBtnFree.style.display = 'inline-block';
+          // Free users: Show Free CTAs, hide Pro CTAs
+          document.querySelectorAll('.free-only').forEach(el => {
+            if (el.tagName === 'BUTTON') {
+              el.style.display = 'inline-block';
+            } else if (el.tagName === 'DIV') {
+              el.style.display = 'flex';
+            } else {
+              el.style.display = '';
+            }
+          });
+          document.querySelectorAll('.pro-only').forEach(el => {
+            el.style.display = 'none';
+          });
           
           // Update pricing CTA for Free users
           const pricingPrimaryBtn = document.getElementById('pricingPrimaryBtn');
