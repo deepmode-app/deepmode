@@ -144,10 +144,12 @@ function showOverlay(activeSession) {
   if (activeSession && activeSession.is_pro !== undefined) {
     isPro = activeSession.is_pro;
   } else {
-    // Check storage for user info (async)
+    // Check storage for user info
     chrome.storage.local.get(["deepmode_user"], (result) => {
-      const userIsPro = result.deepmode_user && result.deepmode_user.is_pro;
-      renderOverlay(activeSession, userIsPro);
+      if (result.deepmode_user && result.deepmode_user.is_pro) {
+        isPro = true;
+      }
+      renderOverlay(activeSession, isPro);
     });
     return; // Will render in callback
   }
@@ -320,19 +322,26 @@ function initializeTimer(activeSession) {
     remainingSeconds = plannedSeconds;
   }
   
+  console.log(`[Deepmode Blocker] Timer initialized: ${durationMinutes}min planned, ${remainingSeconds}s remaining, isShortBlock=${isShortBlock}`);
+  
   fiveMinuteWarningSent = false;
   sessionFinishedNotified = false;
+
+  // Stop any existing timer
+  if (timerHandle) {
+    clearTimeout(timerHandle);
+    timerHandle = null;
+  }
+  isRunning = false;
 
   // Update badge immediately
   updateTimerUI(remainingSeconds);
 
   // Start the timer
   if (remainingSeconds > 0) {
-    if (!isRunning) {
-      isRunning = true;
-      console.log(`[Deepmode Blocker] ✅ Timer started! Will auto-end in ${remainingSeconds} seconds`);
-      tickTimer();
-    }
+  isRunning = true;
+    console.log(`[Deepmode Blocker] ✅ Timer started! Will auto-end in ${remainingSeconds} seconds`);
+  tickTimer();
   } else {
     console.log(`[Deepmode Blocker] ⚠️ Timer already expired (${remainingSeconds}s), triggering immediate auto-end`);
     // Timer already expired, trigger auto-end immediately
@@ -353,10 +362,18 @@ function initializeTimer(activeSession) {
 }
 
 function tickTimer() {
-  if (!isRunning) return;
+  if (!isRunning) {
+    console.log("[Deepmode Blocker] Timer tick skipped - not running");
+    return;
+  }
 
   remainingSeconds--;
 
+  // Debug log every 60 seconds OR when close to 0
+  if ((remainingSeconds % 60 === 0 && remainingSeconds > 0) || (remainingSeconds <= 10 && remainingSeconds > 0)) {
+    console.log(`[Deepmode Blocker] Timer: ${Math.floor(remainingSeconds / 60)}m ${remainingSeconds % 60}s remaining`);
+  }
+  
   // ----- HIT ZERO - Send END_SESSION_AT_TIMER_ZERO (alarm is primary, this is backup) -----
   if (remainingSeconds <= 0 && !sessionFinishedNotified) {
     sessionFinishedNotified = true;
@@ -424,7 +441,6 @@ chrome.storage.onChanged.addListener((changes, area) => {
       timerHandle = null;
     }
     isRunning = false;
-        // Badge will be cleared by background.js when session ends
   }
 });
 

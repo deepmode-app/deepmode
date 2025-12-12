@@ -2,7 +2,7 @@
 // Responsibilities:
 // 1) Auto-ending Deepmode sessions at the planned end time (via chrome.alarms)
 // 2) Blocking distraction sites by injecting blocker.js while a Deepmode session is active
-// 3) Handling timer notifications and extend/end actions
+// NOTE: Chrome desktop notifications have been removed. No OS notifications.
 
 // ---------- CONSTANTS ----------
 
@@ -38,8 +38,7 @@ let blockPrefs = {
   defaultSiteFlags: {},
   customSites: [],
 };
-
-// ---------- ALARM HELPERS ----------
+// ---------- ALARM HELPERS (NO NOTIFICATIONS) ----------
 
 function sessionAlarmName(sessionId) {
   return `${SESSION_ALARM_PREFIX}${sessionId}`;
@@ -159,7 +158,6 @@ function resyncOnStartup() {
         );
         scheduleSessionAlarm(active);
         updateBadgeFromSession(active);
-        updateBadgeFromSession(active);
       } else {
         activeSession = null;
         chrome.action.setBadgeText({ text: "" });
@@ -183,12 +181,113 @@ function resyncOnStartup() {
 chrome.runtime.onInstalled.addListener(() => {
   console.log("[Deepmode BG] onInstalled");
   resyncOnStartup();
+  // Check notification permission on install
+  checkNotificationPermission((hasPermission, level) => {
+    if (!hasPermission) {
+      console.warn("[Deepmode BG] ⚠️ Notifications are not enabled!");
+      console.warn("[Deepmode BG] To enable notifications:");
+      console.warn("[Deepmode BG] 1. Open Chrome settings: chrome://settings/content/notifications");
+      console.warn("[Deepmode BG] 2. Add 'Deepmode AI' to allowed sites");
+      console.warn("[Deepmode BG] 3. Or check Windows Settings > System > Notifications");
+    } else {
+      console.log("[Deepmode BG] ✓ Notification permission check passed");
+    }
+  });
 });
 
 chrome.runtime.onStartup.addListener(() => {
   console.log("[Deepmode BG] onStartup");
   resyncOnStartup();
 });
+
+// ---------- NOTIFICATION HELPERS ----------
+
+function checkNotificationPermission(callback) {
+  if (!chrome.notifications) {
+    console.error("[Deepmode BG] chrome.notifications API not available");
+    callback(false, "unavailable");
+    return;
+  }
+
+  // Check permission level (available in Chrome 42+)
+  if (chrome.notifications.getPermissionLevel) {
+    chrome.notifications.getPermissionLevel((level) => {
+      console.log("[Deepmode BG] Notification permission level:", level);
+      if (level === "denied") {
+        console.error("[Deepmode BG] Notifications are DENIED by user.");
+        console.error("[Deepmode BG] User must enable in Chrome settings: chrome://settings/content/notifications");
+        console.error("[Deepmode BG] Or check system notification settings (Windows Settings > System > Notifications)");
+        callback(false, "denied");
+      } else if (level === "granted") {
+        console.log("[Deepmode BG] Notification permission granted");
+        callback(true, "granted");
+      } else {
+        // Default level - usually means allowed
+        console.log("[Deepmode BG] Notification permission: default (usually allowed)");
+        callback(true, "default");
+      }
+    });
+  } else {
+    // Fallback for older Chrome versions - assume allowed if API exists
+    console.log("[Deepmode BG] Cannot check permission level (older Chrome), assuming allowed");
+    callback(true, "unknown");
+  }
+}
+
+function createNotificationWithPermission(options, callback) {
+  console.log("[Deepmode BG] Checking notification permission...");
+  checkNotificationPermission((hasPermission, level) => {
+    console.log("[Deepmode BG] Permission check result: hasPermission=", hasPermission, "level=", level);
+    if (!hasPermission) {
+      console.error("[Deepmode BG] ❌ Cannot create notification - permission denied");
+      console.error("[Deepmode BG] Please enable notifications in Chrome settings or system settings");
+      if (callback) callback(null);
+      return;
+    }
+
+    console.log("[Deepmode BG] ✅ Permission granted, creating notification...");
+    console.log("[Deepmode BG] Notification options:", {
+      type: options.type,
+      title: options.title,
+      message: options.message,
+      iconUrl: options.iconUrl,
+      buttons: options.buttons ? options.buttons.length + " buttons" : "no buttons"
+    });
+    
+    chrome.notifications.create(options, (notificationId) => {
+      if (chrome.runtime.lastError) {
+        console.error("[Deepmode BG] ❌ ERROR creating notification!");
+        console.error("[Deepmode BG] Error message:", chrome.runtime.lastError.message);
+        console.error("[Deepmode BG] Full error object:", chrome.runtime.lastError);
+        console.error("[Deepmode BG] Possible causes:");
+        console.error("  1. Notification permission denied in Chrome (chrome://settings/content/notifications)");
+        console.error("  2. System notifications disabled (Windows Settings > System > Notifications)");
+        console.error("  3. Do Not Disturb / Focus Assist enabled");
+        console.error("  4. Icon file not found:", options.iconUrl);
+        console.error("  5. Extension notifications blocked at system level");
+      } else {
+        console.log("[Deepmode BG] ✅✅✅ Notification created successfully! ID:", notificationId);
+        console.log("[Deepmode BG] ⚠️ If you don't see the notification, check:");
+        console.log("[Deepmode BG]   1. Windows Settings > System > Notifications > Chrome (must be ON)");
+        console.log("[Deepmode BG]   2. Windows Focus Assist (must be OFF)");
+        console.log("[Deepmode BG]   3. Check notification center (click time/date in taskbar)");
+        console.log("[Deepmode BG]   4. Try: Windows key + A to open Action Center");
+        
+        // Verify notification exists
+        if (notificationId) {
+          chrome.notifications.getAll((notifications) => {
+            if (notifications && notifications[notificationId]) {
+              console.log("[Deepmode BG] ✅ Notification confirmed in Chrome's notification list");
+            } else {
+              console.warn("[Deepmode BG] ⚠️ Notification ID exists but not found in Chrome's list - may be system-blocked");
+            }
+          });
+        }
+      }
+      if (callback) callback(notificationId);
+    });
+  });
+}
 
 // ---------- NOTIFICATION HANDLERS ----------
 
@@ -207,6 +306,50 @@ chrome.runtime.onMessage.addListener((msg, sender, sendResponse) => {
     // Immediately clear badge
     chrome.action.setBadgeText({ text: "" });
     console.log("[Deepmode BG] Badge cleared on logout");
+    return;
+  }
+
+  // Handle end session from blocker
+  if (msg.type === "END_SESSION_FROM_BLOCKER") {
+    chrome.storage.local.get(
+      [STORAGE_KEYS.ACTIVE_SESSION, STORAGE_KEYS.ACCESS_TOKEN],
+      async (res) => {
+        const active = res[STORAGE_KEYS.ACTIVE_SESSION];
+        const accessToken = res[STORAGE_KEYS.ACCESS_TOKEN] || null;
+
+        if (!active || !active.id) {
+          return;
+        }
+
+        const isGuest = !!active.isGuest || !accessToken;
+
+        if (isGuest) {
+          chrome.storage.local.remove(STORAGE_KEYS.ACTIVE_SESSION, () => {
+            activeSession = null;
+          });
+          return;
+        }
+
+        try {
+          await fetch(
+            `${API_BASE_URL}/sessions/${active.id}/end`,
+            {
+              method: "PATCH",
+              headers: {
+                "Content-Type": "application/json",
+                "Authorization": "Bearer " + accessToken,
+              },
+            }
+          );
+        } catch (err) {
+          console.error("[Deepmode BG] Error ending session from blocker", err);
+        } finally {
+          chrome.storage.local.remove(STORAGE_KEYS.ACTIVE_SESSION, () => {
+            activeSession = null;
+          });
+        }
+      }
+    );
     return;
   }
 
@@ -233,6 +376,22 @@ chrome.runtime.onMessage.addListener((msg, sender, sendResponse) => {
 
         const isGuest = !!active.isGuest || !accessToken;
 
+        // Send end notification for manual end
+        createNotificationWithPermission(
+          {
+            type: "basic",
+            iconUrl: "icon.png",
+            title: "Block complete",
+            message: "Block complete. Step away, reset, then start the next one intentionally.",
+            priority: 2
+          },
+          (notificationId) => {
+            if (notificationId) {
+              console.log("[Deepmode BG] ✅ End notification created:", notificationId);
+            }
+          }
+        );
+
         if (isGuest) {
           console.log("[Deepmode BG] Ending guest session (local only)");
           chrome.storage.local.remove(STORAGE_KEYS.ACTIVE_SESSION, () => {
@@ -242,24 +401,6 @@ chrome.runtime.onMessage.addListener((msg, sender, sendResponse) => {
           });
           return;
         }
-
-        // Send end notification for manual end
-        chrome.notifications.create(
-          {
-            type: "basic",
-            iconUrl: "icon.png",
-            title: "Block complete",
-            message: "Block complete. Step away, reset, then start the next one intentionally.",
-            priority: 2
-          },
-          (notificationId) => {
-            if (chrome.runtime.lastError) {
-              console.error("[Deepmode BG] ❌ ERROR creating end notification:", chrome.runtime.lastError.message);
-            } else {
-              console.log("[Deepmode BG] ✅ End notification created:", notificationId);
-            }
-          }
-        );
 
         try {
           console.log(`[Deepmode BG] Calling backend /sessions/${active.id}/end`);
@@ -295,12 +436,7 @@ chrome.runtime.onMessage.addListener((msg, sender, sendResponse) => {
     return;
   }
 
-  // Handle end session from blocker (legacy)
-  if (msg.type === "END_SESSION_FROM_BLOCKER") {
-    // Forward to END_SESSION handler
-    chrome.runtime.sendMessage({ type: "END_SESSION" });
-    return;
-  }
+  // Note: Badge updates are now handled by alarms (updateBadgeFromSession), not messages
 });
 
 // ---------- URL / BLOCKING HELPERS ----------
@@ -435,7 +571,6 @@ chrome.storage.onChanged.addListener((changes, area) => {
     if (newValue && newValue.id) {
       console.log("[Deepmode BG] New active session:", newValue.id);
       scheduleSessionAlarm(newValue);
-      // Badge will be updated by blocker.js timer
       
       // Send start notification
       chrome.notifications.create(
@@ -454,8 +589,9 @@ chrome.storage.onChanged.addListener((changes, area) => {
       );
     } else {
       console.log("[Deepmode BG] No active session after change.");
-      // Clear badge when session ends
+      // Clear badge when session is removed
       chrome.action.setBadgeText({ text: "" });
+      console.log("[Deepmode BG] Badge cleared - session ended");
     }
 
     // 🔁 Immediately re-evaluate ALL open tabs when a session starts/ends
@@ -547,7 +683,7 @@ chrome.alarms.onAlarm.addListener((alarm) => {
       if (active && String(active.id) === String(sessionIdPart)) {
         const taskLabel = active.task || "Your deep block";
         console.log("[Deepmode BG] 5-minute warning alarm fired for:", taskLabel);
-        chrome.notifications.create(
+        createNotificationWithPermission(
           {
             type: "basic",
             iconUrl: "icon.png",
@@ -556,9 +692,7 @@ chrome.alarms.onAlarm.addListener((alarm) => {
             priority: 1
           },
           (notificationId) => {
-            if (chrome.runtime.lastError) {
-              console.error("[Deepmode BG] ❌ ERROR creating notification:", chrome.runtime.lastError.message);
-            } else {
+            if (notificationId) {
               console.log("[Deepmode BG] ✅ 5-minute warning notification created");
             }
           }
@@ -591,7 +725,8 @@ chrome.alarms.onAlarm.addListener((alarm) => {
 
   const sessionIdPart = alarm.name.substring(SESSION_ALARM_PREFIX.length);
   console.log("[Deepmode BG] ✅ Alarm fired for session:", sessionIdPart, "- Auto-ending session");
-
+  
+  // Auto-end session when alarm fires (timer reached planned duration)
   chrome.storage.local.get(
     [STORAGE_KEYS.ACTIVE_SESSION, STORAGE_KEYS.ACCESS_TOKEN],
     async (res) => {
@@ -599,26 +734,22 @@ chrome.alarms.onAlarm.addListener((alarm) => {
       const accessToken = res[STORAGE_KEYS.ACCESS_TOKEN] || null;
 
       if (!active || !active.id) {
-        console.log(
-          "[Deepmode BG] No active session found on alarm, skipping auto-end."
-        );
+        console.log("[Deepmode BG] No active session found on alarm, skipping auto-end.");
         return;
       }
 
       if (String(active.id) !== String(sessionIdPart)) {
-        console.log(
-          "[Deepmode BG] Active session id mismatch on alarm, skipping auto-end."
-        );
+        console.log("[Deepmode BG] Active session id mismatch on alarm, skipping auto-end.");
         return;
       }
 
       const isGuest = !!active.isGuest || !accessToken;
       const taskLabel = active.task || "your block";
 
-      console.log("[Deepmode BG] ✅ Auto-ending session from alarm. guest=", isGuest);
+      console.log("[Deepmode BG] Auto-ending session from alarm. guest=", isGuest);
 
       // Send notification BEFORE ending
-      chrome.notifications.create(
+      createNotificationWithPermission(
         {
           type: "basic",
           iconUrl: "icon.png",
@@ -627,9 +758,7 @@ chrome.alarms.onAlarm.addListener((alarm) => {
           priority: 2
         },
         (notificationId) => {
-          if (chrome.runtime.lastError) {
-            console.error("[Deepmode BG] ❌ ERROR creating notification:", chrome.runtime.lastError.message);
-          } else {
+          if (notificationId) {
             console.log("[Deepmode BG] ✅ End notification created:", notificationId);
           }
         }
@@ -638,9 +767,8 @@ chrome.alarms.onAlarm.addListener((alarm) => {
       if (isGuest) {
         chrome.storage.local.remove(STORAGE_KEYS.ACTIVE_SESSION, () => {
           activeSession = null;
-          console.log(
-            "[Deepmode BG] Guest session auto-ended and cleared from storage."
-          );
+          chrome.action.setBadgeText({ text: "" });
+          console.log("[Deepmode BG] Guest session auto-ended and cleared from storage.");
         });
         return;
       }
@@ -658,24 +786,17 @@ chrome.alarms.onAlarm.addListener((alarm) => {
         );
 
         if (!resp.ok) {
-          console.error(
-            "[Deepmode BG] Auto-end PATCH failed",
-            resp.status
-          );
+          console.error("[Deepmode BG] Auto-end PATCH failed", resp.status);
         } else {
-          console.log("[Deepmode BG] Auto-end PATCH succeeded.");
+          console.log("[Deepmode BG] ✅ Auto-end PATCH succeeded.");
         }
       } catch (err) {
-        console.error(
-          "[Deepmode BG] Error calling backend on auto-end",
-          err
-        );
+        console.error("[Deepmode BG] Error calling backend on auto-end", err);
       } finally {
         chrome.storage.local.remove(STORAGE_KEYS.ACTIVE_SESSION, () => {
           activeSession = null;
-          console.log(
-            "[Deepmode BG] Session cleared from storage after auto-end."
-          );
+          chrome.action.setBadgeText({ text: "" });
+          console.log("[Deepmode BG] Session cleared from storage after auto-end.");
         });
       }
     }
@@ -698,4 +819,3 @@ chrome.tabs.onActivated.addListener((activeInfo) => {
 });
 
 console.log("[Deepmode BG] Service worker loaded (alarms and notifications enabled).");
-
