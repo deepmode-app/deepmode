@@ -15,6 +15,7 @@ const BLOCK_PREFS_KEY = "deepmode_block_prefs";
 
 const SESSION_ALARM_PREFIX = "deepmode_session_";
 const BADGE_UPDATE_ALARM_PREFIX = "deepmode_badge_";
+const HALFWAY_ALARM_PREFIX = "deepmode_halfway_";
 const WARNING_5MIN_ALARM_PREFIX = "deepmode_warn5min_";
 
 // Keep in sync with backend URL and popup.js
@@ -69,9 +70,21 @@ function scheduleSessionAlarm(session) {
   // Main alarm for auto-end
   chrome.alarms.create(name, { when: Date.now() + delayMs });
 
-  // 5-minute warning alarm (only for blocks > 5 minutes)
+  // For sessions > 5 minutes: add HALFWAY and 5-MINUTE WARNING notifications
+  // 5 min sessions: only Beginning and End
+  // 25/50/90 min sessions: Beginning → Halfway → 5 min left → End
   if (session.planned_duration_minutes > 5) {
-    const warningTime = targetTime - (5 * 60 * 1000); // 5 minutes before end
+    // Halfway notification (at 50% mark)
+    const halfwayTime = startMs + (durationMs / 2);
+    const halfwayDelayMs = halfwayTime - Date.now();
+    if (halfwayDelayMs > 1000) { // Only schedule if more than 1 second away
+      const halfwayName = `${HALFWAY_ALARM_PREFIX}${session.id}`;
+      chrome.alarms.create(halfwayName, { when: Date.now() + halfwayDelayMs });
+      console.log("[Deepmode BG] Halfway alarm created, fires in", Math.round(halfwayDelayMs / 1000), "seconds");
+    }
+    
+    // 5-minute warning (5 minutes before end)
+    const warningTime = targetTime - (5 * 60 * 1000);
     const warningDelayMs = warningTime - Date.now();
     if (warningDelayMs > 1000) { // Only schedule if more than 1 second away
       const warningName = `${WARNING_5MIN_ALARM_PREFIX}${session.id}`;
@@ -99,10 +112,12 @@ function scheduleSessionAlarm(session) {
 function clearSessionAlarm(sessionId) {
   if (!sessionId) return;
   const name = sessionAlarmName(sessionId);
+  const halfwayName = `${HALFWAY_ALARM_PREFIX}${sessionId}`;
   const warningName = `${WARNING_5MIN_ALARM_PREFIX}${sessionId}`;
   const badgeName = `${BADGE_UPDATE_ALARM_PREFIX}${sessionId}`;
   
   chrome.alarms.clear(name);
+  chrome.alarms.clear(halfwayName);
   chrome.alarms.clear(warningName);
   chrome.alarms.clear(badgeName);
   
@@ -675,7 +690,34 @@ chrome.alarms.onAlarm.addListener((alarm) => {
     return;
   }
 
-  // Handle 5-minute warning
+  // Handle HALFWAY notification (at 50% mark)
+  if (alarm.name.startsWith(HALFWAY_ALARM_PREFIX)) {
+    const sessionIdPart = alarm.name.substring(HALFWAY_ALARM_PREFIX.length);
+    chrome.storage.local.get([STORAGE_KEYS.ACTIVE_SESSION], (res) => {
+      const active = res[STORAGE_KEYS.ACTIVE_SESSION];
+      if (active && String(active.id) === String(sessionIdPart)) {
+        const taskLabel = active.task || "Your deep block";
+        console.log("[Deepmode BG] Halfway alarm fired for:", taskLabel);
+        createNotificationWithPermission(
+          {
+            type: "basic",
+            iconUrl: "icon.png",
+            title: "Halfway there",
+            message: "You're halfway through. Stay with the task — this is where momentum builds.",
+            priority: 1
+          },
+          (notificationId) => {
+            if (notificationId) {
+              console.log("[Deepmode BG] ✅ Halfway notification created");
+            }
+          }
+        );
+      }
+    });
+    return;
+  }
+
+  // Handle 5-minute warning (5 min before end)
   if (alarm.name.startsWith(WARNING_5MIN_ALARM_PREFIX)) {
     const sessionIdPart = alarm.name.substring(WARNING_5MIN_ALARM_PREFIX.length);
     chrome.storage.local.get([STORAGE_KEYS.ACTIVE_SESSION], (res) => {
@@ -687,8 +729,8 @@ chrome.alarms.onAlarm.addListener((alarm) => {
           {
             type: "basic",
             iconUrl: "icon.png",
-            title: "Halfway there",
-            message: "You're halfway through. Stay with the task — this is where momentum builds.",
+            title: "5 minutes left",
+            message: "Final stretch. Finish strong — you're almost there.",
             priority: 1
           },
           (notificationId) => {

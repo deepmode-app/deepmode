@@ -277,6 +277,24 @@
       cursor: not-allowed;
     }
 
+    .pro-badge {
+      display: inline-block;
+      background: linear-gradient(135deg, #e50914 0%, #ff4d4d 100%);
+      color: #ffffff;
+      font-size: 9px;
+      font-weight: 600;
+      text-transform: uppercase;
+      letter-spacing: 0.05em;
+      padding: 2px 6px;
+      border-radius: 4px;
+      margin-left: 8px;
+      vertical-align: middle;
+    }
+
+    .toggle-row.disabled .toggle-text {
+      opacity: 0.6;
+    }
+
     .btn-primary {
       padding: 10px 20px;
       background: var(--dw-accent);
@@ -625,7 +643,7 @@
 
         <div class="toggle-row" id="dailyEmailRow">
           <div class="toggle-text">
-            <div class="toggle-title">Daily deepwork report</div>
+            <div class="toggle-title">Daily deepwork report <span id="dailyEmailProBadge" class="pro-badge" style="display:none;">Pro</span></div>
             <div class="toggle-sub" id="dailyEmailSub">Short nudge to keep your streak alive.</div>
           </div>
           <label class="switch">
@@ -812,16 +830,32 @@
         document.getElementById("weeklyEmailToggle").checked = user.weekly_email_enabled !== false;
         document.getElementById("dailyEmailToggle").checked = user.daily_email_enabled === true;
 
-        // Show/hide daily email toggle based on is_pro
+        // Configure daily email toggle based on is_pro
         const dailyEmailRow = document.getElementById("dailyEmailRow");
         const dailyEmailSub = document.getElementById("dailyEmailSub");
+        const dailyEmailToggle = document.getElementById("dailyEmailToggle");
+        const dailyEmailProBadge = document.getElementById("dailyEmailProBadge");
+        
+        // Always show the row
+        dailyEmailRow.style.display = "flex";
+        
         if (user.is_pro) {
-          dailyEmailRow.style.display = "flex";
+          // Pro users: enable toggle, hide badge
+          dailyEmailToggle.disabled = false;
+          dailyEmailRow.classList.remove("disabled");
+          if (dailyEmailProBadge) dailyEmailProBadge.style.display = "none";
           if (dailyEmailSub) {
             dailyEmailSub.textContent = "Short nudge to keep your streak alive.";
           }
         } else {
-          dailyEmailRow.style.display = "none";
+          // Free users: disable toggle, show badge, update hint
+          dailyEmailToggle.disabled = true;
+          dailyEmailToggle.checked = false;
+          dailyEmailRow.classList.add("disabled");
+          if (dailyEmailProBadge) dailyEmailProBadge.style.display = "inline-block";
+          if (dailyEmailSub) {
+            dailyEmailSub.textContent = "Upgrade to Pro to receive daily focus nudges.";
+          }
         }
 
         // Update avatar preview
