@@ -17,6 +17,23 @@
       --dw-muted: #9ca3af;
       --dw-border: #27272f;
     }
+    /* ========== PAGE TRANSITIONS ========== */
+    @keyframes pageEnter { from { opacity: 0; } to { opacity: 1; } }
+    body { animation: pageEnter 700ms ease-out forwards; }
+    body.page-exit { animation: none; opacity: 0; transition: opacity 200ms ease-out; }
+    .page-transition-watermark {
+      position: fixed; top: 50%; left: 50%; transform: translate(-50%, -50%);
+      width: 120px; height: 120px;
+      background: url('/static/logos/Logo - Red BG.png') center/contain no-repeat;
+      opacity: 0; pointer-events: none; z-index: 99999; transition: opacity 150ms ease-out;
+    }
+    body.page-exit .page-transition-watermark { opacity: 0.05; }
+    @media (prefers-reduced-motion: reduce) {
+      body { animation: none; opacity: 1; }
+      body.page-exit { transition: none; opacity: 1; }
+      .page-transition-watermark { display: none; }
+    }
+    /* ========== END PAGE TRANSITIONS ========== */
     * { box-sizing: border-box; margin: 0; padding: 0; }
     body {
       font-family: Inter, -apple-system, BlinkMacSystemFont, system-ui, sans-serif;
@@ -126,6 +143,7 @@
   </style>
 </head>
 <body>
+  <div class="page-transition-watermark" aria-hidden="true"></div>
   <div class="page">
     <header class="nav">
       <div class="nav-left">
@@ -252,5 +270,32 @@
       </div>
     </footer>
   </div>
+  <!-- Page Transition Handler -->
+  <script>
+    (function() {
+      if (window.matchMedia('(prefers-reduced-motion: reduce)').matches) return;
+      function handleNavigation(e) {
+        const link = e.target.closest('a[href]');
+        if (!link) return;
+        const href = link.getAttribute('href');
+        if (!href) return;
+        if (href.startsWith('http') && !href.includes(window.location.host)) return;
+        if (href.startsWith('javascript:') || href.startsWith('mailto:') || href.startsWith('tel:')) return;
+        if (href === '#') return;
+        if (e.ctrlKey || e.metaKey || e.shiftKey) return;
+        if (href.startsWith('#') && href.length > 1) {
+          e.preventDefault();
+          const target = document.querySelector(href);
+          if (target) { target.scrollIntoView({ behavior: 'smooth', block: 'start' }); history.pushState(null, '', href); }
+          return;
+        }
+        e.preventDefault();
+        document.body.classList.add('page-exit');
+        setTimeout(() => { window.location.href = href; }, 200);
+      }
+      document.body.addEventListener('click', handleNavigation);
+      window.addEventListener('pageshow', (e) => { if (e.persisted) document.body.classList.remove('page-exit'); });
+    })();
+  </script>
 </body>
 </html>

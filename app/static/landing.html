@@ -19,6 +19,64 @@
       --dw-border: #27272f;
     }
 
+    /* ========== PAGE TRANSITIONS ========== */
+    
+    /* Fade-in on page load */
+    @keyframes pageEnter {
+      from { opacity: 0; }
+      to { opacity: 1; }
+    }
+    
+    body {
+      animation: pageEnter 700ms ease-out forwards;
+    }
+    
+    /* Fade-out before navigation */
+    body.page-exit {
+      animation: none;
+      opacity: 0;
+      transition: opacity 200ms ease-out;
+    }
+    
+    /* Transition watermark - subtle brand continuity */
+    .page-transition-watermark {
+      position: fixed;
+      top: 50%;
+      left: 50%;
+      transform: translate(-50%, -50%);
+      width: 120px;
+      height: 120px;
+      background-image: url('/static/logos/Logo - Red BG.png');
+      background-size: contain;
+      background-repeat: no-repeat;
+      background-position: center;
+      opacity: 0;
+      pointer-events: none;
+      z-index: 99999;
+      transition: opacity 150ms ease-out;
+    }
+    
+    body.page-exit .page-transition-watermark {
+      opacity: 0.05;
+    }
+    
+    /* Respect reduced motion preference */
+    @media (prefers-reduced-motion: reduce) {
+      body {
+        animation: none;
+        opacity: 1;
+      }
+      body.page-exit {
+        transition: none;
+        opacity: 1;
+      }
+      .page-transition-watermark {
+        display: none;
+      }
+    }
+    
+    /* ========== END PAGE TRANSITIONS ========== */
+
     * {
       box-sizing: border-box;
       margin: 0;
@@ -637,6 +695,9 @@
   </style>
 </head>
 <body>
+  <!-- Page transition watermark -->
+  <div class="page-transition-watermark" aria-hidden="true"></div>
+  
   <div class="page">
     <!-- NAV -->
     <header class="nav">
@@ -678,7 +739,14 @@
             </div>
             <div class="nav-dropdown-separator"></div>
             <a href="/dashboard" class="nav-dropdown-item-link">Dashboard</a>
-            <a href="/settings/profile" class="nav-dropdown-item-link">Profile & Settings</a>
+            <a href="/settings/profile" class="nav-dropdown-item-link">Profile & Email Preferences</a>
+            <div class="nav-dropdown-separator"></div>
+            <a href="/#pricing" class="nav-dropdown-item-link">Pricing</a>
+            <a href="/about" class="nav-dropdown-item-link">About Deepmode</a>
+            <a href="/support" class="nav-dropdown-item-link">Support</a>
+            <a href="/privacy" class="nav-dropdown-item-link">Privacy</a>
+            <a href="/terms" class="nav-dropdown-item-link">Terms</a>
+            <a href="/support#contact" class="nav-dropdown-item-link">Contact</a>
             <div class="nav-dropdown-separator"></div>
             <a href="#" id="logoutLink" class="nav-dropdown-item-link">Log out</a>
           </div>
@@ -887,10 +955,11 @@
       <div class="footer-right" style="display: flex; flex-direction: column; align-items: flex-end; gap: 8px;">
         <div style="display: flex; gap: 14px;">
           <span class="footer-link" id="footerPricingLink" onclick="window.location.href='#pricing'">Pricing</span>
-        <span class="footer-link" onclick="window.location.href='/faq'">FAQ</span>
-        <span class="footer-link" onclick="window.location.href='/terms'">Terms</span>
-        <span class="footer-link" onclick="window.location.href='/privacy'">Privacy</span>
-        <span class="footer-link" onclick="window.location.href='/contact'">Contact</span>
+          <span class="footer-link" onclick="window.location.href='/about'">About</span>
+          <span class="footer-link" onclick="window.location.href='/support'">Support</span>
+          <span class="footer-link" onclick="window.location.href='/privacy'">Privacy</span>
+          <span class="footer-link" onclick="window.location.href='/terms'">Terms</span>
+          <span class="footer-link" onclick="window.location.href='/support#contact'">Contact</span>
         </div>
         <div style="font-size: 11px; color: var(--dw-muted);">
           Deepmode for Teams - Coming soon.
@@ -1240,6 +1309,86 @@
       } catch (err) {
         updateUIForGuest();
       }
+    })();
+  </script>
+
+  <!-- Page Transition Handler -->
+  <script>
+    (function() {
+      // Respect reduced motion
+      if (window.matchMedia('(prefers-reduced-motion: reduce)').matches) return;
+      
+      // Handle smooth anchor scroll after page load (e.g., /#pricing)
+      function handleAnchorOnLoad() {
+        const hash = window.location.hash;
+        if (hash && hash.length > 1) {
+          // Wait for page fade-in to complete (700ms) then smooth scroll
+          setTimeout(() => {
+            const target = document.querySelector(hash);
+            if (target) {
+              target.scrollIntoView({ behavior: 'smooth', block: 'start' });
+            }
+          }, 750);
+        }
+      }
+      
+      // Intercept internal navigation for smooth transitions
+      function handleNavigation(e) {
+        const link = e.target.closest('a[href]');
+        if (!link) return;
+        
+        const href = link.getAttribute('href');
+        if (!href) return;
+        
+        // Skip external links, javascript:, mailto:, tel:, and # only links
+        if (href.startsWith('http') && !href.includes(window.location.host)) return;
+        if (href.startsWith('javascript:') || href.startsWith('mailto:') || href.startsWith('tel:')) return;
+        if (href === '#') return;
+        
+        // Skip if modifier keys pressed (new tab, etc.)
+        if (e.ctrlKey || e.metaKey || e.shiftKey) return;
+        
+        // Handle same-page anchor links
+        if (href.startsWith('#') && href.length > 1) {
+          e.preventDefault();
+          const target = document.querySelector(href);
+          if (target) {
+            target.scrollIntoView({ behavior: 'smooth', block: 'start' });
+            history.pushState(null, '', href);
+          }
+          return;
+        }
+        
+        // Handle internal page navigation with fade-out
+        e.preventDefault();
+        document.body.classList.add('page-exit');
+        
+        setTimeout(() => {
+          window.location.href = href;
+        }, 200);
+      }
+      
+      // Handle button/onclick navigations
+      function interceptWindowLocation() {
+        const originalHref = Object.getOwnPropertyDescriptor(window.location.__proto__, 'href');
+        if (!originalHref) return;
+        
+        // We can't easily intercept window.location.href assignments
+        // Instead, wrap common navigation patterns via onclick handlers
+      }
+      
+      // Initialize
+      document.addEventListener('DOMContentLoaded', () => {
+        handleAnchorOnLoad();
+        document.body.addEventListener('click', handleNavigation);
+      });
+      
+      // Handle browser back/forward with clean state
+      window.addEventListener('pageshow', (e) => {
+        if (e.persisted) {
+          document.body.classList.remove('page-exit');
+        }
+      });
     })();
   </script>
 </body>
