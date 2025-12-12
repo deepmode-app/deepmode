@@ -1056,6 +1056,48 @@
       });
     }
 
+    // Billing portal handler (for dropdown link)
+    async function openBillingPortal() {
+      if (!token) {
+        window.location.href = "/login";
+        return;
+      }
+      
+      if (!currentUser || !currentUser.email) {
+        alert("Unable to open billing portal. Please refresh the page.");
+        return;
+      }
+
+      try {
+        const resp = await fetch("/billing/customer-portal", {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+            "Accept": "application/json",
+            "Authorization": "Bearer " + token,
+          },
+          body: JSON.stringify({ email: currentUser.email }),
+        });
+
+        if (!resp.ok) {
+          const error = await resp.json();
+          alert(error.detail || "Could not open billing portal. Try again in a minute.");
+          return;
+        }
+
+        const data = await resp.json();
+        if (!data.url) {
+          alert("Billing portal URL missing from server response.");
+          return;
+        }
+
+        window.location.href = data.url;
+      } catch (err) {
+        console.error("Error calling /billing/customer-portal:", err);
+        alert("Something went wrong while opening billing.");
+      }
+    }
+
     // Initialize
     loadProfile();
   </script>
