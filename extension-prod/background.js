@@ -698,12 +698,24 @@ chrome.alarms.onAlarm.addListener((alarm) => {
       if (active && String(active.id) === String(sessionIdPart)) {
         const taskLabel = active.task || "Your deep block";
         console.log("[Deepmode BG] Halfway alarm fired for:", taskLabel);
+        
+        // Default halfway message
+        let notifTitle = "Halfway there";
+        let notifMessage = "You're halfway through. Stay with the task — this is where momentum builds.";
+        
+        // For 90-minute blocks only: occasionally show alternate message (~30% chance)
+        if (active.planned_duration_minutes === 90 && Math.random() < 0.3) {
+          notifTitle = "Focus sustained";
+          notifMessage = "This is rare work. Keep going.";
+          console.log("[Deepmode BG] Using alternate 90-min message");
+        }
+        
         createNotificationWithPermission(
           {
             type: "basic",
             iconUrl: "icon.png",
-            title: "Halfway there",
-            message: "You're halfway through. Stay with the task — this is where momentum builds.",
+            title: notifTitle,
+            message: notifMessage,
             priority: 1
           },
           (notificationId) => {
