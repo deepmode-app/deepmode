@@ -678,8 +678,7 @@
             </div>
             <div class="nav-dropdown-separator"></div>
             <a href="/dashboard" class="nav-dropdown-item-link">Dashboard</a>
-            <a href="#" id="navBillingLink" class="nav-dropdown-item-link" style="display:none;" onclick="event.preventDefault(); openBillingPortal();">Billing & Subscription</a>
-            <a href="/settings/profile" class="nav-dropdown-item-link">Email preferences / Profile</a>
+            <a href="/settings/profile" class="nav-dropdown-item-link">Profile & Settings</a>
             <div class="nav-dropdown-separator"></div>
             <a href="#" id="logoutLink" class="nav-dropdown-item-link">Log out</a>
           </div>
@@ -903,35 +902,6 @@
   <script>
     // Pricing CTA will be handled in updateUIForGuest and updateUIForAuth
 
-    // Billing portal opener (for logged-in users)
-    function openBillingPortal() {
-      const token = localStorage.getItem('access_token') || localStorage.getItem('deepmode_token');
-      if (!token) {
-        window.location.href = '/login';
-        return;
-      }
-      
-      fetch('/billing/customer-portal', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          'Authorization': 'Bearer ' + token
-        }
-      })
-      .then(res => res.json())
-      .then(data => {
-        if (data.url) {
-          window.location.href = data.url;
-        } else {
-          window.location.href = '/billing/checkout';
-        }
-      })
-      .catch(err => {
-        console.error('Error opening billing portal:', err);
-        window.location.href = '/billing/checkout';
-      });
-    }
-
     // Auth state management
     (async function() {
       let currentUser = null;
@@ -1068,11 +1038,6 @@
           }
         }
 
-        // Show/hide billing link based on is_pro
-        const navBillingLink = document.getElementById('navBillingLink');
-        if (navBillingLink) {
-          navBillingLink.style.display = user.is_pro ? 'block' : 'none';
-        }
       }
 
       // Update UI based on auth state
