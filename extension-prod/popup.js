@@ -67,27 +67,27 @@ document.addEventListener("DOMContentLoaded", () => {
     if (chrome.notifications.getPermissionLevel) {
       chrome.notifications.getPermissionLevel((level) => {
         if (level === "denied") {
-          const hasActiveSession = currentSessionBox && currentSessionBox.style.display !== "none";
-          
-          if (!hasActiveSession) {
-            const originalText = statusDiv.textContent;
-            statusDiv.style.color = "#ffb84d";
-            statusDiv.style.fontSize = "11px";
-            statusDiv.style.lineHeight = "1.4";
-            statusDiv.textContent = "🔔 Enable notifications for timer alerts: Windows Settings > System > Notifications > Chrome";
-            statusDiv.title = "Notifications help you know when your block finishes. Enable in Windows Settings.";
+            const hasActiveSession = currentSessionBox && currentSessionBox.style.display !== "none";
             
-            setTimeout(() => {
-              chrome.storage.local.get([STORAGE_KEYS.ACTIVE_SESSION], (result) => {
-                if (!result[STORAGE_KEYS.ACTIVE_SESSION] && statusDiv.textContent.includes("Enable notifications")) {
-                  statusDiv.textContent = originalText || "";
-                  statusDiv.style.color = "";
-                  statusDiv.style.fontSize = "";
-                  statusDiv.style.lineHeight = "";
-                  statusDiv.title = "";
-                }
-              });
-            }, 10000);
+            if (!hasActiveSession) {
+              const originalText = statusDiv.textContent;
+              statusDiv.style.color = "#ffb84d";
+              statusDiv.style.fontSize = "11px";
+              statusDiv.style.lineHeight = "1.4";
+              statusDiv.textContent = "🔔 Enable notifications for timer alerts: Windows Settings > System > Notifications > Chrome";
+              statusDiv.title = "Notifications help you know when your block finishes. Enable in Windows Settings.";
+              
+              setTimeout(() => {
+                chrome.storage.local.get([STORAGE_KEYS.ACTIVE_SESSION], (result) => {
+                  if (!result[STORAGE_KEYS.ACTIVE_SESSION] && statusDiv.textContent.includes("Enable notifications")) {
+                    statusDiv.textContent = originalText || "";
+                    statusDiv.style.color = "";
+                    statusDiv.style.fontSize = "";
+                    statusDiv.style.lineHeight = "";
+                    statusDiv.title = "";
+                  }
+                });
+              }, 10000);
           }
         } else if (level === "granted") {
           console.log("[Deepmode Popup] Notifications enabled ✓");
@@ -328,7 +328,7 @@ document.addEventListener("DOMContentLoaded", () => {
       );
 
       statusDiv.style.color = "#e5e7eb";
-
+      
       if (remainingMs <= 0) {
         statusDiv.textContent = "Deepmode on – Time's up! Check notifications.";
         clearInterval(timerInterval);
@@ -1091,8 +1091,8 @@ document.addEventListener("DOMContentLoaded", () => {
       const newToken = changes[STORAGE_KEYS.ACCESS_TOKEN].newValue || null;
       accessToken = newToken;
 
-        if (!newToken) {
-          isProUser = false;
+      if (!newToken) {
+        isProUser = false;
         if (timerInterval) clearInterval(timerInterval);
         if (primingTimerId) clearInterval(primingTimerId);
         if (primingOverlay) {

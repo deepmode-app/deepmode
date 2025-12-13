@@ -779,7 +779,7 @@ chrome.alarms.onAlarm.addListener((alarm) => {
 
   const sessionIdPart = alarm.name.substring(SESSION_ALARM_PREFIX.length);
   console.log("[Deepmode BG] ✅ Alarm fired for session:", sessionIdPart, "- Auto-ending session");
-
+  
   // Auto-end session when alarm fires (timer reached planned duration)
   chrome.storage.local.get(
     [STORAGE_KEYS.ACTIVE_SESSION, STORAGE_KEYS.ACCESS_TOKEN],
@@ -855,6 +855,81 @@ chrome.alarms.onAlarm.addListener((alarm) => {
       }
     }
   );
+  
+  /* OLD AUTO-END CODE - DISABLED
+  chrome.storage.local.get(
+    [STORAGE_KEYS.ACTIVE_SESSION, STORAGE_KEYS.ACCESS_TOKEN],
+    async (res) => {
+      const active = res[STORAGE_KEYS.ACTIVE_SESSION];
+      const accessToken = res[STORAGE_KEYS.ACCESS_TOKEN] || null;
+
+      if (!active || !active.id) {
+        console.log(
+          "[Deepmode BG] No active session found on alarm, skipping auto-end."
+        );
+        return;
+      }
+
+      if (String(active.id) !== String(sessionIdPart)) {
+        console.log(
+          "[Deepmode BG] Active session id mismatch on alarm, skipping auto-end."
+        );
+        return;
+      }
+
+      const isGuest = !!active.isGuest || !accessToken;
+
+      console.log(
+        "[Deepmode BG] Auto-ending session from background. guest=",
+        isGuest
+      );
+
+      if (isGuest) {
+        chrome.storage.local.remove(STORAGE_KEYS.ACTIVE_SESSION, () => {
+          activeSession = null;
+          console.log(
+            "[Deepmode BG] Guest session auto-ended and cleared from storage."
+          );
+        });
+        return;
+      }
+
+      try {
+        const resp = await fetch(
+          `${API_BASE_URL}/sessions/${active.id}/end`,
+          {
+            method: "PATCH",
+            headers: {
+              "Content-Type": "application/json",
+              "Authorization": "Bearer " + accessToken,
+            },
+          }
+        );
+
+        if (!resp.ok) {
+          console.error(
+            "[Deepmode BG] Auto-end PATCH failed",
+            resp.status
+          );
+        } else {
+          console.log("[Deepmode BG] Auto-end PATCH succeeded.");
+        }
+      } catch (err) {
+        console.error(
+          "[Deepmode BG] Error calling backend on auto-end",
+          err
+        );
+      } finally {
+        chrome.storage.local.remove(STORAGE_KEYS.ACTIVE_SESSION, () => {
+          activeSession = null;
+          console.log(
+            "[Deepmode BG] Session cleared from storage after auto-end."
+          );
+        });
+      }
+    }
+  );
+  */
 });
 
 // ---------- TAB EVENTS: APPLY BLOCKER ON NAVIGATION / FOCUS ----------
