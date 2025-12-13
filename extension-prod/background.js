@@ -779,7 +779,7 @@ chrome.alarms.onAlarm.addListener((alarm) => {
 
   const sessionIdPart = alarm.name.substring(SESSION_ALARM_PREFIX.length);
   console.log("[Deepmode BG] ✅ Alarm fired for session:", sessionIdPart, "- Auto-ending session");
-  
+
   // Auto-end session when alarm fires (timer reached planned duration)
   chrome.storage.local.get(
     [STORAGE_KEYS.ACTIVE_SESSION, STORAGE_KEYS.ACCESS_TOKEN],

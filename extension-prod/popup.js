@@ -1091,8 +1091,8 @@ document.addEventListener("DOMContentLoaded", () => {
       const newToken = changes[STORAGE_KEYS.ACCESS_TOKEN].newValue || null;
       accessToken = newToken;
 
-      if (!newToken) {
-        isProUser = false;
+        if (!newToken) {
+          isProUser = false;
         if (timerInterval) clearInterval(timerInterval);
         if (primingTimerId) clearInterval(primingTimerId);
         if (primingOverlay) {

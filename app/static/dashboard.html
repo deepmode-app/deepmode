@@ -2017,6 +2017,11 @@
         </div>
       </div>
       
+      <!-- Free user hint line -->
+      <div id="recentSessionsHint" class="sessions-free-hint" style="display: none; margin-bottom: 16px; padding: 10px 12px; background: rgba(229, 9, 20, 0.08); border-radius: 8px; font-size: 12px; color: var(--dw-muted); text-align: center; line-height: 1.5;">
+        Showing your most recent 30 sessions. <a href="/#pricing" style="color: var(--dw-accent); text-decoration: none; font-weight: 500;" onmouseover="this.style.textDecoration='underline';" onmouseout="this.style.textDecoration='none';">Upgrade to Deepmode AI Pro</a> for full history + AI insights.
+      </div>
+      
       <!-- Bulk actions bar -->
       <div id="sessionsBulkBar" class="sessions-bulk-bar">
         <div class="sessions-bulk-bar-top">
@@ -3254,8 +3259,31 @@
 
         let sessions = Array.isArray(data) ? data : [];
 
-        // Check if there's a running session
-        const hasRunningSession = sessions.some(s => {
+        // Sort sessions newest-first (by start_time descending)
+        sessions.sort((a, b) => {
+          const timeA = new Date(a.start_time || 0).getTime();
+          const timeB = new Date(b.start_time || 0).getTime();
+          return timeB - timeA;
+        });
+
+        // Show/hide Free user hint line (check before limiting)
+        const recentSessionsHint = document.getElementById("recentSessionsHint");
+        if (recentSessionsHint) {
+          if (currentUser && !currentUser.is_pro && sessions.length > 30) {
+            recentSessionsHint.style.display = "block";
+          } else {
+            recentSessionsHint.style.display = "none";
+          }
+        }
+
+        // Keep full sessions array for stats/calculations, limit only for rendering
+        const allSessions = sessions;
+        const sessionsToRender = (currentUser && currentUser.is_pro) 
+          ? sessions 
+          : sessions.slice(0, 30);
+
+        // Check if there's a running session (use full array)
+        const hasRunningSession = allSessions.some(s => {
           const status = deriveStatus(s);
           return status === "running";
         });
@@ -3283,7 +3311,7 @@
           if (currentBar) currentBar.style.display = "none";
           if (lastBlockCard) lastBlockCard.style.display = "block";
           // Update last block banner (still compute it, but now it will be visible)
-          updateLastBlockBannerFromSessions(sessions);
+          updateLastBlockBannerFromSessions(allSessions);
         }
 
         const body = document.getElementById("sessionsBody");
@@ -3295,7 +3323,7 @@
         body.innerHTML = "";
         sessionsIndex = {};
 
-        if (sessions.length === 0) {
+        if (allSessions.length === 0) {
           if (emptyState) emptyState.style.display = "block";
           if (table) table.style.display = "none";
           document.getElementById("todayMinutes").textContent = "0 min";
@@ -3320,13 +3348,14 @@
         if (emptyState) emptyState.style.display = "none";
         if (table) table.style.display = "table";
 
-        sessions.forEach((s) => {
+        // Build index from all sessions (for detail modal access)
+        allSessions.forEach((s) => {
           sessionsIndex[s.id] = s;
         });
 
         if (projectFilter) {
           const projectNames = new Set();
-          sessions.forEach((s) => {
+          allSessions.forEach((s) => {
             const name = (s.project_name || "").trim();
             if (name) projectNames.add(name);
           });
@@ -3363,13 +3392,14 @@
 
         let total = 0;
         let todayTotal = 0;
-        let started = sessions.length;
+        let started = allSessions.length;
         let completed = 0;
         let runningSession = null;
 
         const today = new Date();
 
-        sessions.forEach((s) => {
+        // Calculate stats from all sessions (not just rendered ones)
+        allSessions.forEach((s) => {
           const actual = s.actual_duration_minutes ?? 0;
           total += actual;
 
@@ -3386,7 +3416,8 @@
           }
         });
 
-        sessions.forEach((s) => {
+        // Render only the limited sessions for Free users
+        sessionsToRender.forEach((s) => {
           const projName = (s.project_name || "").trim();
           // Use backend status if available, otherwise derive from session data
           const statusKey = s.status || deriveStatus(s);
@@ -3495,7 +3526,7 @@
           const lastBlockCard = document.getElementById("dm-last-block-banner");
           if (lastBlockCard && lastBlockCard.style.display !== "block") {
             lastBlockCard.style.display = "block";
-            updateLastBlockBannerFromSessions(sessions);
+            updateLastBlockBannerFromSessions(allSessions);
           }
         }
       } catch (e) {
