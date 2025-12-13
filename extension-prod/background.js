@@ -202,7 +202,7 @@ chrome.runtime.onInstalled.addListener(() => {
       console.warn("[Deepmode BG] ⚠️ Notifications are not enabled!");
       console.warn("[Deepmode BG] To enable notifications:");
       console.warn("[Deepmode BG] 1. Open Chrome settings: chrome://settings/content/notifications");
-      console.warn("[Deepmode BG] 2. Add 'Deepmode AI' to allowed sites");
+      console.warn("[Deepmode BG] 2. Add 'Deepmode AI - DEV' to allowed sites");
       console.warn("[Deepmode BG] 3. Or check Windows Settings > System > Notifications");
     } else {
       console.log("[Deepmode BG] ✓ Notification permission check passed");
