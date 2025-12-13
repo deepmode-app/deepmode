@@ -592,6 +592,108 @@
       font-weight: 600;
     }
 
+    /* SCREENSHOTS SECTION */
+    .screenshots-section {
+      margin: 64px 0;
+      text-align: center;
+    }
+
+    .screenshots-title {
+      font-size: 20px;
+      font-weight: 600;
+      color: var(--dw-text);
+      margin-bottom: 8px;
+      letter-spacing: 0.02em;
+    }
+
+    .screenshots-subtitle {
+      font-size: 14px;
+      color: var(--dw-muted);
+      margin-bottom: 40px;
+    }
+
+    .screenshots-row {
+      display: flex;
+      justify-content: center;
+      gap: 24px;
+      margin-bottom: 32px;
+      flex-wrap: wrap;
+    }
+
+    .screenshots-row-large {
+      display: flex;
+      justify-content: center;
+      gap: 24px;
+      flex-wrap: wrap;
+    }
+
+    .screenshot-card {
+      background: var(--dw-card);
+      border: 1px solid var(--dw-border);
+      border-radius: 12px;
+      overflow: hidden;
+      max-width: 280px;
+      flex: 1;
+      min-width: 240px;
+    }
+
+    .screenshot-card-large {
+      background: var(--dw-card);
+      border: 1px solid var(--dw-border);
+      border-radius: 12px;
+      overflow: hidden;
+      max-width: 420px;
+      flex: 1;
+      min-width: 300px;
+    }
+
+    .screenshot-card img,
+    .screenshot-card-large img {
+      width: 100%;
+      height: auto;
+      display: block;
+      border-bottom: 1px solid var(--dw-border);
+    }
+
+    .screenshot-caption {
+      padding: 16px;
+      text-align: left;
+    }
+
+    .screenshot-caption-title {
+      font-size: 13px;
+      font-weight: 600;
+      color: var(--dw-text);
+      margin-bottom: 6px;
+    }
+
+    .screenshot-caption-desc {
+      font-size: 12px;
+      color: var(--dw-muted);
+      line-height: 1.5;
+    }
+
+    .screenshots-pro-note {
+      font-size: 11px;
+      color: var(--dw-muted);
+      margin-top: 24px;
+      opacity: 0.7;
+    }
+
+    @media (max-width: 900px) {
+      .screenshots-row,
+      .screenshots-row-large {
+        flex-direction: column;
+        align-items: center;
+      }
+
+      .screenshot-card,
+      .screenshot-card-large {
+        max-width: 100%;
+        width: 100%;
+      }
+    }
+
     /* PRICING CARD */
     .pricing-card {
       background: var(--dw-card);
@@ -908,6 +1010,65 @@
         <li><strong>Know exactly where your time goes</strong> — Every session tracked by task, project, and category. Progress becomes visible.</li>
         <li><strong>AI insights that help you improve</strong> — Patterns you can't see yourself, with specific actions to get better every week. (Pro)</li>
       </ul>
+    </section>
+
+    <!-- SCREENSHOTS -->
+    <section class="screenshots-section">
+      <h2 class="screenshots-title">From intention → focus → progress</h2>
+      <p class="screenshots-subtitle">See how Deepmode turns a single task into measurable momentum.</p>
+
+      <!-- Row 1: Core habit loop (3 screenshots) -->
+      <div class="screenshots-row">
+        <!-- Screenshot 1: Extension Popup -->
+        <div class="screenshot-card">
+          <img src="/static/screenshots/popup-start-session.png" alt="Deepmode extension popup - start a focus session" />
+          <div class="screenshot-caption">
+            <div class="screenshot-caption-title">Define one task. Commit to it.</div>
+            <div class="screenshot-caption-desc">One block. One intention. No ambiguity.</div>
+          </div>
+        </div>
+
+        <!-- Screenshot 2: Blocked Site Overlay -->
+        <div class="screenshot-card">
+          <img src="/static/screenshots/blocked-site-overlay.png" alt="Deepmode blocking distractions during focus session" />
+          <div class="screenshot-caption">
+            <div class="screenshot-caption-title">Distractions blocked — focus protected.</div>
+            <div class="screenshot-caption-desc">You can override when needed. Discipline stays intentional.</div>
+          </div>
+        </div>
+
+        <!-- Screenshot 3: Dashboard Live Session -->
+        <div class="screenshot-card">
+          <img src="/static/screenshots/dashboard-live-session.png" alt="Deepmode dashboard showing active focus session" />
+          <div class="screenshot-caption">
+            <div class="screenshot-caption-title">See your work in real time.</div>
+            <div class="screenshot-caption-desc">Every block compounds. Momentum becomes visible.</div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Row 2: AI Payoff (2 large screenshots) -->
+      <div class="screenshots-row-large">
+        <!-- Screenshot 4: AI Report Stats -->
+        <div class="screenshot-card-large">
+          <img src="/static/screenshots/ai-report-stats.png" alt="Deepmode AI focus report showing weekly stats and patterns" />
+          <div class="screenshot-caption">
+            <div class="screenshot-caption-title">Understand how you actually work.</div>
+            <div class="screenshot-caption-desc">AI insights reveal patterns you can't see on your own.</div>
+          </div>
+        </div>
+
+        <!-- Screenshot 5: AI Report Insights -->
+        <div class="screenshot-card-large">
+          <img src="/static/screenshots/ai-report-insights.png" alt="Deepmode AI coach providing weekly review and actionable insights" />
+          <div class="screenshot-caption">
+            <div class="screenshot-caption-title">Improve every week.</div>
+            <div class="screenshot-caption-desc">Wins, patterns, and specific fixes — delivered automatically.</div>
+          </div>
+        </div>
+      </div>
+
+      <p class="screenshots-pro-note">Available with Deepmode AI Pro.</p>
     </section>
 
     <!-- PRICING -->
