@@ -562,15 +562,21 @@
       list-style: none;
       padding: 0;
       margin: 0;
-      max-width: 600px;
+      max-width: 640px;
+      text-align: left;
     }
 
     .why-bullets li {
       font-size: 13px;
       color: var(--dw-muted);
-      line-height: 1.8;
-      padding-left: 16px;
+      line-height: 1.7;
+      padding-left: 20px;
       position: relative;
+      margin-bottom: 12px;
+    }
+
+    .why-bullets li:last-child {
+      margin-bottom: 0;
     }
 
     .why-bullets li::before {
@@ -578,6 +584,12 @@
       position: absolute;
       left: 0;
       color: var(--dw-accent);
+      font-weight: 700;
+    }
+
+    .why-bullets li strong {
+      color: var(--dw-text);
+      font-weight: 600;
     }
 
     /* PRICING CARD */
@@ -889,11 +901,12 @@
 
     <!-- WHY DEEPMODE -->
     <section class="section centered">
-      <h2 class="section-title">Built for people who care about progress — not just staying busy.</h2>
+      <h2 class="section-title">Why Deepmode?</h2>
       <ul class="why-bullets">
-        <li>Total control over distractions</li>
-        <li>Clear tracking by task, project, and category</li>
-        <li>Daily &amp; weekly insights into how you actually work (Pro)</li>
+        <li><strong>Structured focus sessions</strong> — 5, 25, 50, or 90 minutes. Pick your block, define your task, and lock in.</li>
+        <li><strong>Total control over distractions</strong> — Block what breaks your focus. One-click override when you need it.</li>
+        <li><strong>Know exactly where your time goes</strong> — Every session tracked by task, project, and category. Progress becomes visible.</li>
+        <li><strong>AI insights that help you improve</strong> — Patterns you can't see yourself, with specific actions to get better every week. (Pro)</li>
       </ul>
     </section>
 
