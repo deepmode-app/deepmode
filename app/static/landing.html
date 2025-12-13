@@ -594,103 +594,121 @@
 
     /* SCREENSHOTS SECTION */
     .screenshots-section {
-      margin: 64px 0;
+      margin: 48px 0 56px;
       text-align: center;
     }
 
     .screenshots-title {
-      font-size: 20px;
+      font-size: 18px;
       font-weight: 600;
       color: var(--dw-text);
-      margin-bottom: 8px;
-      letter-spacing: 0.02em;
+      margin-bottom: 6px;
+      letter-spacing: 0.01em;
     }
 
     .screenshots-subtitle {
-      font-size: 14px;
+      font-size: 13px;
       color: var(--dw-muted);
-      margin-bottom: 40px;
-    }
-
-    .screenshots-row {
-      display: flex;
-      justify-content: center;
-      gap: 24px;
       margin-bottom: 32px;
-      flex-wrap: wrap;
     }
 
-    .screenshots-row-large {
+    /* Grid layout for screenshots */
+    .screenshot-grid {
+      display: grid;
+      gap: 18px;
+      grid-template-columns: repeat(3, minmax(0, 1fr));
+      max-width: 920px;
+      margin: 0 auto 24px;
+    }
+
+    .screenshot-grid-single {
       display: flex;
       justify-content: center;
-      gap: 24px;
-      flex-wrap: wrap;
+      margin: 0 auto;
     }
 
+    /* Uniform card styling */
     .screenshot-card {
       background: var(--dw-card);
-      border: 1px solid var(--dw-border);
-      border-radius: 12px;
+      border: 1px solid rgba(255, 255, 255, 0.06);
+      border-radius: 16px;
+      padding: 12px;
       overflow: hidden;
-      max-width: 280px;
-      flex: 1;
-      min-width: 240px;
     }
 
     .screenshot-card-large {
       background: var(--dw-card);
-      border: 1px solid var(--dw-border);
+      border: 1px solid rgba(255, 255, 255, 0.06);
+      border-radius: 16px;
+      padding: 14px;
+      max-width: 560px;
+      width: 100%;
+    }
+
+    /* Fixed aspect ratio frame */
+    .screenshot-frame {
+      aspect-ratio: 10 / 14;
+      width: 100%;
       border-radius: 12px;
       overflow: hidden;
-      max-width: 420px;
-      flex: 1;
-      min-width: 300px;
+      background: #0a0a0f;
     }
 
-    .screenshot-card img,
-    .screenshot-card-large img {
+    .screenshot-frame-wide {
+      aspect-ratio: 16 / 10;
       width: 100%;
-      height: auto;
-      display: block;
-      border-bottom: 1px solid var(--dw-border);
+      border-radius: 12px;
+      overflow: hidden;
+      background: #0a0a0f;
     }
 
+    .screenshot-frame img,
+    .screenshot-frame-wide img {
+      width: 100%;
+      height: 100%;
+      object-fit: cover;
+    }
+
+    /* Per-image positioning to show key areas */
+    .img-popup { object-position: center 18%; }
+    .img-overlay { object-position: center 45%; }
+    .img-dashboard { object-position: center 25%; }
+    .img-ai-stats { object-position: center 20%; }
+
+    /* Caption styling */
     .screenshot-caption {
-      padding: 16px;
-      text-align: left;
+      padding: 12px 4px 4px;
+      text-align: center;
     }
 
     .screenshot-caption-title {
-      font-size: 13px;
+      font-size: 12px;
       font-weight: 600;
       color: var(--dw-text);
-      margin-bottom: 6px;
+      margin-bottom: 4px;
     }
 
     .screenshot-caption-desc {
-      font-size: 12px;
+      font-size: 11px;
       color: var(--dw-muted);
-      line-height: 1.5;
+      line-height: 1.4;
     }
 
     .screenshots-pro-note {
       font-size: 11px;
       color: var(--dw-muted);
-      margin-top: 24px;
-      opacity: 0.7;
+      margin-top: 20px;
+      opacity: 0.6;
     }
 
     @media (max-width: 900px) {
-      .screenshots-row,
-      .screenshots-row-large {
-        flex-direction: column;
-        align-items: center;
+      .screenshot-grid {
+        grid-template-columns: 1fr;
+        max-width: 320px;
       }
 
-      .screenshot-card,
       .screenshot-card-large {
         max-width: 100%;
-        width: 100%;
       }
     }
 
@@ -982,6 +1000,63 @@
       </p>
     </section>
 
+    <!-- SCREENSHOTS -->
+    <section class="screenshots-section">
+      <h2 class="screenshots-title">From intention → focus → progress</h2>
+      <p class="screenshots-subtitle">See how Deepmode turns a single task into measurable momentum.</p>
+
+      <!-- Row 1: Core habit loop (3 screenshots) -->
+      <div class="screenshot-grid">
+        <!-- Screenshot 1: Extension Popup -->
+        <div class="screenshot-card">
+          <div class="screenshot-frame">
+            <img src="/static/screenshots/popup-start-session.png" alt="Start a focus session" class="img-popup" />
+          </div>
+          <div class="screenshot-caption">
+            <div class="screenshot-caption-title">Define one task. Commit.</div>
+            <div class="screenshot-caption-desc">One block. One intention.</div>
+          </div>
+        </div>
+
+        <!-- Screenshot 2: Blocked Site Overlay -->
+        <div class="screenshot-card">
+          <div class="screenshot-frame">
+            <img src="/static/screenshots/blocked-site-overlay.png" alt="Distractions blocked" class="img-overlay" />
+          </div>
+          <div class="screenshot-caption">
+            <div class="screenshot-caption-title">Distractions blocked.</div>
+            <div class="screenshot-caption-desc">Override when you need to.</div>
+          </div>
+        </div>
+
+        <!-- Screenshot 3: Dashboard Live Session -->
+        <div class="screenshot-card">
+          <div class="screenshot-frame">
+            <img src="/static/screenshots/dashboard-live-session.png" alt="Live session tracking" class="img-dashboard" />
+          </div>
+          <div class="screenshot-caption">
+            <div class="screenshot-caption-title">See progress in real time.</div>
+            <div class="screenshot-caption-desc">Every block compounds.</div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Row 2: Single large AI screenshot (Option B - strongest conversion) -->
+      <div class="screenshot-grid-single">
+        <div class="screenshot-card-large">
+          <div class="screenshot-frame-wide">
+            <img src="/static/screenshots/ai-report-stats.png" alt="AI-powered weekly focus report" class="img-ai-stats" />
+          </div>
+          <div class="screenshot-caption">
+            <div class="screenshot-caption-title">Understand how you actually work. Improve every week.</div>
+            <div class="screenshot-caption-desc">AI insights reveal patterns you can't see on your own.</div>
+          </div>
+        </div>
+      </div>
+
+      <p class="screenshots-pro-note">Available with Deepmode AI Pro.</p>
+    </section>
+
     <!-- HOW IT WORKS -->
     <section id="how" class="section centered">
       <h2 class="section-title">How it works</h2>
@@ -1010,65 +1085,6 @@
         <li><strong>Know exactly where your time goes</strong> — Every session tracked by task, project, and category. Progress becomes visible.</li>
         <li><strong>AI insights that help you improve</strong> — Patterns you can't see yourself, with specific actions to get better every week. (Pro)</li>
       </ul>
-    </section>
-
-    <!-- SCREENSHOTS -->
-    <section class="screenshots-section">
-      <h2 class="screenshots-title">From intention → focus → progress</h2>
-      <p class="screenshots-subtitle">See how Deepmode turns a single task into measurable momentum.</p>
-
-      <!-- Row 1: Core habit loop (3 screenshots) -->
-      <div class="screenshots-row">
-        <!-- Screenshot 1: Extension Popup -->
-        <div class="screenshot-card">
-          <img src="/static/screenshots/popup-start-session.png" alt="Deepmode extension popup - start a focus session" />
-          <div class="screenshot-caption">
-            <div class="screenshot-caption-title">Define one task. Commit to it.</div>
-            <div class="screenshot-caption-desc">One block. One intention. No ambiguity.</div>
-          </div>
-        </div>
-
-        <!-- Screenshot 2: Blocked Site Overlay -->
-        <div class="screenshot-card">
-          <img src="/static/screenshots/blocked-site-overlay.png" alt="Deepmode blocking distractions during focus session" />
-          <div class="screenshot-caption">
-            <div class="screenshot-caption-title">Distractions blocked — focus protected.</div>
-            <div class="screenshot-caption-desc">You can override when needed. Discipline stays intentional.</div>
-          </div>
-        </div>
-
-        <!-- Screenshot 3: Dashboard Live Session -->
-        <div class="screenshot-card">
-          <img src="/static/screenshots/dashboard-live-session.png" alt="Deepmode dashboard showing active focus session" />
-          <div class="screenshot-caption">
-            <div class="screenshot-caption-title">See your work in real time.</div>
-            <div class="screenshot-caption-desc">Every block compounds. Momentum becomes visible.</div>
-          </div>
-        </div>
-      </div>
-
-      <!-- Row 2: AI Payoff (2 large screenshots) -->
-      <div class="screenshots-row-large">
-        <!-- Screenshot 4: AI Report Stats -->
-        <div class="screenshot-card-large">
-          <img src="/static/screenshots/ai-report-stats.png" alt="Deepmode AI focus report showing weekly stats and patterns" />
-          <div class="screenshot-caption">
-            <div class="screenshot-caption-title">Understand how you actually work.</div>
-            <div class="screenshot-caption-desc">AI insights reveal patterns you can't see on your own.</div>
-          </div>
-        </div>
-
-        <!-- Screenshot 5: AI Report Insights -->
-        <div class="screenshot-card-large">
-          <img src="/static/screenshots/ai-report-insights.png" alt="Deepmode AI coach providing weekly review and actionable insights" />
-          <div class="screenshot-caption">
-            <div class="screenshot-caption-title">Improve every week.</div>
-            <div class="screenshot-caption-desc">Wins, patterns, and specific fixes — delivered automatically.</div>
-          </div>
-        </div>
-      </div>
-
-      <p class="screenshots-pro-note">Available with Deepmode AI Pro.</p>
     </section>
 
     <!-- PRICING -->
