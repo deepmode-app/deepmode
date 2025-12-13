@@ -365,8 +365,11 @@ document.addEventListener("DOMContentLoaded", () => {
       `;
 
       btn.addEventListener("click", () => {
-        const current = blockPrefs.defaultSiteFlags[site.id];
-        const next = !(current === true);
+        // Calculate current state the same way as visual rendering
+        const flags = blockPrefs.defaultSiteFlags || {};
+        const noFlags = !flags || Object.keys(flags).length === 0;
+        const current = noFlags ? true : !!flags[site.id];
+        const next = !current;
 
         blockPrefs.defaultSiteFlags[site.id] = next;
 
