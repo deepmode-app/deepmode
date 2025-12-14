@@ -19,7 +19,11 @@ const DEFAULT_SITES = [
   { id: "instagram", label: "Instagram",  host: "instagram.com", icon: "◎" },
   { id: "facebook",  label: "Facebook",   host: "facebook.com",  icon: "f" },
   { id: "reddit",    label: "Reddit",     host: "reddit.com",    icon: "r" },
-  { id: "tiktok",    label: "TikTok",     host: "tiktok.com",    icon: "♬" }
+  { id: "tiktok",    label: "TikTok",     host: "tiktok.com",    icon: "♬" },
+  { id: "linkedin",  label: "LinkedIn",   host: "linkedin.com",  icon: "in" },
+  { id: "discord",   label: "Discord",     host: "discord.com",   icon: "💬" },
+  { id: "whatsapp",  label: "WhatsApp",   host: "web.whatsapp.com", icon: "💬" },
+  { id: "telegram",  label: "Telegram",   host: "web.telegram.org", icon: "✈" }
 ];
 
 document.addEventListener("DOMContentLoaded", () => {
@@ -127,73 +131,7 @@ document.addEventListener("DOMContentLoaded", () => {
     }
   });
 
-  // ---------- Permission helpers ----------
-
-  function getHostnameFromUrl(url) {
-    try {
-      const u = new URL(url);
-      return u.hostname || "";
-    } catch {
-      return "";
-    }
-  }
-
-  function normalizeHost(host) {
-    if (!host) return "";
-    // Remove scheme if present (https://, http://)
-    let normalized = host.replace(/^https?:\/\//, "").replace(/\/.*$/, "");
-    // Remove www. prefix
-    normalized = normalized.toLowerCase().trim();
-    if (normalized.startsWith("www.")) {
-      normalized = normalized.substring(4);
-    }
-    return normalized;
-  }
-
-  function siteToOrigins(siteString) {
-    const hostname = normalizeHost(siteString);
-    if (!hostname) return [];
-    return [`*://${hostname}/*`, `*://*.${hostname}/*`];
-  }
-
-  function buildOriginsToRequestFromPrefs(blockPrefs) {
-    const originsSet = new Set();
-    
-    // Gather enabled DEFAULT_SITES hosts
-    const flags = blockPrefs.defaultSiteFlags || {};
-    const noFlags = !flags || Object.keys(flags).length === 0;
-    
-    for (const site of DEFAULT_SITES) {
-      const enabled = noFlags ? true : !!flags[site.id];
-      if (enabled) {
-        const siteOrigins = siteToOrigins(site.host);
-        siteOrigins.forEach(origin => originsSet.add(origin));
-      }
-    }
-    
-    // Gather custom sites
-    const customSites = blockPrefs.customSites || [];
-    for (const entry of customSites) {
-      const trimmed = (entry || "").trim();
-      if (trimmed) {
-        const siteOrigins = siteToOrigins(trimmed);
-        siteOrigins.forEach(origin => originsSet.add(origin));
-      }
-    }
-    
-    return Array.from(originsSet);
-  }
-
-  async function ensureBlockingPermissions(blockPrefs) {
-    const origins = buildOriginsToRequestFromPrefs(blockPrefs);
-    if (origins.length === 0) return true;
-    
-    return new Promise((resolve) => {
-      chrome.permissions.request({ origins }, (granted) => {
-        resolve(granted === true);
-      });
-    });
-  }
+  // ---------- Permission helpers removed for conservative launch ----------
 
   // ---------- Small helpers ----------
 
@@ -461,18 +399,29 @@ document.addEventListener("DOMContentLoaded", () => {
   function setupCustomSitesEvents() {
     if (!customSitesTextarea) return;
 
-    const saveCustomSites = () => {
-      const lines = customSitesTextarea.value
-        .split("\n")
-        .map((l) => l.trim())
-        .filter(Boolean);
+    // Disable custom sites for launch - UI remains but functionality disabled
+    customSitesTextarea.disabled = true;
+    customSitesTextarea.placeholder = "Custom site blocking is coming soon. For now, Deepmode blocks the most common distractions.";
+    
+    // Add helper text below textarea
+    const helperText = document.createElement("p");
+    helperText.className = "dw-field-hint";
+    helperText.style.marginTop = "4px";
+    helperText.style.color = "#6b7280";
+    helperText.textContent = "Custom site blocking is coming soon. For now, Deepmode blocks the most common distractions.";
+    customSitesTextarea.parentNode.insertBefore(helperText, customSitesTextarea.nextSibling);
 
-      blockPrefs.customSites = lines;
-      chrome.storage.sync.set({ [BLOCK_PREFS_KEY]: blockPrefs });
-    };
-
-    customSitesTextarea.addEventListener("blur", saveCustomSites);
-    customSitesTextarea.addEventListener("change", saveCustomSites);
+    // Do not save custom sites - functionality disabled for launch
+    // const saveCustomSites = () => {
+    //   const lines = customSitesTextarea.value
+    //     .split("\n")
+    //     .map((l) => l.trim())
+    //     .filter(Boolean);
+    //   blockPrefs.customSites = lines;
+    //   chrome.storage.sync.set({ [BLOCK_PREFS_KEY]: blockPrefs });
+    // };
+    // customSitesTextarea.addEventListener("blur", saveCustomSites);
+    // customSitesTextarea.addEventListener("change", saveCustomSites);
   }
 
   // ---------- Logout handler ----------
@@ -985,7 +934,7 @@ document.addEventListener("DOMContentLoaded", () => {
 
   // ---------- START BUTTON ----------
 
-  startBtn.addEventListener("click", async () => {
+  startBtn.addEventListener("click", () => {
     if (endBtn.disabled === false) {
       return;
     }
@@ -998,14 +947,6 @@ document.addEventListener("DOMContentLoaded", () => {
       statusDiv.style.color = "#e5e7eb";
       statusDiv.textContent = "Name your block.";
       return;
-    }
-
-    // Request blocking permissions before starting session (user gesture required)
-    const granted = await ensureBlockingPermissions(blockPrefs);
-    if (!granted) {
-      statusDiv.style.color = "#ffb84d";
-      statusDiv.textContent = "Blocking needs site permission. Session can still run, but sites may not be blocked until you allow access.";
-      // Continue starting session anyway - don't block product usage
     }
 
     if (!accessToken) {
@@ -1157,16 +1098,6 @@ document.addEventListener("DOMContentLoaded", () => {
       );
     }
 
-    // Handle permission needed message from background
-    if (msg && msg.type === "DEEPMODE_NEEDS_SITE_PERMISSION") {
-      const url = msg.url || "";
-      const hostname = getHostnameFromUrl(url);
-      if (hostname) {
-        const normalized = normalizeHost(hostname);
-        statusDiv.style.color = "#ffb84d";
-        statusDiv.textContent = `Allow access to block this site: ${normalized}`;
-      }
-    }
   });
 
   // ---------- React to storage changes as backup ----------

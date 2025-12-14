@@ -1,7 +1,7 @@
 {
   "manifest_version": 3,
   "name": "Deepmode",
-  "version": "2.4.1",
+  "version": "2.4.2",
   "description": "Define one task. Lock in focus. See exactly how you spend your time on your current projects — with AI insights that help you improve every week.",
   "icons": {
     "16": "icons/icon16.png",
@@ -27,11 +27,27 @@
     "notifications"
   ],
   "host_permissions": [
-    "https://deepmode.app/*"
-  ],
-  "optional_host_permissions": [
-    "https://*/*",
-    "http://*/*"
+    "https://deepmode.app/*",
+    "https://youtube.com/*",
+    "https://*.youtube.com/*",
+    "https://x.com/*",
+    "https://*.x.com/*",
+    "https://twitter.com/*",
+    "https://*.twitter.com/*",
+    "https://instagram.com/*",
+    "https://*.instagram.com/*",
+    "https://facebook.com/*",
+    "https://*.facebook.com/*",
+    "https://reddit.com/*",
+    "https://*.reddit.com/*",
+    "https://tiktok.com/*",
+    "https://*.tiktok.com/*",
+    "https://linkedin.com/*",
+    "https://*.linkedin.com/*",
+    "https://discord.com/*",
+    "https://*.discord.com/*",
+    "https://web.whatsapp.com/*",
+    "https://web.telegram.org/*"
   ],
   "background": {
     "service_worker": "background.js"

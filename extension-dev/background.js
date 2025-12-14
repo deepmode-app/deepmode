@@ -30,6 +30,10 @@ const DEFAULT_SITES = [
   { id: "facebook",  host: "facebook.com"  },
   { id: "reddit",    host: "reddit.com"    },
   { id: "tiktok",    host: "tiktok.com"    },
+  { id: "linkedin",  host: "linkedin.com"  },
+  { id: "discord",   host: "discord.com"   },
+  { id: "whatsapp",  host: "web.whatsapp.com" },
+  { id: "telegram",  host: "web.telegram.org" },
 ];
 
 // ---------- IN-MEMORY STATE ----------
@@ -465,54 +469,6 @@ function getHostnameFromUrl(url) {
   }
 }
 
-// ---------- PERMISSION HELPERS ----------
-
-function normalizeHost(hostname) {
-  if (!hostname) return "";
-  let normalized = hostname.toLowerCase().trim();
-  if (normalized.startsWith("www.")) {
-    normalized = normalized.substring(4);
-  }
-  return normalized;
-}
-
-function hostToOrigins(hostname) {
-  const normalized = normalizeHost(hostname);
-  if (!normalized) return [];
-  return [`*://${normalized}/*`, `*://*.${normalized}/*`];
-}
-
-function getOriginsForUrl(url) {
-  try {
-    const hostname = getHostnameFromUrl(url);
-    if (!hostname) return [];
-    return hostToOrigins(hostname);
-  } catch {
-    return [];
-  }
-}
-
-async function hasPermissionForUrl(url) {
-  // Block internal Chrome/Edge/extension URLs
-  if (!url || 
-      url.startsWith("chrome://") || 
-      url.startsWith("edge://") || 
-      url.startsWith("chrome-extension://") || 
-      url.startsWith("about:") || 
-      url.startsWith("file://")) {
-    return false;
-  }
-
-  const origins = getOriginsForUrl(url);
-  if (origins.length === 0) return false;
-
-  return new Promise((resolve) => {
-    chrome.permissions.contains({ origins }, (result) => {
-      resolve(result === true);
-    });
-  });
-}
-
 function isDefaultSiteBlocked(hostname) {
   if (!hostname) return false;
 
@@ -530,48 +486,18 @@ function isDefaultSiteBlocked(hostname) {
   return false;
 }
 
-function isCustomSiteBlocked(hostname) {
-  if (!hostname) return false;
-  const custom = blockPrefs.customSites || [];
-
-  for (const entry of custom) {
-    const needle = (entry || "").trim().toLowerCase();
-    if (!needle) continue;
-
-    if (hostname.toLowerCase().includes(needle)) {
-      return true;
-    }
-  }
-  return false;
-}
-
 function shouldBlockUrl(url) {
   if (!activeSession || !activeSession.id) return false;
 
   const hostname = getHostnameFromUrl(url);
   if (!hostname) return false;
 
-  return isDefaultSiteBlocked(hostname) || isCustomSiteBlocked(hostname);
+  // Only block default sites for launch (custom sites disabled)
+  return isDefaultSiteBlocked(hostname);
 }
 
-async function injectBlockerIntoTab(tabId, tabUrl) {
+function injectBlockerIntoTab(tabId) {
   if (!tabId || tabId < 0) return;
-
-  // Check if we have permission for this URL
-  const ok = await hasPermissionForUrl(tabUrl);
-  if (!ok) {
-    console.warn("[Deepmode BG] No optional host permission for", tabUrl, "skipping injection");
-    // Notify popup that permission is needed
-    try {
-      chrome.runtime.sendMessage({ 
-        type: "DEEPMODE_NEEDS_SITE_PERMISSION", 
-        url: tabUrl 
-      });
-    } catch (e) {
-      // Popup might not be open, ignore
-    }
-    return;
-  }
 
   chrome.scripting.executeScript(
     {
@@ -601,7 +527,7 @@ function ensureTabBlocked(tab) {
     () => {
       const err = chrome.runtime.lastError;
       if (err) {
-        injectBlockerIntoTab(tab.id, tab.url);
+        injectBlockerIntoTab(tab.id);
       }
     }
   );
