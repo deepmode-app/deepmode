@@ -189,7 +189,7 @@ function renderOverlay(activeSession, isPro) {
       max-width:520px;
       text-align:center;
       color:#f5f5f5;
-      font-family:Inter,-apple-system,BlinkMacSystemFont,'Segoe UI',system-ui,sans-serif;
+      font-family:ui-sans-serif, system-ui, -apple-system, "Segoe UI", Roboto, Helvetica, Arial, "Apple Color Emoji", "Segoe UI Emoji";
       position:relative;
       z-index:1;
     ">
@@ -207,23 +207,10 @@ function renderOverlay(activeSession, isPro) {
     </div>
   `;
 
-  // Add CSS for background logo and Inter font
+  // Add CSS for background logo
   if (!document.getElementById("deepmode-overlay-styles")) {
     const style = document.createElement("style");
     style.id = "deepmode-overlay-styles";
-    const fontLink = document.createElement("link");
-    fontLink.rel = "preconnect";
-    fontLink.href = "https://fonts.googleapis.com";
-    document.head.appendChild(fontLink);
-    const fontLink2 = document.createElement("link");
-    fontLink2.rel = "preconnect";
-    fontLink2.href = "https://fonts.gstatic.com";
-    fontLink2.crossOrigin = "anonymous";
-    document.head.appendChild(fontLink2);
-    const fontLink3 = document.createElement("link");
-    fontLink3.rel = "stylesheet";
-    fontLink3.href = "https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap";
-    document.head.appendChild(fontLink3);
     style.textContent = `
       #deepwork-overlay {
         position: relative;
