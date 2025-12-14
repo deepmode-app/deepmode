@@ -48,7 +48,6 @@ document.addEventListener("DOMContentLoaded", () => {
   const blockingStatus = document.getElementById("blockingStatus");
 
   const defaultSitesRow = document.getElementById("defaultSitesRow");
-  const customSitesTextarea = document.getElementById("customSites");
 
   // Priming overlay elements
   const primingOverlay = document.getElementById("primingOverlay");
@@ -115,7 +114,6 @@ document.addEventListener("DOMContentLoaded", () => {
 
   let blockPrefs = {
     defaultSiteFlags: {},
-    customSites: [],
   };
 
   // ---------- Task input validation feedback ----------
@@ -391,38 +389,6 @@ document.addEventListener("DOMContentLoaded", () => {
     });
   }
 
-  function renderCustomSitesTextarea() {
-    if (!customSitesTextarea) return;
-    customSitesTextarea.value = (blockPrefs.customSites || []).join("\n");
-  }
-
-  function setupCustomSitesEvents() {
-    if (!customSitesTextarea) return;
-
-    // Disable custom sites for launch - UI remains but functionality disabled
-    customSitesTextarea.disabled = true;
-    customSitesTextarea.placeholder = "Custom site blocking is coming soon. For now, Deepmode blocks the most common distractions.";
-    
-    // Add helper text below textarea
-    const helperText = document.createElement("p");
-    helperText.className = "dw-field-hint";
-    helperText.style.marginTop = "4px";
-    helperText.style.color = "#6b7280";
-    helperText.textContent = "Custom site blocking is coming soon. For now, Deepmode blocks the most common distractions.";
-    customSitesTextarea.parentNode.insertBefore(helperText, customSitesTextarea.nextSibling);
-
-    // Do not save custom sites - functionality disabled for launch
-    // const saveCustomSites = () => {
-    //   const lines = customSitesTextarea.value
-    //     .split("\n")
-    //     .map((l) => l.trim())
-    //     .filter(Boolean);
-    //   blockPrefs.customSites = lines;
-    //   chrome.storage.sync.set({ [BLOCK_PREFS_KEY]: blockPrefs });
-    // };
-    // customSitesTextarea.addEventListener("blur", saveCustomSites);
-    // customSitesTextarea.addEventListener("change", saveCustomSites);
-  }
 
   // ---------- Logout handler ----------
 
@@ -1054,13 +1020,8 @@ document.addEventListener("DOMContentLoaded", () => {
     const prefs = res[BLOCK_PREFS_KEY];
     if (prefs && typeof prefs === "object") {
       blockPrefs.defaultSiteFlags = prefs.defaultSiteFlags || {};
-      blockPrefs.customSites = Array.isArray(prefs.customSites)
-        ? prefs.customSites
-        : [];
     }
     renderDefaultSitePills();
-    renderCustomSitesTextarea();
-    setupCustomSitesEvents();
   });
 
   // ---------- React immediately to logout (from connect.js) ----------

@@ -41,7 +41,6 @@ const DEFAULT_SITES = [
 let activeSession = null;
 let blockPrefs = {
   defaultSiteFlags: {},
-  customSites: [],
 };
 // ---------- ALARM HELPERS (NO NOTIFICATIONS) ----------
 
@@ -189,9 +188,6 @@ function resyncOnStartup() {
     const prefs = res[BLOCK_PREFS_KEY];
     if (prefs && typeof prefs === "object") {
       blockPrefs.defaultSiteFlags = prefs.defaultSiteFlags || {};
-      blockPrefs.customSites = Array.isArray(prefs.customSites)
-        ? prefs.customSites
-        : [];
       console.log("[Deepmode BG] Resync: block prefs loaded.");
     }
   });
@@ -638,9 +634,6 @@ chrome.storage.onChanged.addListener((changes, area) => {
     const prefs = changes[BLOCK_PREFS_KEY].newValue;
     if (prefs && typeof prefs === "object") {
       blockPrefs.defaultSiteFlags = prefs.defaultSiteFlags || {};
-      blockPrefs.customSites = Array.isArray(prefs.customSites)
-        ? prefs.customSites
-        : [];
       console.log("[Deepmode BG] Block prefs updated from sync.");
 
       if (activeSession && activeSession.id) {
