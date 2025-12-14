@@ -1,7 +1,8 @@
 # app/jobs/email_jobs.py
 
+import os
 from datetime import date, timedelta
-from fastapi import APIRouter
+from fastapi import APIRouter, Request, HTTPException, status
 from collections import defaultdict
 
 from app.database import get_conn
@@ -21,8 +22,34 @@ from app.ai_config import AI_EMAIL_ENABLED, OPENAI_API_KEY
 router = APIRouter(prefix="/jobs", tags=["jobs"])
 
 
+def verify_jobs_secret(request: Request):
+    """
+    Verify that the request includes the correct X-JOBS-SECRET header.
+    Returns None if valid, raises HTTPException if invalid.
+    """
+    jobs_secret = os.getenv("JOBS_SECRET")
+    if not jobs_secret:
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail="JOBS_SECRET not configured"
+        )
+    
+    provided_secret = request.headers.get("X-JOBS-SECRET")
+    if not provided_secret:
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail="Missing X-JOBS-SECRET header"
+        )
+    
+    if provided_secret != jobs_secret:
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail="Invalid X-JOBS-SECRET"
+        )
+
+
 @router.post("/daily-streak-digest")
-def run_daily_streak_digest():
+def run_daily_streak_digest(request: Request):
     """
     Send daily 'yesterday report' emails for Pro users.
 
@@ -32,6 +59,7 @@ def run_daily_streak_digest():
     - Independent of whether they worked today (this is a yesterday report)
     - Uses yesterday's minutes for context
     """
+    verify_jobs_secret(request)
     from datetime import datetime, timezone
     
     today = date.today()
@@ -218,7 +246,7 @@ def run_daily_streak_digest():
 
 
 @router.post("/weekly-summary-digest")
-def run_weekly_summary_digest():
+def run_weekly_summary_digest(request: Request):
     """
     Send weekly summary emails.
 
@@ -226,6 +254,7 @@ def run_weekly_summary_digest():
     - Only users with weekly_email_enabled = TRUE
     - Computes minutes for current week and previous week (Mon–Sun)
     """
+    verify_jobs_secret(request)
     today = date.today()
     weekday = today.weekday()  # Monday=0
     start_of_this_week = today - timedelta(days=weekday)
