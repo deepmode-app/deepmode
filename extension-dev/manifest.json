@@ -24,8 +24,7 @@
     "tabs",
     "scripting",
     "alarms",
-    "notifications",
-    "permissions"
+    "notifications"
   ],
   "host_permissions": [
     "https://deepmode.onrender.com/*"
