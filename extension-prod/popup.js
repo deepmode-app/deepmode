@@ -19,11 +19,7 @@ const DEFAULT_SITES = [
   { id: "instagram", label: "Instagram",  host: "instagram.com", icon: "◎" },
   { id: "facebook",  label: "Facebook",   host: "facebook.com",  icon: "f" },
   { id: "reddit",    label: "Reddit",     host: "reddit.com",    icon: "r" },
-  { id: "tiktok",    label: "TikTok",     host: "tiktok.com",    icon: "♬" },
-  { id: "linkedin",  label: "LinkedIn",   host: "linkedin.com",  icon: "in" },
-  { id: "discord",   label: "Discord",     host: "discord.com",   icon: "💬" },
-  { id: "whatsapp",  label: "WhatsApp",   host: "web.whatsapp.com", icon: "💬" },
-  { id: "telegram",  label: "Telegram",   host: "web.telegram.org", icon: "✈" }
+  { id: "tiktok",    label: "TikTok",     host: "tiktok.com",    icon: "♬" }
 ];
 
 document.addEventListener("DOMContentLoaded", () => {

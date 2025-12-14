@@ -30,10 +30,6 @@ const DEFAULT_SITES = [
   { id: "facebook",  host: "facebook.com"  },
   { id: "reddit",    host: "reddit.com"    },
   { id: "tiktok",    host: "tiktok.com"    },
-  { id: "linkedin",  host: "linkedin.com"  },
-  { id: "discord",   host: "discord.com"   },
-  { id: "whatsapp",  host: "web.whatsapp.com" },
-  { id: "telegram",  host: "web.telegram.org" },
 ];
 
 // ---------- IN-MEMORY STATE ----------
@@ -488,7 +484,7 @@ function shouldBlockUrl(url) {
   const hostname = getHostnameFromUrl(url);
   if (!hostname) return false;
 
-  // Only block default sites for launch (custom sites disabled)
+  // Block default sites only
   return isDefaultSiteBlocked(hostname);
 }
 

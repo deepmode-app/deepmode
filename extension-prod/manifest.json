@@ -41,13 +41,7 @@
     "https://reddit.com/*",
     "https://*.reddit.com/*",
     "https://tiktok.com/*",
-    "https://*.tiktok.com/*",
-    "https://linkedin.com/*",
-    "https://*.linkedin.com/*",
-    "https://discord.com/*",
-    "https://*.discord.com/*",
-    "https://web.whatsapp.com/*",
-    "https://web.telegram.org/*"
+    "https://*.tiktok.com/*"
   ],
   "background": {
     "service_worker": "background.js"

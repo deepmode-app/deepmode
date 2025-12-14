@@ -30,10 +30,6 @@ const DEFAULT_SITES = [
   { id: "facebook",  host: "facebook.com"  },
   { id: "reddit",    host: "reddit.com"    },
   { id: "tiktok",    host: "tiktok.com"    },
-  { id: "linkedin",  host: "linkedin.com"  },
-  { id: "discord",   host: "discord.com"   },
-  { id: "whatsapp",  host: "web.whatsapp.com" },
-  { id: "telegram",  host: "web.telegram.org" },
 ];
 
 // ---------- IN-MEMORY STATE ----------
