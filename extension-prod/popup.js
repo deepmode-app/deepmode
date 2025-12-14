@@ -127,6 +127,74 @@ document.addEventListener("DOMContentLoaded", () => {
     }
   });
 
+  // ---------- Permission helpers ----------
+
+  function getHostnameFromUrl(url) {
+    try {
+      const u = new URL(url);
+      return u.hostname || "";
+    } catch {
+      return "";
+    }
+  }
+
+  function normalizeHost(host) {
+    if (!host) return "";
+    // Remove scheme if present (https://, http://)
+    let normalized = host.replace(/^https?:\/\//, "").replace(/\/.*$/, "");
+    // Remove www. prefix
+    normalized = normalized.toLowerCase().trim();
+    if (normalized.startsWith("www.")) {
+      normalized = normalized.substring(4);
+    }
+    return normalized;
+  }
+
+  function siteToOrigins(siteString) {
+    const hostname = normalizeHost(siteString);
+    if (!hostname) return [];
+    return [`*://${hostname}/*`, `*://*.${hostname}/*`];
+  }
+
+  function buildOriginsToRequestFromPrefs(blockPrefs) {
+    const originsSet = new Set();
+    
+    // Gather enabled DEFAULT_SITES hosts
+    const flags = blockPrefs.defaultSiteFlags || {};
+    const noFlags = !flags || Object.keys(flags).length === 0;
+    
+    for (const site of DEFAULT_SITES) {
+      const enabled = noFlags ? true : !!flags[site.id];
+      if (enabled) {
+        const siteOrigins = siteToOrigins(site.host);
+        siteOrigins.forEach(origin => originsSet.add(origin));
+      }
+    }
+    
+    // Gather custom sites
+    const customSites = blockPrefs.customSites || [];
+    for (const entry of customSites) {
+      const trimmed = (entry || "").trim();
+      if (trimmed) {
+        const siteOrigins = siteToOrigins(trimmed);
+        siteOrigins.forEach(origin => originsSet.add(origin));
+      }
+    }
+    
+    return Array.from(originsSet);
+  }
+
+  async function ensureBlockingPermissions(blockPrefs) {
+    const origins = buildOriginsToRequestFromPrefs(blockPrefs);
+    if (origins.length === 0) return true;
+    
+    return new Promise((resolve) => {
+      chrome.permissions.request({ origins }, (granted) => {
+        resolve(granted === true);
+      });
+    });
+  }
+
   // ---------- Small helpers ----------
 
   function formatCategoryLabel(cat) {
@@ -917,7 +985,7 @@ document.addEventListener("DOMContentLoaded", () => {
 
   // ---------- START BUTTON ----------
 
-  startBtn.addEventListener("click", () => {
+  startBtn.addEventListener("click", async () => {
     if (endBtn.disabled === false) {
       return;
     }
@@ -930,6 +998,14 @@ document.addEventListener("DOMContentLoaded", () => {
       statusDiv.style.color = "#e5e7eb";
       statusDiv.textContent = "Name your block.";
       return;
+    }
+
+    // Request blocking permissions before starting session (user gesture required)
+    const granted = await ensureBlockingPermissions(blockPrefs);
+    if (!granted) {
+      statusDiv.style.color = "#ffb84d";
+      statusDiv.textContent = "Blocking needs site permission. Session can still run, but sites may not be blocked until you allow access.";
+      // Continue starting session anyway - don't block product usage
     }
 
     if (!accessToken) {
@@ -1079,6 +1155,17 @@ document.addEventListener("DOMContentLoaded", () => {
             "Logged out.";
         }
       );
+    }
+
+    // Handle permission needed message from background
+    if (msg && msg.type === "DEEPMODE_NEEDS_SITE_PERMISSION") {
+      const url = msg.url || "";
+      const hostname = getHostnameFromUrl(url);
+      if (hostname) {
+        const normalized = normalizeHost(hostname);
+        statusDiv.style.color = "#ffb84d";
+        statusDiv.textContent = `Allow access to block this site: ${normalized}`;
+      }
     }
   });
 

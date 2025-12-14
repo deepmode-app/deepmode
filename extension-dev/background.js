@@ -465,6 +465,54 @@ function getHostnameFromUrl(url) {
   }
 }
 
+// ---------- PERMISSION HELPERS ----------
+
+function normalizeHost(hostname) {
+  if (!hostname) return "";
+  let normalized = hostname.toLowerCase().trim();
+  if (normalized.startsWith("www.")) {
+    normalized = normalized.substring(4);
+  }
+  return normalized;
+}
+
+function hostToOrigins(hostname) {
+  const normalized = normalizeHost(hostname);
+  if (!normalized) return [];
+  return [`*://${normalized}/*`, `*://*.${normalized}/*`];
+}
+
+function getOriginsForUrl(url) {
+  try {
+    const hostname = getHostnameFromUrl(url);
+    if (!hostname) return [];
+    return hostToOrigins(hostname);
+  } catch {
+    return [];
+  }
+}
+
+async function hasPermissionForUrl(url) {
+  // Block internal Chrome/Edge/extension URLs
+  if (!url || 
+      url.startsWith("chrome://") || 
+      url.startsWith("edge://") || 
+      url.startsWith("chrome-extension://") || 
+      url.startsWith("about:") || 
+      url.startsWith("file://")) {
+    return false;
+  }
+
+  const origins = getOriginsForUrl(url);
+  if (origins.length === 0) return false;
+
+  return new Promise((resolve) => {
+    chrome.permissions.contains({ origins }, (result) => {
+      resolve(result === true);
+    });
+  });
+}
+
 function isDefaultSiteBlocked(hostname) {
   if (!hostname) return false;
 
@@ -506,8 +554,24 @@ function shouldBlockUrl(url) {
   return isDefaultSiteBlocked(hostname) || isCustomSiteBlocked(hostname);
 }
 
-function injectBlockerIntoTab(tabId) {
+async function injectBlockerIntoTab(tabId, tabUrl) {
   if (!tabId || tabId < 0) return;
+
+  // Check if we have permission for this URL
+  const ok = await hasPermissionForUrl(tabUrl);
+  if (!ok) {
+    console.warn("[Deepmode BG] No optional host permission for", tabUrl, "skipping injection");
+    // Notify popup that permission is needed
+    try {
+      chrome.runtime.sendMessage({ 
+        type: "DEEPMODE_NEEDS_SITE_PERMISSION", 
+        url: tabUrl 
+      });
+    } catch (e) {
+      // Popup might not be open, ignore
+    }
+    return;
+  }
 
   chrome.scripting.executeScript(
     {
@@ -537,7 +601,7 @@ function ensureTabBlocked(tab) {
     () => {
       const err = chrome.runtime.lastError;
       if (err) {
-        injectBlockerIntoTab(tab.id);
+        injectBlockerIntoTab(tab.id, tab.url);
       }
     }
   );
