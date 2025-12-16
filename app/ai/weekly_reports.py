@@ -182,7 +182,18 @@ Do NOT include <html>, <body>, or <head> tags. Return only the content that will
         longest_streak = stats.get('longest_streak', 0)
         
         # Compute days worked from weekday breakdown
-        by_weekday_list = stats.get('by_weekday', [])
+        # Handle both dict format (from streak-insights) and list format (from email jobs)
+        by_weekday_raw = stats.get('by_weekday', [])
+        
+        # Normalize to list format
+        if isinstance(by_weekday_raw, dict):
+            # Convert dict to list: {"Mon": 100, "Tue": 50} -> [{"weekday": "Mon", "minutes": 100}, ...]
+            by_weekday_list = [{"weekday": day, "minutes": mins} for day, mins in by_weekday_raw.items()]
+        elif isinstance(by_weekday_raw, list):
+            by_weekday_list = by_weekday_raw
+        else:
+            by_weekday_list = []
+        
         days_worked = sum(1 for day in by_weekday_list if day.get('minutes', 0) > 0)
         
         # Find best and worst days
