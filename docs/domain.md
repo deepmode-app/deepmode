@@ -10,7 +10,7 @@ created_at
 plan – "free" or "paid" (from Gumroad key). 
 license_key_id – link to license if they paid.
 
-Free: 2 sessions/day, no AI, no analytics.
+Free: Up to 100 minutes/day (4 × 25 min sessions), no AI, no analytics.
 Paid: unlimited sessions, AI debrief, analytics.
 ====================================================================
 **2) Session**

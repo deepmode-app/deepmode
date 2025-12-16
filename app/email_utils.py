@@ -473,7 +473,7 @@ def send_minimal_weekly_summary_email(
 
         <h2 style="font-size:16px;font-weight:600;margin:0 0 12px;color:#e5e7eb;">Upgrade to Deepmode AI Pro</h2>
         <p style="font-size:13px;line-height:1.6;margin:0 0 20px;color:#9ca3af;">
-          Pro unlocks AI-written weekly reports based on your actual sessions, deeper project and category breakdowns, and a momentum score with next-week recommendations.
+          Upgrade to Pro to go beyond 100 minutes and unlock longer deep work blocks. Pro unlocks AI-written weekly reports based on your actual sessions, deeper project and category breakdowns, and a momentum score with next-week recommendations.
         </p>
 
         <a href="https://deepmode.app/#pricing"
