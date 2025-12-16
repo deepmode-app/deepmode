@@ -351,9 +351,9 @@
       font-size: 14px;
       line-height: 1.6;
       color: var(--dw-muted);
-      max-width: 460px;
-      margin: 0 auto 28px;
-      margin-top: 16px;
+      max-width: 520px;
+      margin: 0 auto 32px;
+      margin-top: 20px;
     }
 
     .hero-sub span {
@@ -365,8 +365,8 @@
       justify-content: center;
       flex-wrap: wrap;
       gap: 10px;
-      margin-bottom: 8px;
-      margin-top: 24px;
+      margin-bottom: 0;
+      margin-top: 28px;
     }
 
     @keyframes fadeUp {
@@ -921,14 +921,12 @@
 
     <!-- HERO -->
     <section class="hero">
-      <h1 class="hero-title">Know exactly where your time goes.</h1>
-      <h1 class="hero-title" style="margin-top: 4px;">Turn focused blocks into real progress.</h1>
+      <h1 class="hero-title">Work with intention.</h1>
+      <h1 class="hero-title" style="margin-top: 4px;">Protect your focus.</h1>
+      <h1 class="hero-title" style="margin-top: 4px;">Know exactly where your time goes.</h1>
       <p class="hero-sub">
-        Define one task. Lock in focused work.<br>
-        See real progress — not guesses.
-      </p>
-      <p class="hero-credibility">
-        Built and used daily by professionals, writers  and students who value their time.
+        Define one task, lock in deep work, and track real progress — automatically.<br>
+        Get clear weekly insights powered by AI to improve how you work over time.
       </p>
 
       <div class="hero-cta-row" id="heroCtaRow">
@@ -940,10 +938,12 @@
         >
           Add Deepmode to Chrome — Free
         </button>
+        <!-- Secondary CTA hidden for guests (de-emphasized) -->
         <button
           id="heroSecondaryBtn"
           class="btn btn-secondary guest-only"
           onclick="document.getElementById('pricing').scrollIntoView({ behavior: 'smooth', block: 'start' })"
+          style="display: none;"
         >
           Start free
         </button>
@@ -958,8 +958,9 @@
         </button>
       </div>
       <!-- Hero micro-copy (guest only) -->
-      <p class="hero-micro-copy guest-only" style="margin-top: 8px; font-size: 11px; color: var(--dw-muted); text-align: center;">
-        Install → Pin → Start your first focused session. Takes under 1 minute.
+      <p class="hero-micro-copy guest-only" style="margin-top: 10px; font-size: 11px; color: var(--dw-muted); text-align: center; line-height: 1.5;">
+        Install → Pin → Start your first focused session.<br>
+        No signup required. Try it instantly.
       </p>
       <!-- Logged-in users: Secondary row -->
       <div class="hero-cta-secondary-row auth-only" id="heroCtaSecondaryRow" style="display: none;">
@@ -1007,7 +1008,7 @@
     <!-- SCREENSHOTS -->
     <section class="screenshots-section">
       <h2 class="screenshots-title">From intention → focus → progress</h2>
-      <p class="screenshots-subtitle">See how Deepmode turns a single task into measurable momentum.</p>
+      <p class="screenshots-subtitle">See how Deepmode turns a single task into measurable progress.</p>
 
       <!-- Row 1: Core habit loop (3 screenshots) -->
       <div class="screenshot-grid">
@@ -1018,7 +1019,7 @@
           </div>
           <div class="screenshot-caption">
             <div class="screenshot-caption-title">Define one task on your extension popup.</div>
-            <div class="screenshot-caption-desc">One block. Commit.</div>
+            <div class="screenshot-caption-desc">One task. One block.</div>
           </div>
         </div>
 
@@ -1039,8 +1040,8 @@
             <img src="/static/screenshots/dashboard-live-session.png" alt="Live session tracking" class="img-dashboard" />
           </div>
           <div class="screenshot-caption">
-            <div class="screenshot-caption-title">See progress in real time.</div>
-            <div class="screenshot-caption-desc">Every block compounds.</div>
+            <div class="screenshot-caption-title">Track progress in real time.</div>
+            <div class="screenshot-caption-desc">See where your time actually went.</div>
           </div>
         </div>
       </div>
@@ -1099,7 +1100,7 @@
         <div class="pricing-title-row">
           <h2 class="section-title" style="margin-bottom: 0;">Deepmode AI Pro</h2>
           <p class="pricing-value-headline">
-            The only deep work system that analyzes your real behaviour and gives you actionable insights — automatically.
+            A deep work system that analyzes your real behaviour and gives you actionable insights — automatically.
           </p>
           <div class="pricing-price-row">
             <span class="pricing-price">£9.99 / month</span>
@@ -1159,7 +1160,7 @@
             <tr>
               <td>Distraction blocking</td>
               <td class="center">Yes</td>
-              <td class="center pro">Yes (advanced tracking)</td>
+              <td class="center pro">Yes (with distraction analytics)</td>
             </tr>
             <tr>
               <td>Projects</td>
