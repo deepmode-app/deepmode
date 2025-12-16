@@ -36,11 +36,21 @@ CORE PRINCIPLES
 
 4. Small wins compound — highlight momentum.
 
-5. Direct, rational, supportive tone — no guilt, no shame.
+5. Direct, rational, supportive tone — no guilt, no shame. Always encouraging, never criticizing or discouraging.
 
 6. Every insight must be actionable.
 
 7. Minimal words, maximum impact.
+
+8. Professional context awareness — emphasize weekday performance patterns. Weekdays (Mon-Fri) are where professional momentum compounds. Weekends are for recovery and intentional work, not pressure.
+
+WEEKEND TONE ADJUSTMENT
+
+- When analyzing weekly patterns, pay special attention to weekday (Mon-Fri) performance vs weekend (Sat-Sun).
+- Weekday consistency is the professional foundation — celebrate strong weekday patterns.
+- Weekend work is optional and valuable when intentional — never frame it as expected or required.
+- If the week includes weekends with work, celebrate it as bonus momentum, but emphasize weekday patterns as the core.
+- If weekends show lower activity, that's normal and healthy — never suggest it's a problem.
 
 OUTPUT FORMAT (STRICT)
 
@@ -61,6 +71,8 @@ You must always produce these exact sections:
    - 1–2 sentences.
 
    - Identify the single most important behavioural pattern (e.g., strong streak but low minutes, heavy context switching, one strong day then drop-off, etc.).
+   
+   - When analyzing patterns, emphasize weekday performance. If weekdays show strong consistency, highlight that as the professional foundation. Weekend patterns are secondary.
 
 3. What's Working (Compound Wins)
 
@@ -170,18 +182,18 @@ Do NOT include <html>, <body>, or <head> tags. Return only the content that will
         longest_streak = stats.get('longest_streak', 0)
         
         # Compute days worked from weekday breakdown
-        by_weekday = stats.get('by_weekday', {})
-        days_worked = sum(1 for day, mins in by_weekday.items() if mins > 0)
+        by_weekday_list = stats.get('by_weekday', [])
+        days_worked = sum(1 for day in by_weekday_list if day.get('minutes', 0) > 0)
         
         # Find best and worst days
         best_day = "N/A"
         worst_day = "N/A"
-        if by_weekday:
-            sorted_days = sorted(by_weekday.items(), key=lambda x: x[1], reverse=True)
-            if sorted_days and sorted_days[0][1] > 0:
-                best_day = f"{sorted_days[0][0]}: {sorted_days[0][1]} min"
+        if by_weekday_list:
+            sorted_days = sorted(by_weekday_list, key=lambda x: x.get('minutes', 0), reverse=True)
+            if sorted_days and sorted_days[0].get('minutes', 0) > 0:
+                best_day = f"{sorted_days[0].get('weekday', 'N/A')}: {sorted_days[0].get('minutes', 0)} min"
             if len(sorted_days) > 1:
-                worst_day = f"{sorted_days[-1][0]}: {sorted_days[-1][1]} min"
+                worst_day = f"{sorted_days[-1].get('weekday', 'N/A')}: {sorted_days[-1].get('minutes', 0)} min"
         
         # Format project breakdown
         by_project = stats.get('by_project', {})
@@ -219,10 +231,28 @@ Do NOT include <html>, <body>, or <head> tags. Return only the content that will
         else:
             previous_week_line = "Previous week average minutes: Not available (insufficient historical data)"
 
+        # Analyze weekday vs weekend patterns
+        weekday_minutes = 0
+        weekend_minutes = 0
+        weekday_days = ['Mon', 'Tue', 'Wed', 'Thu', 'Fri']
+        weekend_days = ['Sat', 'Sun']
+        
+        for day_entry in by_weekday_list:
+            day_name = day_entry.get('weekday', '')
+            mins = day_entry.get('minutes', 0)
+            if day_name in weekday_days:
+                weekday_minutes += mins
+            elif day_name in weekend_days:
+                weekend_minutes += mins
+        
+        weekday_pattern_note = f"Weekday (Mon-Fri) minutes: {weekday_minutes}. Weekend (Sat-Sun) minutes: {weekend_minutes}. Emphasize weekday consistency as the professional foundation. Weekend work is valuable but optional."
+
         # Build user content with template
         user_content = f"""You are generating a Deepmode performance report.
 
 Report type: weekly.
+
+{weekday_pattern_note}
 
 Here is the user's data for the period:
 

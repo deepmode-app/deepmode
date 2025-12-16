@@ -218,11 +218,11 @@ def send_welcome_email(to_email: str) -> None:
     if not to_email:
         return
 
-    subject = "Welcome to Deepmode"
+    subject = "Welcome to Deepmode — your focus has a home"
 
     # Use BASE_URL for login/dashboard links
     login_link = f"{BASE_URL}/login"
-    docs_link = f"{BASE_URL}/"  # landing
+    chrome_store_link = "https://chromewebstore.google.com/detail/deepmode/iebdcandcalfphohlapgdgbhpbbmhdng"
 
     html_body = f"""
     <div style="font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',system-ui,sans-serif;background:#050509;color:#f9fafb;padding:16px;">
@@ -236,17 +236,12 @@ def send_welcome_email(to_email: str) -> None:
           You've created your Deepmode account. From now on, your deep work has a home.
         </p>
 
-        <h2 style="margin:0 0 12px;font-size:16px;font-weight:600;color:#e5e7eb;">Next steps (takes 2 minutes):</h2>
+        <h2 style="margin:0 0 12px;font-size:16px;font-weight:600;color:#e5e7eb;">Next steps:</h2>
         <ul style="margin:0 0 20px 18px;font-size:14px;line-height:1.8;color:#9ca3af;padding-left:0;list-style-position:outside;">
-          <li style="margin-bottom:8px;">Install the Chrome extension and pin it in your toolbar.</li>
-          <li style="margin-bottom:8px;">Start a 25-minute session and stay in Deepmode on the selected task until the timer ends.</li>
-          <li style="margin-bottom:8px;">All the distractions will be blocked and you can control them anytime from the extension's popup menu. You will be able to focus on your task with complete authority.</li>
-          <li style="margin-bottom:8px;">Assign a project name (e.g. 'Thesis', 'Software', 'Interview prep') to the completed sessions to track the Projects you are currenlty working on.</li>
+          <li style="margin-bottom:8px;"><a href="{chrome_store_link}" style="color:#e50914;text-decoration:none;">Install the Chrome extension</a> and pin it to your toolbar.</li>
+          <li style="margin-bottom:8px;">Start a 25-minute session and stay with one task until the timer ends.</li>
+          <li style="margin-bottom:8px;">Deepmode blocks distractions, tracks real work, and helps you build momentum — one intentional block at a time.</li>
         </ul>
-
-        <p style="font-size:14px;line-height:1.6;margin:0 0 20px;color:#9ca3af;">
-          Deepmode is built for people who can't afford to waste their attention — professionals and serious students. One focused session of work beats a whole day of multitasking.
-        </p>
 
         <p style="margin:0 0 20px;">
           <a href="{login_link}"
@@ -261,13 +256,12 @@ def send_welcome_email(to_email: str) -> None:
     """
 
     text_body = (
-        "Welcome to Deepmode.\n\n"
+        "Welcome to Deepmode — your focus has a home.\n\n"
         "You've created your Deepmode account. From now on, your deep work has a home.\n\n"
-        "Next steps (takes 2 minutes):\n"
-        "1) Install the Chrome extension and pin it in your toolbar.\n"
-        "2) Start a 25-minute session and stay in Deepmode until the timer ends.\n"
-        "3) Assign a project name (e.g. 'Thesis', 'Client A', 'Interview prep') to the completed sessions to track the Projects you are currently working on.\n\n"
-        "Deepmode is built for anyone who wants to protect their time, sharpen their focus and progress every single day. One focused hour can change your day. Let's get started!\n\n"
+        "Next steps:\n"
+        f"1) Install the Chrome extension ({chrome_store_link}) and pin it to your toolbar.\n"
+        "2) Start a 25-minute session and stay with one task until the timer ends.\n"
+        "3) Deepmode blocks distractions, tracks real work, and helps you build momentum — one intentional block at a time.\n\n"
         "Go to your dashboard: " + login_link
     )
 

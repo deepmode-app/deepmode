@@ -53,9 +53,11 @@ def compute_work_tracker_stats(user_id: int, days: int = 7, timezone_name: Optio
     - days (list of dicts with daily breakdown for last 7 days)
     """
     today = get_today_in_timezone(timezone_name)
-    start_date = today - timedelta(days=days - 1)
+    # Exclude today - show past 7 completed days
+    end_date = today - timedelta(days=1)  # Yesterday (last completed day)
+    start_date = end_date - timedelta(days=days - 1)  # 7 days back from yesterday
     
-    # Build list of all 7 days
+    # Build list of all 7 days (excluding today)
     all_days = []
     weekday_names = ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun']
     for i in range(days):
@@ -174,8 +176,8 @@ def compute_work_tracker_stats(user_id: int, days: int = 7, timezone_name: Optio
             else:
                 continue
             
-            # Only count if within our window
-            if work_date < start_date or work_date > today:
+            # Only count if within our window (exclude today)
+            if work_date < start_date or work_date > end_date:
                 continue
             
             days_with_work.add(work_date)

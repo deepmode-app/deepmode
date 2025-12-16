@@ -1,6 +1,7 @@
 # app/ai/daily_reports.py
 
 import requests
+from datetime import date, timedelta
 
 from app.ai_config import (
     OPENAI_API_KEY,
@@ -36,17 +37,26 @@ CORE PRINCIPLES
 
 4. Small wins compound — highlight momentum.
 
-5. Direct, rational, supportive tone — no guilt, no shame.
+5. Direct, rational, supportive tone — no guilt, no shame. Always encouraging, never criticizing or discouraging.
 
 6. Every insight must be actionable.
 
 7. Minimal words, maximum impact.
 
+8. Professional context awareness — emphasize weekday performance patterns. Weekdays (Mon-Fri) are where professional momentum compounds. Weekends are for recovery and intentional work, not pressure.
+
+WEEKEND TONE ADJUSTMENT
+
+- If the report covers a weekend day (Saturday or Sunday), adopt a more relaxed, supportive tone.
+- Weekend work is optional and valuable when intentional — never frame it as expected or required.
+- Celebrate weekend work as bonus momentum, but never imply it's necessary.
+- Focus encouragement on weekday consistency as the foundation of professional progress.
+
 OUTPUT FORMAT (STRICT)
 
 You must always produce these exact sections:
 
-1. Today's Snapshot
+1. Snapshot
 
    - 1–2 short sentences.
 
@@ -148,7 +158,7 @@ OUTPUT HTML FORMAT
 
 Return your report as an HTML fragment using these tags:
 
-- <h2> for section headings (e.g., <h2>Today's Snapshot</h2>)
+- <h2> for section headings (e.g., <h2>Snapshot</h2>)
 
 - <p> for paragraphs
 
@@ -166,6 +176,10 @@ Do NOT include <html>, <body>, or <head> tags. Return only the content that will
         sessions_total = daily_stats.get('sessions_yesterday', 0)
         current_streak = daily_stats.get('current_streak', 0)
         longest_streak = daily_stats.get('longest_streak', 0)
+        
+        # Detect if yesterday was a weekend
+        yesterday_date = date.today() - timedelta(days=1)
+        is_weekend = yesterday_date.weekday() >= 5  # Saturday = 5, Sunday = 6
         
         # Format project breakdown
         top_projects = daily_stats.get('top_projects', [])
@@ -197,9 +211,13 @@ Do NOT include <html>, <body>, or <head> tags. Return only the content that will
         context_switching = f"{sessions_total} sessions" if sessions_total > 0 else "0 sessions"
 
         # Build user content with template
+        weekend_note = "NOTE: Yesterday was a weekend day. Use a relaxed, supportive tone. Weekend work is valuable when intentional, but never frame it as expected. Focus encouragement on weekday consistency as the professional foundation." if is_weekend else "NOTE: Yesterday was a weekday. Emphasize weekday consistency as the foundation of professional momentum."
+        
         user_content = f"""You are generating a Deepmode performance report.
 
 Report type: daily.
+
+{weekend_note}
 
 Here is the user's data for the period:
 
