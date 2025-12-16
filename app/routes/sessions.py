@@ -20,7 +20,7 @@ router = APIRouter(tags=["sessions"])
 # ---------- FREE TIER LIMITS ----------
 
 # How many focus blocks a free user can start per day
-MAX_FREE_SESSIONS_PER_DAY = 3
+MAX_FREE_SESSIONS_PER_DAY = 4
 
 # Which durations (in minutes) are allowed on the free plan
 FREE_ALLOWED_DURATIONS_MINUTES = {5, 25}
@@ -286,8 +286,8 @@ def create_new_session(
                 detail={
                     "code": "FREE_LIMIT_REACHED",
                     "message": (
-                        "You’ve used all 3 free Deepmode focus blocks for today. "
-                        "Upgrade to Pro for unlimited sessions and longer 50/90 minute blocks."
+                        "You've completed today's 100 free focus minutes. "
+                        "Upgrade to Pro to unlock longer and unlimited deep work blocks."
                     ),
                 },
             )

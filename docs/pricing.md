@@ -1,8 +1,7 @@
 # Deepwork AI – Pricing Tiers (Draft)
 
 ## Free
-- Max X sessions per day (e.g. 2)
-- Max Y minutes per day (e.g. 60)
+- Up to 100 minutes of deep work per day (4 × 25 min sessions)
 - Basic dashboard (today + all time)
 - Blocks a limited set of sites (YouTube, Twitter)
 
