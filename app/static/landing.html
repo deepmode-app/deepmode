@@ -878,7 +878,7 @@
         <a href="#pricing" class="nav-link" id="navPricingLink">Pricing</a>
         <a href="/login" class="nav-link guest-only">Log in</a>
         <button class="nav-cta guest-only" onclick="window.location.href='/signup'">
-          Start free
+          Sign up
         </button>
         <!-- Logged-in user avatar dropdown -->
         <span id="navProBadge" class="nav-pro-pill auth-only" style="display: none;">AI Pro</span>
@@ -921,12 +921,10 @@
 
     <!-- HERO -->
     <section class="hero">
-      <h1 class="hero-title">Work with intention.</h1>
-      <h1 class="hero-title" style="margin-top: 4px;">Protect your focus.</h1>
-      <h1 class="hero-title" style="margin-top: 4px;">Know exactly where your time goes.</h1>
+      <h1 class="hero-title">Structure your work.</h1>
+      <h1 class="hero-title" style="margin-top: 4px;">Protect your time.</h1>
       <p class="hero-sub">
-        Define one task, lock in deep work, and track real progress — automatically.<br>
-        Get clear weekly insights powered by AI to improve how you work over time.
+        Define one task, lock in deep work, and track real progress — with AI insights that help you improve every week.
       </p>
 
       <div class="hero-cta-row" id="heroCtaRow">
@@ -945,7 +943,7 @@
           onclick="document.getElementById('pricing').scrollIntoView({ behavior: 'smooth', block: 'start' })"
           style="display: none;"
         >
-          Start free
+          Sign up
         </button>
         <!-- Logged-in users: Primary CTA -->
         <button
@@ -992,17 +990,6 @@
         </button>
       </div>
 
-      <p class="hero-footnote guest-only" style="margin-top: 12px; display: none;">
-        No signup required
-      </p>
-    </section>
-
-    <!-- PROBLEM STATEMENT -->
-    <section class="section centered pain-solution">
-      <h2 class="problem-headline">The real problem isn't distraction — it's invisible time.</h2>
-      <p class="problem-text">
-        Most people work all day and still don’t know where it went.
-      </p>
     </section>
 
     <!-- SCREENSHOTS -->
@@ -1115,7 +1102,7 @@
             <option value="monthly">Monthly (£9.99/month)</option>
           </select>
           <button id="pricingPrimaryBtn" class="btn btn-primary" style="min-width: 200px; text-align: center; line-height: 1.5;">
-            Start free
+            Sign up
           </button>
         </div>
         <div class="pricing-cancel-note">
@@ -1373,7 +1360,7 @@
         const pricingPrimaryBtn = document.getElementById('pricingPrimaryBtn');
         const pricingPlanSelector = document.getElementById('pricingPlanSelector');
         if (pricingPrimaryBtn) {
-          pricingPrimaryBtn.textContent = 'Start free';
+          pricingPrimaryBtn.textContent = 'Sign up';
           pricingPrimaryBtn.disabled = false;
           pricingPrimaryBtn.onclick = () => {
             window.location.href = '/signup';
