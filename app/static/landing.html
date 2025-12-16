@@ -925,7 +925,7 @@
       <h1 class="hero-title" style="margin-top: 4px;">Turn focused blocks into real progress.</h1>
       <p class="hero-sub">
         Define one task. Lock in focused work.<br>
-        See exactly how you spend your time on your current projects — with AI insights that help you improve every week.
+        See real progress — not guesses.
       </p>
       <p class="hero-credibility">
         Built and used daily by professionals, writers  and students who value their time.
@@ -943,7 +943,7 @@
         <button
           id="heroSecondaryBtn"
           class="btn btn-secondary guest-only"
-          onclick="window.location.href='/signup'"
+          onclick="document.getElementById('pricing').scrollIntoView({ behavior: 'smooth', block: 'start' })"
         >
           Start free
         </button>
@@ -959,7 +959,7 @@
       </div>
       <!-- Hero micro-copy (guest only) -->
       <p class="hero-micro-copy guest-only" style="margin-top: 8px; font-size: 11px; color: var(--dw-muted); text-align: center;">
-        Install → Pin → Start your first focused session
+        Install → Pin → Start your first focused session. Takes under 1 minute.
       </p>
       <!-- Logged-in users: Secondary row -->
       <div class="hero-cta-secondary-row auth-only" id="heroCtaSecondaryRow" style="display: none;">
@@ -991,8 +991,8 @@
         </button>
       </div>
 
-      <p class="hero-footnote guest-only" style="margin-top: 12px;">
-        Try instantly — no signup required
+      <p class="hero-footnote guest-only" style="margin-top: 12px; display: none;">
+        No signup required
       </p>
     </section>
 
@@ -1067,15 +1067,15 @@
       <div class="steps-strip">
         <div class="step-item">
           <span class="step-number">1.</span> Define one task<br/>
-          <span class="step-desc">Decide exactly what you'll work on before you start.</span>
+          <span class="step-desc">Decide exactly what you'll work on.</span>
         </div>
         <div class="step-item">
           <span class="step-number">2.</span> Lock in a focus block<br/>
-          <span class="step-desc">Choose 5, 25, 50, or 90 minutes. Distractions are blocked automatically but you have complete control with one click.</span>
+          <span class="step-desc">Choose 5, 25, 50, or 90 minutes. Distractions are blocked — override anytime.</span>
         </div>
         <div class="step-item">
           <span class="step-number">3.</span> Review and improve<br/>
-          <span class="step-desc">Deepmode tracks your deepwork blocks and gives you AI insights into your work patterns, helping you improve every week.</span>
+          <span class="step-desc">See where your time actually went. Improve week by week.</span>
         </div>
       </div>
     </section>
@@ -1084,11 +1084,13 @@
     <section class="section centered">
       <h2 class="section-title">Why Deepmode?</h2>
       <ul class="why-bullets">
-        <li><strong>Structured focus sessions</strong> — 5, 25, 50, or 90 minutes. Pick your block, define your task, and lock in.</li>
-        <li><strong>Total control over distractions</strong> — Block what breaks your focus. One-click override when you need it.</li>
-        <li><strong>Know exactly where your time goes</strong> — Every session tracked by task, project, and category. Progress becomes visible.</li>
-        <li><strong>AI insights that help you improve</strong> — Patterns you can't see yourself, with specific actions to get better every week. (Pro)</li>
+        <li><strong>Structured focus blocks</strong> — One task. One block. Real commitment.</li>
+        <li><strong>Total control over distractions</strong> — Block what breaks focus. Override when needed.</li>
+        <li><strong>See your real patterns</strong> — Sessions tracked by task, project, and category.</li>
       </ul>
+      <p style="margin-top: 20px; font-size: 13px; color: var(--dw-muted); line-height: 1.6; max-width: 600px; margin-left: auto; margin-right: auto;">
+        Deepmode AI Pro reveals patterns you can't see yourself — and tells you exactly what to fix.
+      </p>
     </section>
 
     <!-- PRICING -->

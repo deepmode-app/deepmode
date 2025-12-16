@@ -669,9 +669,10 @@ def get_streak_insights(
     # Compute stats with timezone
     stats = compute_work_tracker_stats(user_id, days=days, timezone_name=user_timezone)
     
-    # Calculate window dates
+    # Calculate window dates (exclude today - show past 7 completed days)
     today = date.today()
-    start_date = today - timedelta(days=days - 1)
+    end_date = today - timedelta(days=1)  # Yesterday (last completed day)
+    start_date = end_date - timedelta(days=days - 1)  # 7 days back from yesterday
     
     # Build user object for AI
     user_profile = {
