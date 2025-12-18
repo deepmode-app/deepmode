@@ -194,6 +194,9 @@
     <!-- Header -->
     <h1>Log in</h1>
     <p class="sub">See your focus stats and continue where you left off.</p>
+    <p id="firstLoginMsg" class="sub" style="display: none; color: var(--dw-text); margin-top: 8px; margin-bottom: 18px;">
+      Sign in to connect your account and start your first focus session.
+    </p>
 
     <!-- Login form -->
     <form id="loginForm">
@@ -243,6 +246,19 @@
   </div>
 
   <script>
+    // ---------------- First login message ----------------
+    (function() {
+      const urlParams = new URLSearchParams(window.location.search);
+      const firstLoginMsg = document.getElementById("firstLoginMsg");
+      
+      // Show message if URL has first_login param OR if localStorage flag exists
+      if (urlParams.get("first_login") === "true" || localStorage.getItem("deepmode_first_login") === "true") {
+        firstLoginMsg.style.display = "block";
+        // Set flag so it persists if page is refreshed
+        localStorage.setItem("deepmode_first_login", "true");
+      }
+    })();
+
     // ---------------- Login ----------------
     const form = document.getElementById("loginForm");
     const errorBox = document.getElementById("errorBox");
@@ -273,6 +289,9 @@
 
         const data = await res.json();
         localStorage.setItem("access_token", data.access_token);
+        
+        // Clear first login flag after successful login
+        localStorage.removeItem("deepmode_first_login");
 
         window.location.href = "/dashboard";
       } catch (err) {
