@@ -194,6 +194,9 @@
     <!-- Header -->
     <h1>Log in</h1>
     <p id="defaultSub" class="sub">See your focus stats and continue where you left off.</p>
+    <p id="firstLoginWelcome" class="sub" style="display: none; font-size: 13px; color: var(--dw-text); margin-top: 12px; margin-bottom: 4px; font-weight: 500;">
+      Welcome to Deepmode. Your work now has a home.
+    </p>
     <p id="firstLoginMsg" class="sub" style="display: none; color: var(--dw-text); margin-top: 8px; margin-bottom: 18px;">
       Sign in to connect your account and start your first focus session.
     </p>
@@ -250,10 +253,12 @@
     (function() {
       const urlParams = new URLSearchParams(window.location.search);
       const firstLoginMsg = document.getElementById("firstLoginMsg");
+      const firstLoginWelcome = document.getElementById("firstLoginWelcome");
       const defaultSub = document.getElementById("defaultSub");
       
       // Show message if URL has first_login param OR if localStorage flag exists
       if (urlParams.get("first_login") === "true" || localStorage.getItem("deepmode_first_login") === "true") {
+        firstLoginWelcome.style.display = "block";
         firstLoginMsg.style.display = "block";
         defaultSub.style.display = "none"; // Hide default subtitle on first login
         // Set flag so it persists if page is refreshed
