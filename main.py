@@ -10,10 +10,11 @@ BASE_DIR = Path(__file__).resolve().parent
 env_path = BASE_DIR / ".env"
 load_dotenv(dotenv_path=env_path)
 
-from fastapi import FastAPI, HTTPException
+from fastapi import FastAPI, HTTPException, Request
 from fastapi.middleware.cors import CORSMiddleware
-from fastapi.responses import FileResponse
+from fastapi.responses import FileResponse, RedirectResponse
 from fastapi.responses import HTMLResponse
+from starlette.middleware.base import BaseHTTPMiddleware
 
 from app.routes import sessions, billing, auth, marketing_router, projects
 from app.database import init_db
@@ -24,6 +25,36 @@ from app.jobs.email_jobs import router as jobs_router  # /jobs/... endpoints
 init_db()
 
 app = FastAPI(title="Deepmode")
+
+
+# ---------- WWW to non-WWW redirect middleware ----------
+
+class WWWRedirectMiddleware(BaseHTTPMiddleware):
+    """
+    Redirects www.deepmode.app to deepmode.app (301 permanent redirect).
+    Preserves path and query string.
+    """
+    async def dispatch(self, request: Request, call_next):
+        host = request.headers.get("host", "").lower()
+        
+        # Check if host starts with "www."
+        if host.startswith("www."):
+            # Build redirect URL: https://deepmode.app + path + query
+            path = request.url.path
+            query = request.url.query
+            redirect_url = f"https://deepmode.app{path}"
+            if query:
+                redirect_url += f"?{query}"
+            
+            return RedirectResponse(url=redirect_url, status_code=301)
+        
+        # Continue normally if not www
+        response = await call_next(request)
+        return response
+
+
+# Add middleware BEFORE CORS (order matters)
+app.add_middleware(WWWRedirectMiddleware)
 
 app.add_middleware(
     CORSMiddleware,
